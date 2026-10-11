@@ -58,6 +58,30 @@ test('private Claude panel authorizes one run without leaking browser credential
  }finally{auto===undefined?delete process.env.CC_CDX_PANEL_AUTO_OPEN:process.env.CC_CDX_PANEL_AUTO_OPEN=auto;await closePeerPanel();await client.close();await server.close();await runtime.close();await codex.close();await f.close()}
 },15000);
 
+test('one panel approval covers later plan phases and the panel-only edit authorization reaches Codex once',async()=>{
+ const f=await nativeFixture(false,{reception:'default'}),codex=await f.connect(),server=new McpServer({name:'claude-fixture',version:'1'}),client=new Client({name:'fixture',version:'1'});let privateUrl='';const auto=process.env.CC_CDX_PANEL_AUTO_OPEN;delete process.env.CC_CDX_PANEL_AUTO_OPEN;
+ const p=await inspectParticipant({configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path},f.peerId,'claude');f.bridge.updateRuntime({status:'idle',mode:'bypass'});
+ const runtime=registerDesktopTools(server,{configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path,codexHome:f.root,pluginRoot:root,openPrivatePanel:async url=>{privateUrl=url},authenticate:async()=>({provider:'claude',sessionId:p.sessionId,pid:p.pid,procStart:p.procStart,project:f.root,binding:{method:'fixture',generation:'fixture',surface:'claude-desktop',evidence:[]}})}),[a,b]=InMemoryTransport.createLinkedPair();await Promise.all([server.connect(a),client.connect(b)]);
+ const call=async(name:string,args:Record<string,unknown>)=>{const r=await client.callTool({name:'desktop_collaboration_'+name,arguments:args});if(r.isError)throw new Error(JSON.stringify(r.content));return JSON.parse((r.content as {text:string}[])[0]!.text)};
+ try{await call('discover',{});await f.call(codex,'desktop_collaboration_discover',{});await call('panel',{});const origin=new URL(privateUrl).origin,token=new URLSearchParams(new URL(privateUrl).hash.slice(1)).get('token')!;
+  const session=await fetch(origin+'/api/v1/session',{method:'POST',headers:{Origin:origin},body:JSON.stringify({token})}),{csrf}=await session.json() as {csrf:string},cookie=session.headers.get('set-cookie')!.split(';')[0]!;
+  const post=async(path:string,body:unknown)=>{const r=await fetch(origin+'/api/v1/desktop/'+path,{method:'POST',headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf},body:JSON.stringify(body)});return {status:r.status,data:await r.json() as any}};
+  expect((await client.listTools()).tools.some(t=>t.name.includes('edit_authorization'))).toBe(false);
+  const run=await call('prepare',{requestId:randomUUID(),peerId:f.desktop.threadId,context:{objective:'Plan phase 1'},limits:{maxMessages:null,maxSeconds:300},openPanel:false});
+  expect((await post('consent',{runId:run.id,expectedRevision:0,coversLaterContexts:true})).data).toMatchObject({valid:true,coversLaterContexts:true});
+  expect((await post('edit_authorization',{runId:run.id,expectedRevision:0})).status).toBe(409);
+  expect((await post('edit_authorization',{runId:run.id,expectedRevision:0,scope:'EDIT_SCOPE_ALL_PHASES'})).data).toMatchObject({valid:true,grantee:{provider:'codex'}});
+  expect((await post('start',{runId:run.id,supervised:true})).status).toBe(200);
+  const first=randomUUID();await call('send',{runId:run.id,messageId:first,text:'PHASE_ONE_TASK'});await until(()=>f.desktop.submissions.length===1);const delivered=JSON.stringify(f.desktop.submissions[0]);expect(delivered).toContain('EDIT_SCOPE_ALL_PHASES');expect(delivered).toContain('Human edit authorization');expect(delivered).toContain('later context versions of this run');
+  expect((await f.call(codex,'desktop_collaboration_status',{runId:run.id})).data.editAuthorization).toMatchObject({valid:true,scope:'EDIT_SCOPE_ALL_PHASES'});
+  const reply=randomUUID();expect((await f.call(codex,'desktop_collaboration_send',{runId:run.id,messageId:reply,replyTo:first,text:'PHASE_ONE_DONE'})).error).toBeFalsy();await until(()=>f.frames.some(x=>x.type==='user'&&x.message.content.includes('PHASE_ONE_DONE')));
+  const revision=(await call('status',{runId:run.id})).coordination.revision;await call('control',{runId:run.id,commandId:randomUUID(),expectedRevision:revision,control:{action:'context',context:{objective:'Plan phase 2'}}});expect(runtime.store.consentStatus(run.id).valid).toBe(true);
+  await call('send',{runId:run.id,messageId:randomUUID(),text:'PHASE_TWO_TASK'});await until(()=>f.desktop.submissions.length===2);const second=JSON.stringify(f.desktop.submissions[1]);expect(second).toContain('Plan phase 2');expect(second).not.toContain('EDIT_SCOPE_ALL_PHASES');
+  expect((await post('edit_authorization',{runId:run.id,expectedRevision:(await call('status',{runId:run.id})).coordination.revision,revoke:true})).data.valid).toBe(false);await call('send',{runId:run.id,messageId:randomUUID(),text:'AFTER_REVOKE'});await until(()=>f.desktop.submissions.length===3);expect(JSON.stringify(f.desktop.submissions[2])).toContain('revoked the panel edit authorization');
+  expect(f.bridge.policy()).toBe('default');
+ }finally{auto===undefined?delete process.env.CC_CDX_PANEL_AUTO_OPEN:process.env.CC_CDX_PANEL_AUTO_OPEN=auto;await client.close();await server.close();await runtime.close();await codex.close();await f.close()}
+},15000);
+
 test('scoped implementation through both MCP hosts preserves dirty scope, exact reviews and readiness without executing reported checks',async()=>{
  const {writeFileSync}=await import('node:fs'),{git}=await import('../src/project');const f=await nativeFixture();
  for(const args of [['init','-q'],['config','user.email','fixture@example.invalid'],['config','user.name','Fixture']])expect((await git(f.root,args)).code).toBe(0);
