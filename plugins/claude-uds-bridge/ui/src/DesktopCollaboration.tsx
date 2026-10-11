@@ -12,6 +12,7 @@ import {DesktopTickets,FirstMessage,openNewChat} from './DesktopTickets';
 import {Switch} from '@/components/ui/switch';
 import {serializedRefresh} from './lib/live-refresh';
 import {State as RunState,providerName} from './RunState';
+import {syncEditAuthorization,type EditChoice} from './lib/collaboration-form';
 
 const l=(en:string,es:string)=>getLanguage()==='es'?es:en;
 type Principal={provider:'codex'|'claude';sessionId:string};
@@ -21,7 +22,6 @@ type Ticket={id:string;adapter:string;targetProvider:string;project:string;state
 type Proposal={id:string;requester:Principal;createdAt:number;objective:string;newChat:boolean;peerId?:string;allowEdits:boolean;editScope?:string;maxMessages:number|null;minutes:number;initialBarrier:boolean};
 type State={principal:Principal;project:string;runs:Run[];participants:Peer[];proposals?:Proposal[];tickets:Ticket[];grants:{id:string;targetProvider:string;adapter:string;revokedAt:number|null;expiresAt:number|null}[];bindingErrors?:Record<string,string>};
 type Api=<T>(path:string,body?:unknown)=>Promise<T>;
-type EditChoice={enabled:boolean;scope:string};
 const defaultScope=()=>l('Implement the agreed plan in this project: edit files and make local commits. No push, pull requests or merges.','Implementar el plan acordado en este proyecto: editar archivos y hacer commits locales. Sin push, PR ni merges.');
 const otherOf=(r:Run)=>r.initiator.provider==='claude'?'codex':'claude';
 const needsApproval=(r:Run)=>r.state==='prepared'&&r.initiator.provider==='claude'&&!r.consent.valid;
@@ -35,12 +35,12 @@ export function DesktopCollaboration({api,onError,initialRun=''}:{api:Api;onErro
  const [state,setState]=useState<State|null>(null),[selected,setSelectedRun]=useState(''),[composing,setComposing]=useState(false),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[direction,setDirection]=useState<'forward'|'back'|null>(null);
  // Remember which way the user travelled so the next view enters along that path.
  const setSelected=(id:string)=>{setDirection(id?'forward':'back');setSelectedRun(id)};
- const refresh=useRef<()=>Promise<void>>(()=>Promise.resolve()),focused=useRef(false);
+ const refresh=useRef<()=>Promise<void>>(()=>Promise.resolve()),focused=useRef(false),actionLock=useRef(false);
  useEffect(()=>{let alive=true;const worker=serializedRefresh(async()=>{try{const value=await api<State>('desktop/state');if(alive)setState(value)}catch(e){if(alive)onError((e as Error).message)}});refresh.current=worker.request;void worker.request();const timer=setInterval(()=>void worker.request(),2500),focus=()=>{if(document.visibilityState==='visible')void worker.request()};window.addEventListener('focus',focus);document.addEventListener('visibilitychange',focus);return()=>{alive=false;worker.stop();clearInterval(timer);window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',focus)}},[api,onError]);
  // A focus link opens on its run once; later selections are the human's.
  useEffect(()=>{if(focused.current||!state||!initialRun)return;focused.current=true;if(state.runs.some(r=>r.id===initialRun))setSelected(initialRun)},[state,initialRun]);
  useEffect(()=>{window.scrollTo({top:0})},[selected,composing]);
- const act=async(fn:()=>Promise<void>)=>{if(busy)return;setBusy(true);try{onError('');await fn();await refresh.current()}catch(e){onError((e as Error).message)}finally{setBusy(false)}};
+ const act=async(fn:()=>Promise<void>)=>{if(actionLock.current)return;actionLock.current=true;setBusy(true);try{onError('');await fn();await refresh.current()}catch(e){onError((e as Error).message)}finally{actionLock.current=false;setBusy(false)}};
  if(!state)return <p className="text-muted-foreground">{l('Loading…','Cargando…')}</p>;
  const run=state.runs.find(r=>r.id===selected),other=state.principal.provider==='codex'?'claude':'codex';
  const toast=notice&&<Alert role="status" className="toast fixed right-6 top-20 z-50 max-w-md"><AlertDescription className="flex items-start justify-between gap-3">{notice}<button className="pressable -m-1.5 rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" onClick={()=>setNotice('')} aria-label={l('Close','Cerrar')}><X className="size-3.5"/></button></AlertDescription></Alert>;
@@ -58,7 +58,7 @@ export function DesktopCollaboration({api,onError,initialRun=''}:{api:Api;onErro
 // One approval covers the whole plan: later phases update this run's context instead of starting another run.
 async function approveAndStart(api:Api,run:Run,edit?:EditChoice,allowBusyPeer=false){
  if(run.initiator.provider==='claude'&&!run.consent.valid)await api('desktop/consent',{runId:run.id,expectedRevision:run.coordination.revision,coversLaterContexts:true});
- if(edit?.enabled)await api('desktop/edit_authorization',{runId:run.id,expectedRevision:run.coordination.revision,scope:edit.scope});
+ if(edit)await syncEditAuthorization(api,run,edit);
  await api('desktop/start',{runId:run.id,supervised:true,allowBusyPeer});
  return api<{state:string}>('desktop/notify',{runId:run.id,commandId:crypto.randomUUID()});
 }
@@ -114,7 +114,7 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
  const ticketId=newChat?(boundId?opening!.ticketId:''):advancedTicket;
  const limits=()=>{const maxMessages=messages===''?null:Number(messages),maxSeconds=Number(minutes)*60;if(maxMessages!==null&&(!Number.isSafeInteger(maxMessages)||maxMessages<2)||!Number.isInteger(maxSeconds)||maxSeconds<60)throw new Error(l('Enter valid limits: at least 2 messages and 1 minute.','Indica límites válidos: al menos 2 mensajes y 1 minuto.'));return {maxMessages,maxSeconds}};
  const ready2go=!!objective.trim()&&(!edit.enabled||!!edit.scope.trim());
- const start=()=>act(async()=>{if(!objective.trim()||!chosen)throw new Error(l('Choose a conversation and an objective.','Elige una conversación y un objetivo.'));
+ const start=()=>act(async()=>{if(!objective.trim()||!chosen)throw new Error(l('Choose a conversation and an objective.','Elige una conversación y un objetivo.'));if(edit.enabled&&!edit.scope.trim())throw new Error(l('Describe what it may edit first.','Describe primero qué puede editar.'));
   const payload={peerId:chosen,context:{objective:objective.trim(),constraints:[],references:[],priorAnalysis:{...(priorCodex.trim()?{codex:priorCodex}:{}),...(priorClaude.trim()?{claude:priorClaude}:{})}},limits:limits(),routine:{mode:'free'},...(initialBarrier?{coordination:{initialBarrier:true}}:{}),...(ticketId?{ticketId}:{}),...(implementation.trim()?{implementation:JSON.parse(implementation)}:{}),openPanel:false};
   const key=JSON.stringify(payload);if(request.current?.payload!==key)request.current={payload:key,id:crypto.randomUUID(),notifyId:crypto.randomUUID()};
   const prepared=await api<Run>('desktop/prepare',{...payload,requestId:request.current.id});
@@ -122,7 +122,7 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
   // A human pressing start here is the approval itself for a Claude-initiated run.
   if(prepared.preflight&&!prepared.preflight.readyForCheck&&(prepared.initiator.provider!=='claude'||prepared.consent.valid)){onStarted(prepared.id,l('Prepared. Check the details before starting.','Preparada. Revisa los detalles antes de iniciarla.'));return;}
   if(prepared.initiator.provider==='claude'&&!prepared.consent.valid)await api('desktop/consent',{runId:prepared.id,expectedRevision:prepared.coordination.revision,coversLaterContexts:true});
-  if(edit.enabled&&!prepared.editAuthorization?.valid)await api('desktop/edit_authorization',{runId:prepared.id,expectedRevision:prepared.coordination.revision,scope:edit.scope});
+  await syncEditAuthorization(api,prepared,edit);
   await api('desktop/start',{runId:prepared.id,supervised:true,allowBusyPeer:busyPeer});
   const job=await api<{state:string}>('desktop/notify',{runId:prepared.id,commandId:request.current.notifyId});
   onStarted(prepared.id,job.state==='unknown'?l('Started, but the chat could not be woken for sure. Open it to check.','Iniciada, pero no se pudo confirmar el aviso al chat. Ábrelo para comprobarlo.'):l('Started. Both chats are working on it.','Iniciada. Los dos chats ya están en ello.'))});
@@ -137,6 +137,7 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
  const dismiss=()=>act(async()=>{if(proposal)await api('desktop/proposal_resolve',{id:proposal.id,state:'dismissed'});onCancel?.()});
  const suggester=proposal?providerName(proposal.requester.provider):'';
  return <div className={`reveal space-y-6 rounded-xl border bg-card p-6 shadow-sm ${proposal?'border-primary/40':''}`}>
+  <fieldset disabled={busy} className="min-w-0 space-y-6">
   {proposal&&<div className="-mx-6 -mt-6 flex flex-wrap items-center justify-between gap-3 rounded-t-xl border-b border-primary/20 bg-primary/[.06] px-6 py-3"><div><p className="text-sm font-medium text-primary">{l(`Suggested by ${suggester} · ${ago(proposal.createdAt)}`,`Sugerida por ${suggester} · ${ago(proposal.createdAt)}`)}</p><p className="text-xs text-muted-foreground">{l('Change anything below. Nothing happens until you press start.','Cambia lo que quieras. No pasa nada hasta que pulses empezar.')}</p></div><Button variant="ghost" size="sm" disabled={busy} onClick={()=>void dismiss()}>{l('Dismiss','Descartar')}</Button></div>}
   <div className="space-y-2"><Label htmlFor="objective">{l('What should they work on?','¿En qué tienen que trabajar?')}</Label><Textarea id="objective" value={objective} onChange={e=>setObjective(e.target.value)} rows={3} maxLength={16000} placeholder={l('E.g. Review the panel design together and propose improvements.','Ej.: Revisad juntos el diseño del panel y proponed mejoras.')}/></div>
 
@@ -178,6 +179,7 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
    <details><summary className="cursor-pointer text-muted-foreground">{l('Implementation contract (advanced)','Contrato de implementación (avanzado)')}</summary><p className="my-2 text-xs text-muted-foreground">{l('Clean Git base; separate files or worktrees; required checks. Grants no editing permission.','Base Git limpia; archivos o worktrees separados; comprobaciones obligatorias. No da permisos de edición.')}</p><Textarea className="font-mono text-xs" rows={8} value={implementation} onChange={e=>setImplementation(e.target.value)} placeholder={JSON.stringify({strategy:'files',workspaces:{codex:{root:state.project,paths:['src/a.ts']},claude:{root:state.project,paths:['src/b.ts']}},requiredChecks:['tests']},null,2)}/></details>
    <details><summary className="cursor-pointer text-muted-foreground">{l(`Other ways to get a ${peerName} chat`,`Otras formas de conseguir un chat de ${peerName}`)}</summary><div className="mt-4"><DesktopTickets state={state} api={api} busy={busy} act={act} onBound={(id,ticket)=>{setNewChat(false);setPeer(id);setAdvancedTicket(ticket)}} onNotice={()=>{}}/></div></details>
   </div></details>
+  </fieldset>
  </div>;
 }
 
