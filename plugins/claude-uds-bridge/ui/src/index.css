@@ -1,22 +1,66 @@
 @import "tailwindcss";
+/* The theme toggle sets .dark on <html>; dark: utilities must follow it, not the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
 @theme inline {
  --color-background:var(--background); --color-foreground:var(--foreground); --color-card:var(--card); --color-card-foreground:var(--foreground); --color-popover:var(--card); --color-popover-foreground:var(--foreground);
- --color-primary:var(--primary); --color-primary-foreground:var(--primary-foreground); --color-secondary:var(--secondary); --color-secondary-foreground:var(--foreground); --color-muted:var(--muted); --color-muted-foreground:var(--muted-foreground); --color-accent:var(--secondary); --color-accent-foreground:var(--foreground); --color-destructive:#dc4b4b; --color-border:var(--border); --color-input:var(--border); --color-ring:var(--primary);
+ --color-primary:var(--primary); --color-primary-foreground:var(--primary-foreground); --color-secondary:var(--secondary); --color-secondary-foreground:var(--foreground); --color-muted:var(--muted); --color-muted-foreground:var(--muted-foreground); --color-accent:var(--secondary); --color-accent-foreground:var(--foreground); --color-destructive:var(--danger); --color-border:var(--border); --color-input:var(--border); --color-ring:var(--primary);
+ --color-success:var(--success); --color-warning:var(--warning); --color-danger:var(--danger); --color-warning-foreground:var(--warning-foreground);
  --radius-sm:calc(var(--radius) - 4px); --radius-md:calc(var(--radius) - 2px); --radius-lg:var(--radius); --radius-xl:calc(var(--radius) + 4px);
+ --ease-spring:cubic-bezier(.32,.72,0,1);
 }
-:root {--background:#f8f8f7;--foreground:#222322;--card:#fff;--primary:#254c3b;--primary-foreground:#fff;--secondary:#eeefec;--muted:#f1f2ef;--muted-foreground:#70736e;--border:#e1e3dc;--radius:.65rem; color-scheme:light;}
-:root.dark {--background:#141615;--foreground:#ededeb;--card:#1b1e1c;--primary:#a8c9ad;--primary-foreground:#18281d;--secondary:#272c28;--muted:#232724;--muted-foreground:#a4ada5;--border:#363b36;color-scheme:dark;}
-* {border-color:var(--border)}
-body {margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--background);color:var(--foreground);font-size:14px;line-height:1.55}
-button,a,input,select,textarea{touch-action:manipulation}
-button:not(:disabled),a{cursor:pointer}
+/* System-style palette: neutral grays, one blue accent, semantic state colors tuned per theme. */
+:root {--background:#f5f5f7;--foreground:#1d1d1f;--card:#fff;--primary:#0071e3;--primary-foreground:#fff;--secondary:#e8e8ed;--muted:#f0f0f3;--muted-foreground:#6e6e73;--border:#dcdce1;--success:#1e7d36;--warning:#a85200;--warning-foreground:#fff;--danger:#d70015;--material:rgb(255 255 255 / .72);--shadow:0 1px 2px rgb(0 0 0 / .04),0 8px 28px rgb(0 0 0 / .08);--radius:.75rem; color-scheme:light;}
+:root.dark {--background:#0f0f11;--foreground:#f5f5f7;--card:#1c1c1e;--primary:#0a84ff;--primary-foreground:#fff;--secondary:#2c2c2e;--muted:#232326;--muted-foreground:#98989d;--border:#38383a;--success:#30d158;--warning:#ff9f0a;--warning-foreground:#1d1d1f;--danger:#ff453a;--material:rgb(28 28 30 / .72);--shadow:0 1px 2px rgb(0 0 0 / .3),0 10px 32px rgb(0 0 0 / .45);color-scheme:dark;}
+/* Layered so border-* utilities (state badges, accents) can override it; unlayered rules always win over utilities. */
+@layer base{*{border-color:var(--border)}}
+body {margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--background);color:var(--foreground);font-size:14px;line-height:1.55;font-optical-sizing:auto;-webkit-font-smoothing:antialiased}
+h1,h2{letter-spacing:-.02em;line-height:1.2}
+input[type=checkbox],input[type=radio]{accent-color:var(--primary);width:1rem;height:1rem;margin-top:.15rem;flex-shrink:0}
+button,a,input,select,textarea,summary{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button:not(:disabled),a,summary{cursor:pointer}
 :focus-visible{outline:2px solid var(--primary);outline-offset:3px}
 pre,.prose-text{white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit}
 ::-webkit-scrollbar{width:7px;height:7px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
 .app{min-height:100vh}
-.topbar{position:sticky;top:0;z-index:40;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(8px)}
+/* Floating chrome: a translucent material the content scrolls under, with a hairline only once something is beneath it. */
+.topbar{position:sticky;top:0;z-index:40;background:var(--material);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:0 1px 0 color-mix(in srgb,var(--border) 70%,transparent)}
 .topbar-inner{max-width:1100px;margin:auto;height:56px;padding:0 24px;display:flex;align-items:center;gap:20px}
 .workspace{max-width:1100px;padding:32px 24px 64px;width:100%;margin:auto}
 .eyebrow{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.13em;color:var(--muted-foreground)}
+/* Press feedback lands on pointer-down; release eases back. */
+.pressable{transition:transform 160ms var(--ease-spring),background-color 150ms ease,color 150ms ease,box-shadow 150ms ease}
+.pressable:active:not(:disabled){transform:scale(.985);transition-duration:80ms}
+/* Toasts materialize from the edge they sit on instead of popping in. */
+.toast{background:var(--material)!important;backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);box-shadow:var(--shadow);animation:materialize 380ms var(--ease-spring) both}
+@keyframes materialize{from{opacity:0;transform:translateX(16px) scale(.96);filter:blur(6px)}}
+/* Views enter along the path the user travelled: deeper slides in from the right, back from the left. */
+.view-forward{animation:enter-forward 420ms var(--ease-spring) both}
+.view-back{animation:enter-back 420ms var(--ease-spring) both}
+@keyframes enter-forward{from{opacity:0;transform:translateX(24px)}}
+@keyframes enter-back{from{opacity:0;transform:translateX(-24px)}}
+.reveal{animation:reveal 320ms var(--ease-spring) both}
+@keyframes reveal{from{opacity:0;transform:translateY(-6px)}}
+/* Disclosures grow open instead of jumping, where the browser can animate to auto height. */
+:root{interpolate-size:allow-keywords}
+details::details-content{height:0;overflow:clip;transition:height 320ms var(--ease-spring),content-visibility 320ms allow-discrete}
+details[open]::details-content{height:auto}
+/* A theme switch eases the brightness change instead of flashing. */
+.theme-transition,.theme-transition *{transition:background-color 240ms ease,border-color 240ms ease,color 240ms ease!important}
 @media(max-width:1100px){.detail-grid{display:block!important}.detail-grid>aside{margin-top:24px}}
 @media(max-width:640px){.topbar-inner{height:auto;flex-wrap:wrap;padding:10px 16px;gap:10px}.workspace{padding:20px 16px 48px}}
+@media(prefers-reduced-motion:reduce){
+ .view-forward,.view-back,.reveal{animation:fade 200ms ease both}
+ .toast{animation:fade 200ms ease both}
+ .pressable:active:not(:disabled){transform:none}
+ details::details-content{transition:none}
+ *,*::before,*::after{scroll-behavior:auto!important}
+}
+@keyframes fade{from{opacity:0}}
+@media(prefers-reduced-transparency:reduce){
+ :root{--material:#fff}:root.dark{--material:#1c1c1e}
+ .topbar,.toast{backdrop-filter:none;-webkit-backdrop-filter:none}
+}
+@media(prefers-contrast:more){
+ :root{--border:#86868b;--muted-foreground:#424245}:root.dark{--border:#8e8e93;--muted-foreground:#c7c7cc}
+ .topbar{box-shadow:0 1px 0 var(--border)}
+}
