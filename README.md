@@ -4,7 +4,15 @@
 
 Ask either chat to work with the other one. A small panel opens in your browser where you check the plan, set limits and decide whether the other agent may edit code, then you press **Start**. The two chats message each other directly while you watch. At the end you get a result that shows who said what and where they still disagree.
 
+It's an easier, collaboration-focused take on [Claude UDS Bridge](https://github.com/LeonKohli/claude-uds-bridge): the same local Claude ↔ Codex bridge, plus a guided panel so you never have to manage sessions or settings by hand.
+
 <!-- Demo GIF goes here: both apps side by side with the panel open. -->
+
+## Why have them collaborate?
+
+- **They catch each other's mistakes.** Two different models make different errors. When one reviews the other's plan or code, problems that a single agent would miss tend to surface.
+- **Disagreements stay visible.** You see where they disagree instead of getting one confident answer, so you know what to double-check.
+- **Everything is traceable.** Every message, result and review is recorded with who wrote it and which exact version it refers to. You can follow how they got to the answer and export the whole exchange.
 
 ## Why not just use codex-plugin-cc?
 
