@@ -8,7 +8,7 @@ import {NativeSelect,NativeSelectOption} from '@/components/ui/native-select';
 import {Badge} from '@/components/ui/badge';
 import {Alert,AlertDescription} from '@/components/ui/alert';
 import {Play,Pause,RefreshCw,Download,Plus,Check,ArrowLeft,ChevronRight,X} from 'lucide-react';
-import {DesktopTickets} from './DesktopTickets';
+import {DesktopTickets,FirstMessage,openNewChat,openedNotice} from './DesktopTickets';
 import {serializedRefresh} from './lib/live-refresh';
 import {State as RunState,providerName} from './RunState';
 
@@ -82,8 +82,10 @@ function EditAuthorization({run,api,busy,act,edit,setEdit}:{run:Run;api:Api;busy
 
 function Composer({state,other,api,busy,act,onCancel,onStarted}:{state:State;other:string;api:Api;busy:boolean;act:(fn:()=>Promise<void>)=>Promise<void>;onCancel?:()=>void;onStarted:(id:string,notice:string)=>void}){
  const peers=state.participants.filter(p=>p.provider===other&&p.cwd===state.project&&p.eligibleSurface),ready=peers.filter(p=>p.symmetricDesktop);
- const [peer,setPeer]=useState(''),[objective,setObjective]=useState(''),[messages,setMessages]=useState('24'),[minutes,setMinutes]=useState('30'),[busyPeer,setBusyPeer]=useState(false),[initialBarrier,setInitialBarrier]=useState(false),[priorCodex,setPriorCodex]=useState(''),[priorClaude,setPriorClaude]=useState(''),[implementation,setImplementation]=useState(''),[ticketId,setTicketId]=useState(''),[edit,setEdit]=useState<EditChoice>({enabled:false,scope:defaultScope()});
- const request=useRef<{payload:string;id:string;notifyId:string}|null>(null);
+ const [peer,setPeer]=useState(''),[firstMessage,setFirstMessage]=useState(''),[objective,setObjective]=useState(''),[messages,setMessages]=useState('24'),[minutes,setMinutes]=useState('30'),[busyPeer,setBusyPeer]=useState(false),[initialBarrier,setInitialBarrier]=useState(false),[priorCodex,setPriorCodex]=useState(''),[priorClaude,setPriorClaude]=useState(''),[implementation,setImplementation]=useState(''),[ticketId,setTicketId]=useState(''),[edit,setEdit]=useState<EditChoice>({enabled:false,scope:defaultScope()});
+ const request=useRef<{payload:string;id:string;notifyId:string}|null>(null),openRequest=useRef(crypto.randomUUID());
+ const [openNotice,setOpenNotice]=useState('');
+ const openApp=()=>act(async()=>{const opened=await openNewChat(api,state.project,other,openRequest.current);openRequest.current=crypto.randomUUID();setFirstMessage(opened.bootstrapPrompt);setOpenNotice(openedNotice(other))});
  // With a single available chat there is nothing to choose.
  const chosen=peer||(ready.length===1?ready[0]!.sessionId:'');
  const start=()=>act(async()=>{if(!objective.trim()||!chosen)throw new Error(l('Choose a conversation and an objective.','Elige una conversación y un objetivo.'));const maxMessages=messages===''?null:Number(messages),maxSeconds=Number(minutes)*60;if(maxMessages!==null&&(!Number.isSafeInteger(maxMessages)||maxMessages<2)||!Number.isInteger(maxSeconds)||maxSeconds<60)throw new Error(l('Enter valid limits. Leave messages empty for no count limit.','Indica límites válidos. Deja mensajes vacío para no limitar su número.'));
@@ -99,7 +101,7 @@ function Composer({state,other,api,busy,act,onCancel,onStarted}:{state:State;oth
   onStarted(prepared.id,job.state==='unknown'?l('Started, but the chat could not be woken for sure. Open it to check.','Iniciada, pero no se pudo confirmar el aviso al chat. Ábrelo para comprobarlo.'):l('Started. Both chats are working on it.','Iniciada. Los dos chats ya están en ello.'))});
  const peerName=providerName(other);
  return <div className="reveal space-y-5 rounded-xl border bg-card p-6 shadow-sm">
-  {peers.length===0?<div className="rounded-lg bg-muted/60 p-4 text-sm"><p className="font-medium">{l(`No ${peerName} chat is open in this folder`,`No hay ningún chat de ${peerName} abierto en esta carpeta`)}</p><p className="mt-1 text-muted-foreground">{l(`Open one in ${peerName} Desktop and it will appear here.`,`Abre uno en ${peerName} Desktop y aparecerá aquí.`)}</p></div>
+  {peers.length===0?<div className="rounded-lg bg-muted/60 p-4 text-sm"><p className="font-medium">{l(`No ${peerName} chat is open in this folder`,`No hay ningún chat de ${peerName} abierto en esta carpeta`)}</p><p className="mt-1 text-muted-foreground">{l(`Open one in ${peerName} Desktop and it will appear here.`,`Abre uno en ${peerName} Desktop y aparecerá aquí.`)}</p><Button className="mt-3" size="sm" disabled={busy} onClick={()=>void openApp()}>{l(`Open ${peerName} on a new chat`,`Abrir ${peerName} en un chat nuevo`)}</Button>{openNotice&&<p className="reveal mt-3 text-muted-foreground">{openNotice}</p>}{firstMessage&&<div className="mt-2"><FirstMessage text={firstMessage}/></div>}</div>
    :ready.length===1&&!peer?<p className="text-sm text-muted-foreground">{l('With','Con')} <strong className="text-foreground">{ready[0]!.name}</strong> · {l('opened','abierto')} {opened(ready[0]!.startedAt)}{peers.length>1&&<button className="ml-2 underline" onClick={()=>setPeer(ready[0]!.sessionId)}>{l('change','cambiar')}</button>}</p>
    :<div className="space-y-2"><Label>{l(`${peerName} chat`,`Chat de ${peerName}`)}</Label><NativeSelect className="w-full" value={chosen} onChange={e=>{setPeer(e.target.value);setTicketId('')}}><NativeSelectOption value="">{l('Choose…','Elige…')}</NativeSelectOption>{peers.map(p=><NativeSelectOption key={p.sessionId} value={p.sessionId} disabled={!p.symmetricDesktop}>{p.name}{p.startedAt?' · '+l('opened','abierto')+' '+opened(p.startedAt):''}{p.symmetricDesktop?(p.status==='busy'?' · '+l('busy','ocupado'):''):' · '+l('reload plugin','recarga el plugin')}</NativeSelectOption>)}</NativeSelect></div>}
   <div className="space-y-2"><Label htmlFor="objective">{l('What should they work on?','¿En qué tienen que trabajar?')}</Label><Textarea id="objective" value={objective} onChange={e=>setObjective(e.target.value)} rows={3} maxLength={16000} placeholder={l('E.g. Review the panel design together and propose improvements.','Ej.: Revisad juntos el diseño del panel y proponed mejoras.')}/></div>

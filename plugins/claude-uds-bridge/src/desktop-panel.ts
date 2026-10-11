@@ -5,10 +5,12 @@ import {CreationTickets,ticketInputSchema,grantInputSchema,type PanelActor,type 
 import {inspectParticipant,discoverParticipants,type ParticipantOptions} from './participants';
 import type {Principal} from './desktop-runs';
 import {consumeCorrelation,peekCorrelation} from './claude-sidecar';
+import {bootstrapPrompt} from './desktop-creation';
+import {newConversationLink,openWithSystem,type AppLauncher} from './app-link';
 
 export type DesktopPanelAdapter={principal:Principal;project:string;invoke:(name:string,args:Record<string,unknown>,panelSessionId:string)=>Promise<unknown>};
 /** The HTTP router supplies its authenticated panel session, never a model argument. */
-export function desktopPanelRoutes(options:ParticipantOptions,adapter:DesktopPanelAdapter,panelSessionId:string){
+export function desktopPanelRoutes(options:ParticipantOptions,adapter:DesktopPanelAdapter,panelSessionId:string,launch:AppLauncher=openWithSystem){
  const tickets=new CreationTickets(options.stateDir),actor:PanelActor={kind:'panel_session',id:panelSessionId,scope:{project:adapter.project}};
  const selected=async(ticketId:string,sessionId:string)=>{const t=tickets.get(ticketId),p=await inspectParticipant(options,sessionId,t.targetProvider),native=(await discoverParticipants(options.configDir,options.stateDir)).find(x=>x.sessionId===sessionId&&x.provider===t.targetProvider);if(!native?.startedAt)throw new Error('Host session start time is unavailable; do not infer freshness');return {provider:p.provider,sessionId:p.sessionId,pid:p.pid,procStart:p.procStart,project:p.project.directory,branch:p.project.branch,head:p.project.head,startedAt:native.startedAt} satisfies Candidate;};
 
@@ -30,6 +32,14 @@ export function desktopPanelRoutes(options:ParticipantOptions,adapter:DesktopPan
   if(path==='tickets/authorize'){const a=z.object({id:z.string().uuid(),revision:z.number().int()}).strict().parse(raw);return tickets.authorize(actor,a.id,a.revision);}
   if(path==='tickets/cancel'){const a=z.object({id:z.string().uuid()}).strict().parse(raw);return tickets.cancel(actor,a.id);}
   if(path==='tickets/bind'){const a=z.object({id:z.string().uuid(),sessionId:z.string().uuid()}).strict().parse(raw);return tickets.bindManual(actor,a.id,await selected(a.id,a.sessionId));}
+  // The panel opens the other app on a new chat with the bootstrap filled in; the person sends it. One claim per ticket, as for any creation.
+  if(path==='tickets/open'){const a=z.object({id:z.string().uuid()}).strict().parse(raw),t=tickets.get(a.id);
+   if(t.project!==realpathSync(adapter.project))throw new Error('Panel project mismatch');
+   if(t.adapter!=='manual'||t.mode!=='local')throw new Error('Only a local manual ticket can be opened in the app');
+   const claim=tickets.claimCreating(t.id,`panel:${panelSessionId.slice(0,32)}`),prompt=bootstrapPrompt(claim.ticket,claim.correlationId);
+   try{await launch(newConversationLink(t.targetProvider==='claude'?'claude':'codex',t.project,prompt))}
+   catch(error){tickets.markFailed(t.id,claim.epoch,{effect:'none',reason:'app_link_failed'});throw error}
+   return {ticket:tickets.markCreated(t.id,claim.epoch,{hostRef:null,degradation:'app_link_human_send'}),bootstrapPrompt:prompt};}
   if(path==='tickets/check'){const a=z.object({id:z.string().uuid()}).strict().parse(raw);return check(a.id);}
   if(path==='grants/create')return tickets.grant(actor,grantInputSchema.parse(raw));
   if(path==='grants/revoke'){const a=z.object({id:z.string().uuid()}).strict().parse(raw);return tickets.revokeGrant(actor,a.id);}

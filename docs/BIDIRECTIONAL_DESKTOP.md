@@ -28,7 +28,7 @@ Creation tickets have a separate private database and authorization; the recepti
 
 Adapters:
 
-- `manual`: the person opens the destination chat and explicitly binds it.
+- `manual`: the person opens the destination chat and explicitly binds it. On macOS the panel can open it for them through the app's own registered link (`codex://threads/new?path=…&prompt=…` or `claude://code/new?folder=…&q=…`), with the folder and bootstrap message filled in. The person still presses send, so the link creates nothing by itself. Opening claims the ticket once like any creation; if no app accepts the link the ticket fails instead of waiting. Claude chats then bind from the host receipt; Codex chats are still bound explicitly.
 - `assisted_ui`: an authorized executor uses Claude Desktop UI, verifies the requested folder/model/mode and sends the correlation marker in the first prompt. It cannot operate the bridge panel.
 - `native_tool_relay`: a live, exact, panel-delegated Codex chat uses its official host `create_thread` tool. Claude itself has no such creation tool; without a live Codex executor the UI offers manual opening.
 
