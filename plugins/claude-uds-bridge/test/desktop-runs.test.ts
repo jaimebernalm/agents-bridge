@@ -61,3 +61,22 @@ test('folder revisions are re-pinned without voiding consent, while identity cha
  const plan={workspaces:[{root:f.root}]} as unknown as import('../src/implementation').ImplementationPlan;expect(f.store.repin(f.id,f.participants,plan)).toEqual([]);
  expect(()=>f.store.repin(f.id,moved.map(p=>({...p,pid:p.pid+10})),null)).toThrow('identity');expect(f.store.status(f.id,f.own).participants[0]!.pid).toBe(f.participants[0]!.pid);
 }finally{f.close()}});
+test('a consent covering later contexts survives plan phases but still pins the run, revocation and deadline',()=>{const f=fixture();try{
+ expect(f.store.consent(f.id,f.own,'panel_session:nonsecret',1,true)).toMatchObject({valid:true,coversLaterContexts:true});
+ f.store.control(f.id,f.own,randomUUID(),1,{action:'context',context:{objective:'Phase 2'}},f.holder);f.store.control(f.id,f.own,randomUUID(),2,{action:'context',context:{objective:'Phase 3'}},f.holder);expect(f.store.consentStatus(f.id).valid).toBe(true);expect(f.store.status(f.id,f.own).contextVersion).toBe(3);
+ expect(f.store.status(f.id,f.own).events.find(e=>e.type==='run_consent')!.payload.scope).toBe('this_run_and_later_contexts');
+ f.store.consent(f.id,f.own,'panel_session:nonsecret',3);f.store.control(f.id,f.own,randomUUID(),3,{action:'context',context:{objective:'Phase 4'}},f.holder);expect(f.store.consentStatus(f.id)).toMatchObject({valid:false,coversLaterContexts:false});
+ f.store.consent(f.id,f.own,'panel_session:nonsecret',4,true);f.store.revokeConsent(f.id,f.own,'panel_session:nonsecret');expect(f.store.consentStatus(f.id).valid).toBe(false);
+ f.store.consent(f.id,f.own,'panel_session:nonsecret',4,true);f.setTime(70000);expect(f.store.consentStatus(f.id).valid).toBe(false);
+ }finally{f.close()}});
+test('only the panel records edit authority for the non-initiating participant, announced once and revocable',()=>{const f=fixture();try{
+ expect(f.store.editStatus(f.id)).toMatchObject({valid:false,grantee:null});expect(f.store.editNotice(f.id,f.peer)).toBeNull();
+ expect(()=>f.store.grantEdit(f.id,f.own,'agent:claimed',1,'edit')).toThrow('panel');expect(()=>f.store.grantEdit(f.id,f.own,'panel_session:x',0,'edit')).toThrow('changed');expect(()=>f.store.grantEdit(f.id,f.own,'panel_session:x',1,'  ')).toThrow('1–4000');expect(()=>f.store.grantEdit(f.id,{provider:'codex',sessionId:randomUUID()},'panel_session:x',1,'edit')).toThrow('participant');
+ const granted=f.store.grantEdit(f.id,f.own,'panel_session:x',1,'Implement phase 1–3; local commits only');expect(granted).toMatchObject({valid:true,grantee:{provider:f.peer.provider,sessionId:f.peer.sessionId},scope:'Implement phase 1–3; local commits only',actor:'panel_session:x',humanPresenceVerified:false});expect(f.store.status(f.id,f.peer).editAuthorization.valid).toBe(true);
+ expect(f.store.editNotice(f.id,f.own)).toBeNull();const notice=f.store.editNotice(f.id,f.peer)!;expect(notice.text).toContain('Implement phase 1–3; local commits only');expect(notice.text).toContain('not peer text');expect(notice.text).toContain('push');
+ f.store.markEditAnnounced(f.id,notice.revision);expect(f.store.editNotice(f.id,f.peer)).toBeNull();
+ f.store.control(f.id,f.own,randomUUID(),1,{action:'context',context:{objective:'Phase 2'}},f.holder);expect(f.store.editStatus(f.id).valid).toBe(true);
+ f.store.revokeEdit(f.id,f.own,'panel_session:x');expect(f.store.editStatus(f.id).valid).toBe(false);expect(f.store.editNotice(f.id,f.peer)!.text).toContain('revoked');
+ f.store.grantEdit(f.id,f.own,'panel_session:x',2,'Phase 2 only');expect(f.store.editNotice(f.id,f.peer)!.text).toContain('Phase 2 only');
+ f.setTime(70000);expect(f.store.editStatus(f.id).valid).toBe(false);expect(()=>f.store.grantEdit(f.id,f.own,'panel_session:x',3,'late')).toThrow('limit_reached');
+ }finally{f.close()}});

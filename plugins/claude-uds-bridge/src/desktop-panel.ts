@@ -33,7 +33,7 @@ export function desktopPanelRoutes(options:ParticipantOptions,adapter:DesktopPan
   if(path==='tickets/check'){const a=z.object({id:z.string().uuid()}).strict().parse(raw);return check(a.id);}
   if(path==='grants/create')return tickets.grant(actor,grantInputSchema.parse(raw));
   if(path==='grants/revoke'){const a=z.object({id:z.string().uuid()}).strict().parse(raw);return tickets.revokeGrant(actor,a.id);}
-  if(!['prepare','preflight','start','control','export','notify','consent','creation_dispatch','implementation'].includes(path))throw new Error('Unknown Desktop operation');
+  if(!['prepare','preflight','start','control','export','notify','consent','edit_authorization','creation_dispatch','implementation'].includes(path))throw new Error('Unknown Desktop operation');
   const args=z.record(z.string(),z.unknown()).parse(raw);if(path==='prepare')args.openPanel=false;return adapter.invoke(path,args,panelSessionId);
  },close(){tickets.close();}};
 }

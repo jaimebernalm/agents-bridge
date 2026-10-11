@@ -1,6 +1,6 @@
 # Scoped implementation — 0.8.0
 
-Use this only for implementation already authorized by the human. The contract records scope, not execution permission. Analysis/review requests and choosing the implement orientation do not authorize editing or publishing. No editor locks, OS sandbox, automatic model worker or test-command executor is provided.
+Use this only for implementation already authorized by the human, directly in the chat or through a valid panel `editAuthorization` for the bidirectional Desktop tools. The contract records scope, not execution permission. Analysis/review requests and choosing the implement orientation do not authorize editing or publishing. No editor locks, OS sandbox, automatic model worker or test-command executor is provided.
 
 ## Register the contract
 
