@@ -1,5 +1,6 @@
 // Existing Spanish copy serves as stable message identifiers. Agent content is never translated.
 export const english: Record<string, string> = {
+  "El otro chat sigue ocupado con una respuesta. Espera a que termine, o permite empezar aunque esté ocupado (allowBusyPeer).": "The other chat is still busy with a reply. Wait until it finishes, or allow starting while it is busy (allowBusyPeer).",
   "Preparada": "Prepared",
   "En curso": "In progress",
   "Pausada": "Paused",

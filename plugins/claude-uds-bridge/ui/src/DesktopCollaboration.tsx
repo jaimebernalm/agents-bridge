@@ -127,7 +127,9 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
   const job=await api<{state:string}>('desktop/notify',{runId:prepared.id,commandId:request.current.notifyId});
   onStarted(prepared.id,job.state==='unknown'?l('Started, but the chat could not be woken for sure. Open it to check.','Iniciada, pero no se pudo confirmar el aviso al chat. Ábrelo para comprobarlo.'):l('Started. Both chats are working on it.','Iniciada. Los dos chats ya están en ello.'))});
  // The person asked to start when they opened the new chat; start as soon as it is linked.
- useEffect(()=>{if(autoStart.current&&boundId&&!busy){autoStart.current=false;void start()}},[boundId,busy]);
+ // A new chat is still answering its first message right after it links; start once it is idle.
+ const boundIdle=!!boundId&&(busyPeer||state.participants.find(p=>p.sessionId===boundId)?.status==='idle');
+ useEffect(()=>{if(autoStart.current&&boundIdle&&!busy){autoStart.current=false;void start()}},[boundIdle,busy]);
  const openAndStart=()=>act(async()=>{if(!objective.trim())throw new Error(l('Write what they should work on first.','Escribe primero en qué tienen que trabajar.'));limits();
   const opened=await openNewChat(api,state.project,other,openRequest.current);openRequest.current=crypto.randomUUID();autoStart.current=true;setOpening({ticketId:opened.ticket.id,prompt:opened.bootstrapPrompt})});
  const startOver=()=>act(async()=>{autoStart.current=false;if(ticket&&!ticket.bound&&!ticketEnded&&ticket.state!=='creating')await api('desktop/tickets/cancel',{id:ticket.id});setOpening(null);setCandidate('')});
@@ -154,7 +156,8 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
    <Stepper label={l('Time','Tiempo')} unit="min" value={minutes} onChange={setMinutes} step={5} min={5} max={1440}/>
   </div>
 
-  {newChat&&opening&&!boundId?<div className="reveal space-y-3 rounded-xl border bg-muted/50 p-4 text-sm">
+  {newChat&&opening&&boundId&&autoStart.current&&!boundIdle?<p className="reveal flex items-center gap-2 rounded-xl border bg-muted/50 p-4 text-sm"><Loader2 className="size-4 animate-spin text-primary"/>{l(`Linked. Starting as soon as ${peerName} finishes its first reply…`,`Vinculado. Empieza en cuanto ${peerName} termine su primera respuesta…`)}</p>
+  :newChat&&opening&&!boundId?<div className="reveal space-y-3 rounded-xl border bg-muted/50 p-4 text-sm">
     {ticketEnded?<><p className="font-medium">{l('That new chat request ended before it was linked.','La solicitud del chat nuevo terminó antes de vincularse.')}</p><Button size="sm" disabled={busy} onClick={()=>void startOver()}>{l('Try again','Intentar de nuevo')}</Button></>
     :<><p className="flex items-center gap-2 font-medium"><Loader2 className="size-4 animate-spin text-primary"/>{l(`Press send in the new ${peerName} chat`,`Pulsa enviar en el chat nuevo de ${peerName}`)}</p>
      <p className="text-muted-foreground">{l('It links here on its own and the collaboration starts. You can stay in that chat.','Se vincula aquí solo y la colaboración empieza. Puedes quedarte en ese chat.')}</p>
