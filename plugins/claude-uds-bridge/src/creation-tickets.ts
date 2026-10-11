@@ -326,6 +326,24 @@ export class CreationTickets {
         'bound', 'core', { binding: 'host_receipt', sessionId: candidate.sessionId });
     }).immediate();
   }
+  /** Codex has no hook receipt; its own chat record of the first composer message is the host evidence. */
+  bindCodexRecord(id: string, rawCandidate: Candidate, record: { correlationId: string; sessionId: string; cwd: string; priorUserTurns: number; at: number }) {
+    return this.db.transaction(() => {
+      const row = this.row(id), candidate = candidateSchema.parse(rawCandidate);
+      this.bindable(row, candidate);
+      if (row.target_provider !== 'codex') throw new Error('Only a Codex ticket binds from a Codex chat record');
+      if (row.grant_id && !this.grantAllowedBind(row.grant_id)) throw new Error('This ticket needs a panel session to bind');
+      if (record.correlationId !== row.correlation_id) throw new Error('Chat record belongs to another ticket');
+      if (record.sessionId !== candidate.sessionId) throw new Error('Chat record and candidate disagree');
+      const authorizedAt = row.authorized_at!;
+      if (candidate.startedAt < authorizedAt || record.at < authorizedAt) throw new Error('Candidate existed before authorization');
+      if (!this.sameProject(row, record.cwd)) throw new Error('Chat record names another project');
+      if (row.host_ref !== null && row.host_ref !== candidate.sessionId) throw new Error('Candidate differs from the host reference');
+      if (record.priorUserTurns !== 0) throw new Error('Candidate already had a conversation');
+      return this.set(row.id, { state: 'bound', bound_session: candidate.sessionId, bound_pid: candidate.pid, bound_proc_start: candidate.procStart, binding: 'codex_record' },
+        'bound', 'core', { binding: 'codex_record', sessionId: candidate.sessionId });
+    }).immediate();
+  }
   bindManual(panel: PanelActor, id: string, rawCandidate: Candidate) {
     return this.db.transaction(() => {
       const row = this.row(id), actor = this.panel(panel, row), candidate = candidateSchema.parse(rawCandidate);
