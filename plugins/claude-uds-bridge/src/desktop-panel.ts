@@ -46,6 +46,8 @@ export function desktopPanelRoutes(options:ParticipantOptions&{codexHome?:string
    try{await launch(newConversationLink(t.targetProvider==='claude'?'claude':'codex',t.project,prompt))}
    catch(error){tickets.markFailed(t.id,claim.epoch,{effect:'none',reason:'app_link_failed'});throw error}
    return {ticket:tickets.markCreated(t.id,claim.epoch,{hostRef:null,degradation:'app_link_human_send'}),bootstrapPrompt:prompt};}
+  // A blank chat of the panel owner's own app, for starting another collaboration there. Creates no ticket and grants nothing.
+  if(path==='apps/new_chat'){z.object({}).strict().parse(raw);await launch(newConversationLink(adapter.principal.provider,realpathSync(adapter.project)));return {opened:adapter.principal.provider};}
   if(path==='tickets/check'){const a=z.object({id:z.string().uuid()}).strict().parse(raw);return check(a.id);}
   if(path==='grants/create')return tickets.grant(actor,grantInputSchema.parse(raw));
   if(path==='grants/revoke'){const a=z.object({id:z.string().uuid()}).strict().parse(raw);return tickets.revokeGrant(actor,a.id);}

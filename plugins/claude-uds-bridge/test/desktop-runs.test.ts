@@ -43,10 +43,13 @@ test('optional registered-analysis barrier hides reports across hosts, re-arms o
 
 test('an unstarted draft can be cancelled by its initiator without acquiring claims or starting a deadline',()=>{
  const f=fixture('codex');try{
+  // A chat already in an active collaboration cannot prepare another one that could never start.
+  expect(()=>f.store.prepare(f.own,randomUUID(),{objective:'Second while busy'},{maxMessages:4,maxSeconds:60},f.participants)).toThrow('already in an active');
+  f.store.control(f.id,f.own,randomUUID(),1,{action:'cancel'},f.holder);
   const id=f.store.prepare(f.own,randomUUID(),{objective:'Unstarted draft'},{maxMessages:4,maxSeconds:60},f.participants);
   expect(()=>f.store.control(id,f.peer,randomUUID(),0,{action:'cancel'},f.holder)).toThrow('initiating');
   const closed=f.store.control(id,f.own,randomUUID(),0,{action:'cancel'},f.holder);expect(closed.state).toBe('cancelled');expect(f.store.status(id,f.own).deadline).toBeNull();
-  expect(f.store.db.query('SELECT 1 FROM desktop_claims WHERE run_id=?').get(id)).toBeNull();expect(f.store.status(f.id,f.own).state).toBe('active');
+  expect(f.store.db.query('SELECT 1 FROM desktop_claims WHERE run_id=?').get(id)).toBeNull();
  }finally{f.close()}
 });
 

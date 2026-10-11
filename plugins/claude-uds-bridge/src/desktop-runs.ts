@@ -95,6 +95,9 @@ export class DesktopRunStore {
     if(participants.length!==2||new Set(participants.map(x=>x.provider)).size!==2||!participants.some(x=>same(p,x)))throw new Error('Select one exact Codex and one exact Claude Desktop participant');
     const payload={p,c,l,participants:participants.map(x=>({...x,status:undefined,name:undefined})),orientation,extensions},digest=hash(payload);
     return this.db.transaction(()=>{const old=this.db.query<RunRow,[string]>('SELECT * FROM desktop_runs WHERE request_id=?').get(requestId);if(old){if(old.request_hash!==digest)throw new Error('Request ID reused with different content');return old.id;}
+      // One chat, one collaboration at a time: refuse here instead of leaving a prepared run that can never start.
+      if(this.activeFor(p))throw new Error('This chat is already in an active Desktop collaboration; start the new one from another chat');
+      if(participants.some(x=>!same(p,x)&&this.activeFor(x)))throw new Error('The other chat is already in an active Desktop collaboration; choose or open another one');
       const id=randomUUID();this.db.run("INSERT INTO desktop_runs VALUES(?,?,?,?,? ,?,1,?,?,?,NULL,0,0,NULL,0,NULL,?,NULL)",[id,key(p),requestId,digest,'prepared',JSON.stringify(c),JSON.stringify(orientation),JSON.stringify(l),JSON.stringify(participants),this.now()]);
       this.db.run('INSERT INTO desktop_contexts VALUES(?,1,?)',[id,JSON.stringify(c)]);this.event(id,'prepared',actor??key(p),{schema:'desktop_v2',authority:'local_same_uid'});return id;
     }).immediate();

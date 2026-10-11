@@ -2,9 +2,10 @@
 // first message filled in. The person still presses send, so the app link creates nothing by itself.
 export type AppLauncher = (url: string) => Promise<void>;
 
-export function newConversationLink(provider: 'codex' | 'claude', project: string, prompt: string) {
-  if (provider === 'codex') return `codex://threads/new?${new URLSearchParams({ path: project, prompt })}`;
-  return `claude://code/new?${new URLSearchParams({ folder: project, q: prompt })}`;
+// Without a prompt the app just opens a blank chat in the folder.
+export function newConversationLink(provider: 'codex' | 'claude', project: string, prompt = '') {
+  if (provider === 'codex') return `codex://threads/new?${new URLSearchParams({ path: project, ...(prompt ? { prompt } : {}) })}`;
+  return `claude://code/new?${new URLSearchParams({ folder: project, ...(prompt ? { q: prompt } : {}) })}`;
 }
 
 // The URL is passed as one argument, never through a shell. `open` fails when no app handles the scheme.

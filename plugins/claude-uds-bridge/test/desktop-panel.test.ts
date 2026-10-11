@@ -42,6 +42,9 @@ test('the panel opens the other app once on a new chat with the folder and boots
   // When no app takes the link nothing was created, so the ticket fails instead of waiting.
   fail=true;const broken=tickets.requestFromPanel(actor,{requestId:randomUUID(),targetProvider:'codex',project:f.root,adapter:'manual',mode:'local'}).ticket;
   await expect(router.handle('tickets/open','POST',async()=>({id:broken.id}))).rejects.toThrow('no app');expect(tickets.get(broken.id).state).toBe('failed');
+  // A blank chat of the panel owner's own app: folder only, no prompt, no ticket.
+  fail=false;await router.handle('apps/new_chat','POST',async()=>({}));const blank=new URL(opened.at(-1)!);
+  expect(blank.protocol).toBe('claude:');expect(blank.searchParams.get('folder')).toBe(codex.project);expect(blank.searchParams.has('q')).toBe(false);
   const assisted=tickets.requestFromPanel(actor,{requestId:randomUUID(),targetProvider:'claude',project:f.root,adapter:'assisted_ui',mode:'local'}).ticket;
   await expect(router.handle('tickets/open','POST',async()=>({id:assisted.id}))).rejects.toThrow('Only a local manual ticket');
  }finally{router.close();tickets.close();await f.close()}
