@@ -29,8 +29,8 @@ export function desktopPanelRoutes(options:ParticipantOptions&{codexHome?:string
     try{const result=await check(ticket.id);if('bindingError' in result&&result.bindingError)bindingErrors[ticket.id]=result.bindingError;}catch(error){bindingErrors[ticket.id]=error instanceof Error?error.message:'Host receipt rejected';}
    }
    // Older runtimes have no proposals; the panel then simply shows none.
-   const proposals=await adapter.invoke('proposals',{},panelSessionId).catch(()=>[]);
-   return {principal:adapter.principal,project:adapter.project,runs,participants,proposals,tickets:tickets.list(adapter.project),grants:tickets.grants(adapter.project),bindingErrors};
+   const proposals=await adapter.invoke('proposals',{},panelSessionId).catch(()=>[]),startQueue=await adapter.invoke('start_queue',{},panelSessionId).catch(()=>({waiting:{},ended:{}}));
+   return {principal:adapter.principal,project:adapter.project,runs,participants,proposals,startQueue,tickets:tickets.list(adapter.project),grants:tickets.grants(adapter.project),bindingErrors};
   }
   if(method!=='POST')throw new Error('Unknown Desktop panel route');
   const raw=await read();
@@ -51,7 +51,7 @@ export function desktopPanelRoutes(options:ParticipantOptions&{codexHome?:string
   if(path==='tickets/check'){const a=z.object({id:z.string().uuid()}).strict().parse(raw);return check(a.id);}
   if(path==='grants/create')return tickets.grant(actor,grantInputSchema.parse(raw));
   if(path==='grants/revoke'){const a=z.object({id:z.string().uuid()}).strict().parse(raw);return tickets.revokeGrant(actor,a.id);}
-  if(!['prepare','preflight','start','control','export','notify','consent','edit_authorization','creation_dispatch','implementation','proposal_resolve'].includes(path))throw new Error('Unknown Desktop operation');
+  if(!['prepare','preflight','start','control','export','notify','consent','edit_authorization','creation_dispatch','implementation','proposal_resolve','start_when_idle'].includes(path))throw new Error('Unknown Desktop operation');
   const args=z.record(z.string(),z.unknown()).parse(raw);if(path==='prepare')args.openPanel=false;return adapter.invoke(path,args,panelSessionId);
  },close(){tickets.close();}};
 }
