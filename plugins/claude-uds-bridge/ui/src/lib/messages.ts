@@ -3,6 +3,8 @@ export const english: Record<string, string> = {
   // Errors the bridge returns to the panel, so they read in the panel's language.
   "Esta conversación ya participa en otra colaboración de Desktop": "Conversation already participates in another Desktop collaboration",
   "Este chat ya está en una colaboración activa de Desktop; empieza la nueva desde otro chat": "This chat is already in an active Desktop collaboration; start the new one from another chat",
+  "El chat de Claude de esta colaboración ya no está abierto. Finalízala o cancélala; su historial se conserva.": "The Claude chat in this collaboration is no longer open. Finish or cancel it; its history is kept.",
+  "El chat de Codex de esta colaboración ya no está abierto. Finalízala o cancélala; su historial se conserva.": "The Codex chat in this collaboration is no longer open. Finish or cancel it; its history is kept.",
   "El otro chat ya está en una colaboración activa de Desktop; elige o abre otro": "The other chat is already in an active Desktop collaboration; choose or open another one",
   "Solo se puede empezar una colaboración preparada": "Only a prepared collaboration can be started",
   "Elige el chat exacto de la otra app de Desktop": "Select the exact other Desktop provider",

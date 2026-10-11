@@ -1,6 +1,7 @@
 import {test,expect} from 'bun:test';
 import {randomUUID} from 'node:crypto';
-import {resolve} from 'node:path';
+import {join,resolve} from 'node:path';
+import {rmSync} from 'node:fs';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {InMemoryTransport} from '@modelcontextprotocol/sdk/inMemory.js';
@@ -174,3 +175,20 @@ test('a panel start waits for a busy peer, can stop waiting, and starts with its
   expect((await post('start_when_idle',{runId:run.id,commandId:randomUUID()})).status).toBe(409);
  }finally{auto===undefined?delete process.env.CC_CDX_PANEL_AUTO_OPEN:process.env.CC_CDX_PANEL_AUTO_OPEN=auto;await client.close();await server.close();await runtime.close();await codex.close();await f.close()}
 },20000);
+
+test('a collaboration whose Claude chat closed can still be finished, while other controls explain why they cannot run',async()=>{
+ const f=await nativeFixture(false,{reception:'accept'}),codex=await f.connect(),server=new McpServer({name:'claude-fixture',version:'1'}),client=new Client({name:'fixture',version:'1'});
+ const p=await inspectParticipant({configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path},f.peerId,'claude');
+ const runtime=registerDesktopTools(server,{configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path,codexHome:f.root,pluginRoot:root,authenticate:async()=>({provider:'claude',sessionId:p.sessionId,pid:p.pid,procStart:p.procStart,project:f.root,binding:{method:'fixture_only',generation:'fixture',surface:'claude-desktop',evidence:['fixture_only']}})});
+ const [a,b]=InMemoryTransport.createLinkedPair();await Promise.all([server.connect(a),client.connect(b)]);
+ try{await client.callTool({name:'desktop_collaboration_discover',arguments:{}});
+  const run=(await f.call(codex,'desktop_collaboration_prepare',{requestId:randomUUID(),peerId:f.peerId,context:{objective:'closed chat'},openPanel:false})).data;expect((await f.call(codex,'desktop_collaboration_start',{runId:run.id,supervised:true})).error).toBeFalsy();
+  // The Claude chat closes: its native session record disappears.
+  rmSync(join(f.config,'sessions',process.ppid+'.json'));
+  const paused=await f.call(codex,'desktop_collaboration_control',{runId:run.id,commandId:randomUUID(),expectedRevision:1,control:{action:'pause'}});expect(paused.error).toBeTruthy();expect(String(paused.data)).toContain('The Claude chat in this collaboration is no longer open');
+  const finished=await f.call(codex,'desktop_collaboration_control',{runId:run.id,commandId:randomUUID(),expectedRevision:1,control:{action:'finish',closure:{summary:'Closed after Claude left',disposition:'incomplete'}}});expect(finished.error).toBeFalsy();
+  const status=(await f.call(codex,'desktop_collaboration_status',{runId:run.id})).data;expect(status.state).toBe('completed');expect(status.reason).toBe('finish_participant_closed');
+  // The Codex chat is released for a new collaboration.
+  expect(f.bridge).toBeTruthy();const {Database}=await import('bun:sqlite'),db=new Database(join(f.state,'collaborations.sqlite'),{readonly:true});try{expect(db.query('SELECT 1 FROM desktop_claims WHERE run_id=?').get(run.id)).toBeNull();}finally{db.close();}
+ }finally{await client.close();await server.close();await runtime.close();await codex.close();await f.close();}
+},15000);
