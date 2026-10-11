@@ -147,3 +147,30 @@ test('ticket_status works on a fresh state before any creation tool has run',asy
   const status=await call('ticket_status',{ticketId:requested.ticket.id});expect(status.id).toBe(requested.ticket.id);
  }finally{await client.close();await server.close();await runtime.close();await f.close()}
 },15000);
+
+test('a panel start waits for a busy peer, can stop waiting, and starts with its deadline once the peer is idle',async()=>{
+ const f=await nativeFixture(false,{reception:'default'}),codex=await f.connect(),server=new McpServer({name:'claude-fixture',version:'1'}),client=new Client({name:'fixture',version:'1'});let privateUrl='';const auto=process.env.CC_CDX_PANEL_AUTO_OPEN;delete process.env.CC_CDX_PANEL_AUTO_OPEN;
+ const p=await inspectParticipant({configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path},f.peerId,'claude');f.bridge.updateRuntime({status:'idle',mode:'bypass'});
+ const runtime=registerDesktopTools(server,{configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path,codexHome:f.root,pluginRoot:root,openPrivatePanel:async url=>{privateUrl=url},authenticate:async()=>({provider:'claude',sessionId:p.sessionId,pid:p.pid,procStart:p.procStart,project:f.root,binding:{method:'fixture',generation:'fixture',surface:'claude-desktop',evidence:[]}})}),[a,b]=InMemoryTransport.createLinkedPair();await server.connect(a);await client.connect(b);
+ const call=async(name:string,args:Record<string,unknown>)=>{const r=await client.callTool({name:'desktop_collaboration_'+name,arguments:args});if(r.isError)throw new Error(JSON.stringify(r.content));return JSON.parse((r.content as {text:string}[])[0]!.text)};
+ try{await call('discover',{});await f.call(codex,'desktop_collaboration_discover',{});await call('panel',{});const origin=new URL(privateUrl).origin,token=new URLSearchParams(new URL(privateUrl).hash.slice(1)).get('token')!;
+  const session=await fetch(origin+'/api/v1/session',{method:'POST',headers:{Origin:origin},body:JSON.stringify({token})}),{csrf}=await session.json() as {csrf:string},cookie=session.headers.get('set-cookie')!.split(';')[0]!;
+  const post=async(path:string,body:unknown)=>{const r=await fetch(origin+'/api/v1/desktop/'+path,{method:'POST',headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf},body:JSON.stringify(body)});return {status:r.status,data:await r.json() as any}};
+  const state=async()=>(await (await fetch(origin+'/api/v1/desktop/state',{headers:{Origin:origin,Cookie:cookie}})).json()) as any;
+  const run=await call('prepare',{requestId:randomUUID(),peerId:f.desktop.threadId,context:{objective:'Wait for the peer'},limits:{maxMessages:8,maxSeconds:300},openPanel:false});
+  expect((await post('consent',{runId:run.id,expectedRevision:0,coversLaterContexts:true})).status).toBe(200);
+  // While the peer is answering something else, start waits instead of interrupting it.
+  f.bridge.updateRuntime({status:'busy',mode:'bypass'});
+  expect((await post('start_when_idle',{runId:run.id,commandId:randomUUID()})).data).toEqual({state:'waiting'});
+  expect((await state()).startQueue.waiting[run.id]).toBeNumber();expect(runtime.store.status(run.id,p).deadline).toBeNull();
+  expect((await post('start_when_idle',{runId:run.id,commandId:randomUUID(),cancel:true})).data).toEqual({state:'prepared'});
+  expect((await state()).startQueue.waiting[run.id]).toBeUndefined();
+  expect((await post('start_when_idle',{runId:run.id,commandId:randomUUID()})).data).toEqual({state:'waiting'});
+  f.bridge.updateRuntime({status:'idle',mode:'bypass'});
+  const deadline=Date.now()+10000;while(runtime.store.status(run.id,p).state!=='active'&&Date.now()<deadline)await Bun.sleep(100);
+  const started=runtime.store.status(run.id,p);expect(started.state).toBe('active');expect(started.deadline).toBeNumber();
+  expect((await state()).startQueue.waiting[run.id]).toBeUndefined();
+  // A started run is not something to start again.
+  expect((await post('start_when_idle',{runId:run.id,commandId:randomUUID()})).status).toBe(409);
+ }finally{auto===undefined?delete process.env.CC_CDX_PANEL_AUTO_OPEN:process.env.CC_CDX_PANEL_AUTO_OPEN=auto;await client.close();await server.close();await runtime.close();await codex.close();await f.close()}
+},20000);

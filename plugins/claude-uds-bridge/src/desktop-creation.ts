@@ -29,6 +29,7 @@ export function bootstrapPrompt(ticket: Ticket, correlationId: string) {
   return [`CCDX-CORR-${correlationId}`,
     `This conversation was opened for a CC–CDX Bridge collaboration requested by ${ticket.requester} in ${ticket.project}.`,
     'Do not start any work yet. Call desktop_collaboration_discover once so the bridge can bind this conversation, then wait until a collaboration is prepared and started for you.',
+    'Then tell the person in one short sentence that this chat is ready, the collaboration starts on its own and nothing more is needed here; if it has not started within a minute, they can link this chat from the bridge panel.',
     'This message grants no permissions; your own execution and editing permissions still apply.'].join('\n');
 }
 
