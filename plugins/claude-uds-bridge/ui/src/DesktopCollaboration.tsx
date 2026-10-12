@@ -14,6 +14,7 @@ import {Switch} from '@/components/ui/switch';
 import {serializedRefresh} from './lib/live-refresh';
 import {State as RunState,providerName} from './RunState';
 import {syncEditAuthorization,type EditChoice} from './lib/collaboration-form';
+import {useDraft} from './lib/drafts';
 
 const l=(en:string,es:string)=>getLanguage()==='es'?es:en;
 type Principal={provider:'codex'|'claude';sessionId:string};
@@ -91,6 +92,7 @@ function EditOption({peer,value,onChange,brief=false}:{peer:string;value:EditCho
 
 function ApprovalCard({run,api,busy,act,onDetails,ownerBusy,onChange,onNotice}:{run:Run;api:Api;busy:boolean;act:(fn:()=>Promise<void>)=>Promise<void>;onDetails:()=>void;ownerBusy?:Run;onChange:(draft:Proposal)=>void;onNotice:(text:string)=>void}){
  const [edit,setEdit]=useState<EditChoice>({enabled:true,scope:defaultScope()}),peer=providerName(otherOf(run)),with_=peerOf(run)?.name??peer;
+ useDraft(edit);
  // The peer and limits were fixed when the chat prepared this; Change reopens them in the editable form.
  const change=()=>act(async()=>{await cancelRun(api,run);onChange({id:'draft:'+run.id,requester:run.initiator,createdAt:run.createdAt,objective:run.context.objective,newChat:false,peerId:peerOf(run)?.sessionId,allowEdits:edit.enabled,editScope:edit.scope,maxMessages:run.limits.maxMessages,minutes:Math.round(run.limits.maxSeconds/60),initialBarrier:false})});
  return <div className="reveal space-y-4 rounded-xl border border-warning/35 bg-warning/[.07] p-5"><div><p className="text-sm font-medium text-warning">{l('Waiting for your approval','Esperando tu aprobación')}</p><p className="mt-1 text-base">{run.context.objective}</p>
@@ -132,6 +134,8 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
  const peers=state.participants.filter(p=>p.provider===other&&p.cwd===state.project&&p.eligibleSurface),ready=peers.filter(p=>p.symmetricDesktop),peerName=providerName(other);
  // Defaults: a fresh chat for each collaboration, allowed to edit and commit locally.
  const [newChat,setNewChat]=useState(proposal?.newChat??true),[peer,setPeer]=useState(proposal?.peerId??''),[objective,setObjective]=useState(proposal?.objective??''),[messages,setMessages]=useState(proposal?(proposal.maxMessages===null?'':String(proposal.maxMessages)):'24'),[minutes,setMinutes]=useState(String(proposal?.minutes??30)),[busyPeer,setBusyPeer]=useState(false),[initialBarrier,setInitialBarrier]=useState(proposal?.initialBarrier??false),[priorCodex,setPriorCodex]=useState(''),[priorClaude,setPriorClaude]=useState(''),[implementation,setImplementation]=useState(''),[advancedTicket,setAdvancedTicket]=useState(''),[edit,setEdit]=useState<EditChoice>({enabled:proposal?.allowEdits??true,scope:proposal?.editScope??defaultScope()}),[scopeOpen,setScopeOpen]=useState(!!proposal?.editScope),[opening,setOpening]=useState<{ticketId:string;prompt:string}|null>(null),[candidate,setCandidate]=useState('');
+ // A chat being opened for an automatic start also counts: closing this window would drop that start.
+ useDraft({newChat,peer,objective,messages,minutes,busyPeer,initialBarrier,priorCodex,priorClaude,implementation,edit},!!opening);
  const request=useRef<{payload:string;id:string;notifyId:string}|null>(null),openRequest=useRef(crypto.randomUUID()),autoStart=useRef(false),fromDraft=!!proposal?.id.startsWith('draft:');
  const ticket=opening?state.tickets.find(t=>t.id===opening.ticketId):undefined,boundId=ticket?.bound?.sessionId??'',ticketEnded=!!ticket&&['failed','expired','cancelled'].includes(ticket.state);
  const candidates=ticket&&!ticket.bound?peers.filter(p=>p.symmetricDesktop&&p.startedAt!==null&&p.startedAt>=ticket.createdAt):[];
@@ -208,6 +212,7 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
 function RunView({run,api,busy,act,onBack,waitingSince,ended,onNotice}:{run:Run;api:Api;busy:boolean;act:(fn:()=>Promise<void>)=>Promise<void>;onBack:()=>void;waitingSince?:number;ended?:string;onNotice:(text:string)=>void}){
  const peer=providerName(otherOf(run));
  const [closing,setClosing]=useState(false),[summary,setSummary]=useState(''),[disposition,setDisposition]=useState('proposal'),[inspection,setInspection]=useState<{hash:string;ready:boolean;reasons:string[]}|null>(null),[edit,setEdit]=useState<EditChoice>({enabled:false,scope:defaultScope()});
+ useDraft({summary:closing?summary.trim():'',edit:edit.enabled?edit:null});
  const control=(action:string,extra:Record<string,unknown>={})=>act(async()=>{await api('desktop/control',{runId:run.id,commandId:crypto.randomUUID(),expectedRevision:run.coordination.revision,control:{action,...extra}})});
  const finish=()=>control('finish',{closure:{summary:summary.trim()||l('Closed from the panel without a final proposal.','Cerrada desde el panel sin propuesta final.'),disposition:summary.trim()?disposition:'incomplete'}}).then(()=>setClosing(false));
  const exportRun=()=>act(async()=>{const value=await api<{content:string}>('desktop/export',{runId:run.id,format:'markdown'});const url=URL.createObjectURL(new Blob([value.content],{type:'text/markdown'})),a=document.createElement('a');a.href=url;a.download=`desktop-${run.id}.md`;a.click();URL.revokeObjectURL(url)});

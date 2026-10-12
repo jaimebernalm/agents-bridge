@@ -64,11 +64,13 @@ test('immediate MCP decline leaves policy unchanged and returns panel fallback w
  }finally{await c.close();await f.close();}
 });
 test('panel launch dispatch is once per action; failure retains a usable deep link',async()=>{
+ const auto=process.env.CC_CDX_PANEL_AUTO_OPEN;delete process.env.CC_CDX_PANEL_AUTO_OPEN;try{
  const launches:string[]=[];const opening=new PanelOpening(async url=>{launches.push(url)});const url=panelLink('http://127.0.0.1:1234/#token=private',{runId:randomUUID()});
  await Promise.all([opening.open('start',url),opening.open('start',url)]);expect(launches).toHaveLength(1);expect(new URL(url).hash).toContain('run=');expect(new URL(url).hash).toContain('token=private');
  expect(await opening.open('no-open',url,false)).toEqual({requested:false});expect(launches).toHaveLength(1);
  await opening.open('start',url,true,true);expect(launches).toHaveLength(2);
  const failed=new PanelOpening(async()=>{throw new Error('No browser')});expect((await failed.open('start',url)).requested).toBe(false);const thrown=new PanelOpening(()=>{throw new Error('Only the private local panel can be opened')});expect(await thrown.open('sync',url)).toEqual({requested:false,error:'No se pudo abrir el navegador. Abre el enlace privado del panel.'});
+ }finally{auto===undefined?delete process.env.CC_CDX_PANEL_AUTO_OPEN:process.env.CC_CDX_PANEL_AUTO_OPEN=auto}
 });
 test('refresh publishes the current detail even when another section is slow or fails',async()=>{
  const seen:string[]=[];let release!:()=>void;const pending=new Promise<void>(resolve=>{release=resolve});
