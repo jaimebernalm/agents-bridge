@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process';
 // evidence that a human saw the page.
 export class PanelOpening {
   private opened = new Map<string, Promise<{requested: boolean; error?: string}>>();
-  constructor(private launch = launchLocalBrowser) {}
+  constructor(private launch: (url: string) => Promise<unknown> = url => launchLocalBrowser(url)) {}
   open(key: string, url: string, enabled = true, force = false): Promise<{requested: boolean; error?: string}> {
     if (!enabled || process.env.CC_CDX_PANEL_AUTO_OPEN === '0') return Promise.resolve({requested: false});
     const previous = this.opened.get(key); if (previous && !force) return previous;
@@ -14,17 +14,37 @@ export class PanelOpening {
     this.opened.set(key, pending); return pending;
   }
 }
-async function launchLocalBrowser(url: string): Promise<void> {
+export type Run = (command: string, args: string[], timeoutMs: number) => Promise<string>;
+const run: Run = (command, args, timeoutMs) => new Promise((resolve, reject) => {
+  const child = spawn(command, args, {stdio: ['ignore', 'pipe', 'ignore']});
+  let output = '';
+  child.stdout.on('data', chunk => {output += chunk;});
+  const timer = setTimeout(() => {child.kill(); reject(new Error(`${command} timed out`));}, timeoutMs);
+  child.once('error', error => {clearTimeout(timer); reject(error);});
+  child.once('exit', code => {clearTimeout(timer); code === 0 ? resolve(output.trim()) : reject(new Error(`${command} failed`));});
+});
+
+// Chromium browsers show the panel as an app window, without tabs or address bar, so it reads as
+// the bridge's own window rather than one more tab among the person's. Other browsers get a tab.
+const appWindowBrowsers = new Set(['com.google.chrome', 'com.google.chrome.beta', 'com.google.chrome.dev', 'com.google.chrome.canary',
+  'com.microsoft.edgemac', 'com.microsoft.edgemac.beta', 'com.microsoft.edgemac.dev', 'com.microsoft.edgemac.canary',
+  'com.brave.browser', 'com.brave.browser.beta', 'com.brave.browser.nightly', 'org.chromium.chromium', 'com.vivaldi.vivaldi']);
+// Launch Services answers which app opens the panel's own kind of link; no extra permission needed.
+const defaultBrowserScript = "ObjC.import('AppKit');const app=$.NSWorkspace.sharedWorkspace.URLForApplicationToOpenURL($.NSURL.URLWithString('http://127.0.0.1/'));app?$.NSBundle.bundleWithURL(app).bundleIdentifier.js:''";
+
+export async function launchLocalBrowser(url: string, exec: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env): Promise<'app' | 'tab'> {
   const parsed = new URL(url);
   if (parsed.protocol !== 'http:' || parsed.hostname !== '127.0.0.1') throw new Error('Only the private local panel can be opened');
-  const command = process.platform === 'darwin' ? 'open' : process.platform === 'linux' && (process.env.DISPLAY || process.env.WAYLAND_DISPLAY) ? 'xdg-open' : null;
-  if (!command) return Promise.reject(new Error('No desktop browser launcher available'));
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, [url], {stdio: 'ignore'});
-    const timer = setTimeout(() => {child.kill(); reject(new Error('Browser launch timed out'));}, 3000);
-    child.once('error', error => {clearTimeout(timer); reject(error);});
-    child.once('exit', code => {clearTimeout(timer); code === 0 ? resolve() : reject(new Error('Browser launch failed'));});
-  });
+  if (platform === 'darwin') {
+    if (env.CC_CDX_PANEL_APP_WINDOW !== '0') {
+      const browser = await exec('osascript', ['-l', 'JavaScript', '-e', defaultBrowserScript], 2000).catch(() => '');
+      // -n hands the flag to a browser that is already running. Its single-use token is spent on first load.
+      if (appWindowBrowsers.has(browser.toLowerCase()) && await exec('open', ['-n', '-b', browser, '--args', `--app=${url}`], 3000).then(() => true, () => false)) return 'app';
+    }
+    await exec('open', [url], 3000); return 'tab';
+  }
+  if (platform === 'linux' && (env.DISPLAY || env.WAYLAND_DISPLAY)) {await exec('xdg-open', [url], 3000); return 'tab';}
+  throw new Error('No desktop browser launcher available');
 }
 
 export function panelLink(url: string, target: {runId?: string; authorization?: boolean} = {}) {
