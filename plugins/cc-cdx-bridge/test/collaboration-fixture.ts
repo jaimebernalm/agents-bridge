@@ -6,8 +6,6 @@ import {once} from 'node:events';
 import net from 'node:net';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
-import {type Report,formatWork} from '../src/routines';
-import {formatManaged} from '../src/managed-message';
 import {processStart,frameSchema} from '../src/claude';
 import {Bridge} from '../src/bridge';
 import {receiver} from './desktop-fixture';
@@ -21,6 +19,5 @@ export async function nativeFixture(dropAcknowledgement=false,options:{root?:str
  const bridge=new Bridge(desktop.threadId,config,state,desktop.path);await bridge.start(sockets,root,bridge.beginSession());bridge.updateRuntime({status:'idle',mode:'prompting'});await bridge.setPolicy(options.reception??'accept');
  const connect=async()=>{const c=new Client({name:'phase2-fixture',version:'1'});await c.connect(new StdioClientTransport({command:process.execPath,args:[process.env.UDS_MCP_TEST_ENTRYPOINT??join(pluginRoot,'src/server.ts')],env:{...process.env,CODEX_HOME:root,CLAUDE_CONFIG_DIR:config,CC_CDX_PANEL_AUTO_OPEN:'0'}}));return c;};
  const call=async(c:Client,name:string,args:Record<string,unknown>)=>{const r=await c.callTool({name,arguments:args,_meta:{threadId:desktop.threadId}});const text=(r.content as {text:string}[])[0]!.text;return {error:r.isError,data:r.isError?text:JSON.parse(text)};};
- const respond=async(runId:string,out:string,report:Report,text:string,contextVersion=1)=>{const socket=net.createConnection(bridge.status().replyAddress!.slice(4));await once(socket,'connect');socket.end(JSON.stringify({msgV:1,type:'user',msg_id:randomUUID(),from:'uds:'+peerSocket,from_mode:'prompting',session_id:desktop.threadId,message:{role:'user',content:formatManaged({runId,messageId:randomUUID(),replyTo:out,contextVersion},formatWork(report,text))}})+'\n');await once(socket,'close');};
- return {root,desktop,config,state,bridge,peerId,frames,connect,call,respond,async close(){await bridge.close();for(const socket of clients)socket.destroy();await new Promise<void>(done=>server.close(()=>done()));await desktop.close();}};
+ return {root,desktop,config,state,bridge,peerId,frames,connect,call,async close(){await bridge.close();for(const socket of clients)socket.destroy();await new Promise<void>(done=>server.close(()=>done()));await desktop.close();}};
 }

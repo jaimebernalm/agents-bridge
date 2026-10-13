@@ -5,7 +5,6 @@ import { join, resolve, basename } from 'node:path';
 import { Database } from 'bun:sqlite';
 import { Bridge } from '../src/bridge';
 import { ProjectAuthorizations } from '../src/project-authorization';
-import { PanelCommands } from '../src/panel-commands';
 import { pluginName, stateFolder } from '../src/names';
 
 // Opt-in Codex CLI check. No real auth, trust decisions, model sessions or settings.
@@ -47,7 +46,6 @@ try {
   transportDb.run("UPDATE inbound_policy SET policy='refuse'");
   transportDb.run("INSERT INTO messages(id,peer_id,direction,text,status) VALUES (?,?, 'in',?, 'consumed')",[randomUUID(),randomUUID(),'PRIVATE HISTORY SENTINEL']);transportDb.close();
   const authorizations=new ProjectAuthorizations(state);authorizations.change({project:marketplacePath,ownerThread:thread,actionId:randomUUID(),enabled:true,expectedRevision:0,confirmed:true});authorizations.close();
-  const queue=new PanelCommands(state),commandId=randomUUID();queue.enqueue({commandId,ownerThread:thread,project:marketplacePath,command:{action:'create',peerId:randomUUID(),context:{objective:'PRIVATE QUEUED SENTINEL',constraints:[],references:[],priorAnalysis:{}},limits:{maxMessages:4,maxSeconds:300},routine:{mode:'free',starts:{codex:'new',claude:'new'}},coordination:{initialBarrier:false,leaseSeconds:300},revisionPolicy:'same',allowBusyPeer:false}});queue.close();
   const stateFiles=readdirSync(state).filter(f=>f.endsWith('.sqlite'));
   const stateHashes=Object.fromEntries(stateFiles.map(f=>[f,digest(join(state,f))]));
   const retained=()=>{for(const [file,hash] of Object.entries(stateHashes))if(digest(join(state,file))!==hash)throw new Error('Private state changed during package lifecycle');};
@@ -63,7 +61,7 @@ try {
   retained();checks.push({check:'update_preserves_private_state',passed:true,from:old.version,version:installed.version});
   const listing = await cli(['plugin', 'list', '--marketplace', 'jaimebernalm', '--json']);
   if (!listing.installed?.some((item: { pluginId: string; enabled: boolean }) => item.pluginId === installed.pluginId && item.enabled)) throw new Error('Installed plugin not enabled');
-  for (const file of ['dist/server.js', 'dist/hook.js', 'dist/cli.js', 'scripts/run-bun.sh', '.mcp.json', 'hooks/hooks.json', '.codex-plugin/plugin.json', 'skills/bridge-collaboration/SKILL.md', 'skills/bridge-collaboration/references/tools.md', 'skills/bridge-collaboration/references/structured.md', 'skills/bridge-collaboration/references/panel.md', 'skills/bridge-collaboration/references/implementation.md', 'panel-dist/index.html', ...readdirSync(join(target,'panel-dist/assets')).map(f=>'panel-dist/assets/'+f)]) {
+  for (const file of ['dist/server.js', 'dist/hook.js', 'dist/cli.js', 'scripts/run-bun.sh', '.mcp.json', 'hooks/hooks.json', '.codex-plugin/plugin.json', 'skills/bridge-collaboration/SKILL.md', 'skills/bridge-collaboration/references/tools.md', 'skills/bridge-collaboration/references/coordination.md', 'skills/bridge-collaboration/references/panel.md', 'skills/bridge-collaboration/references/implementation.md', 'panel-dist/index.html', ...readdirSync(join(target,'panel-dist/assets')).map(f=>'panel-dist/assets/'+f)]) {
     if (digest(join(installed.installedPath, file)) !== digest(join(target, file))) throw new Error(`Cached file differs: ${file}`);
   }
   checks.push({ check: 'installed_files_match_checkout', passed: true });
@@ -78,10 +76,9 @@ try {
   const again=await cli(['plugin','add',pluginId,'--json']);retained();
   if(again.version!==version)throw new Error('Reinstalled version mismatch');
   const restored=new ProjectAuthorizations(state);if(!restored.status(marketplacePath).enabled)throw new Error('Authorization not retained');restored.close();
-  const restoredQueue=new PanelCommands(state);if(restoredQueue.get(commandId)?.state!=='queued')throw new Error('Command not retained');restoredQueue.close();
   const restoredTransport=new Database(join(state,thread+'.sqlite'),{readonly:true});
   if(restoredTransport.query<{policy:string},[]>('SELECT policy FROM inbound_policy').get()?.policy!=='refuse'||restoredTransport.query<{text:string},[]>('SELECT text FROM messages').get()?.text!=='PRIVATE HISTORY SENTINEL')throw new Error('History or explicit policy not retained');restoredTransport.close();
-  checks.push({check:'reinstall_restores_history_command_and_authorization',passed:true});
+  checks.push({check:'reinstall_restores_history_and_authorization',passed:true});
   report.outcome = 'passed';
 } catch (error) { report.outcome = 'failed'; report.error = error instanceof Error ? error.message : String(error); process.exitCode = 1; }
 finally { report.finishedAt = new Date().toISOString(); save(); console.log(JSON.stringify({ ...report, reportFile: join(output, 'result.json') }, null, 2)); }

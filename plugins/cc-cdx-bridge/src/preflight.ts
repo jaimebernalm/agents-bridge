@@ -12,7 +12,7 @@ export type ReceptionCheck = {
 
 export async function receptionPreflight(options: ParticipantOptions, owner: string, peerId: string, participants?: Participant[]): Promise<ReceptionCheck> {
   const [codex, claude] = participants ?? await Promise.all([
-    inspectParticipant(options, owner, 'codex', true), inspectParticipant(options, peerId, 'claude'),
+    inspectParticipant(options, owner, 'codex'), inspectParticipant(options, peerId, 'claude'),
   ]);
   if (!codex || !claude || codex.sessionId !== owner || claude.sessionId !== peerId) throw new Error('Wrong preflight participants');
   const db = new Database(join(options.stateDir, owner + '.sqlite'), {readonly: true});
@@ -35,7 +35,3 @@ export async function receptionPreflight(options: ParticipantOptions, owner: str
   return {...base, readyForCheck: true, code: 'ready_for_round_trip', message: 'La recepción de Codex permite una comprobación. La recepción efectiva de Claude sigue sin observarse: verifica una respuesta correlacionada breve antes de analizar el objetivo. Los ajustes no prueban recepción por el modelo.'};
 }
 
-export class PreflightBlocked extends Error {
-  constructor(readonly preflight: ReceptionCheck) { super(preflight.message); }
-}
-export function requireReception(check: ReceptionCheck) { if (!check.readyForCheck) throw new PreflightBlocked(check); }

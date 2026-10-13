@@ -2,16 +2,15 @@ import { Database } from 'bun:sqlite';
 import { mkdirSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHmac, randomBytes, randomUUID } from 'node:crypto';
-import { accountReceipt, findPeer, findPeerProcess, frameSchema, hopChain, inbox, peerAddress, peers, privateDirectory, processStart, register, SendRefused, sendFrames, senderMode, serializeFrame, socketPath, userFrame, uuid, type Frame, type Peer } from './claude';
+import { accountReceipt, findPeer, findPeerProcess, hopChain, inbox, peerAddress, peers, privateDirectory, processStart, register, SendRefused, sendFrames, senderMode, serializeFrame, socketPath, userFrame, uuid, type Frame, type Peer } from './claude';
 import { deliverToDesktop, readDesktopInputs, readDesktopRuntime, type Runtime } from './desktop';
 import { z } from 'zod';
 import { outboundServer, refreshReceiver, sendViaReceiver } from './outbound';
 import { PeerGuard } from './guard';
-import { RunStore } from './runs';
 import { DesktopRunStore, parseDesktopMessage } from './desktop-runs';
 import { ProjectAuthorizations } from './project-authorization';
 import {captureImplementation} from './implementation';
-import { inspectParticipant, matchesProcess, sameDesktopParticipant, sameScopedSnapshot } from './participants';
+import { inspectParticipant, matchesProcess, sameDesktopParticipant } from './participants';
 import { version } from './version';
 import { codexEntrypoint, pluginName, tools } from './names';
 
@@ -22,9 +21,10 @@ export const policySchema = z.enum(['default', 'accept', 'hold', 'refuse']);
 export const expirySchema = z.enum(['60s', '5m', '10m', 'never']);
 type Policy = z.infer<typeof policySchema>;
 const subscriptionLifetime = 12 * 60 * 60 * 1000;
+// Header of the earlier Codex-only collaborations. Their runs can no longer take messages, so a reply in that format is dropped.
+const retiredHeader = /^(?:<cross-session-message\s[^>]*>\n)?CC_CDX_RUN_V1 /;
 
 export class Bridge {
-  readonly runs: RunStore;
   readonly desktopRuns: DesktopRunStore;
   private authorizations: ProjectAuthorizations;
   private db: Database;
@@ -42,7 +42,6 @@ export class Bridge {
     uuid.parse(threadId);
     mkdirSync(stateDir, { recursive: true, mode: 0o700 });
     privateDirectory(stateDir);
-    this.runs = new RunStore(stateDir);
     this.desktopRuns = new DesktopRunStore(stateDir);
     this.authorizations = new ProjectAuthorizations(stateDir);
     const path = join(stateDir, `${threadId}.sqlite`);
@@ -169,6 +168,7 @@ export class Bridge {
         const claim = this.db.run('INSERT OR IGNORE INTO receiver VALUES (1,?,?)', [process.pid, procStart]);
         if (!claim.changes) throw new Error('Another receiver claimed this task');
         this.db.run('DELETE FROM receiver_capabilities');
+        // Chats on earlier plugin versions still look for the older capabilities before using this receiver.
         this.db.run("INSERT INTO receiver_capabilities VALUES ('managed_runs_v1',?,?)",[process.pid,procStart]);
         this.db.run("INSERT INTO receiver_capabilities VALUES ('symmetric_desktop_v1',?,?)",[process.pid,procStart]);
         this.db.run("INSERT INTO receiver_capabilities VALUES ('guided_runs_v1',?,?)",[process.pid,procStart]);
@@ -180,7 +180,6 @@ export class Bridge {
       })();
       this.ownsReceiver = true;
       this.db.run("UPDATE messages SET status='unknown' WHERE status='submitting'");
-      for(const row of this.db.query<{id:string;desktop_input_id:string|null},[]>("SELECT id,desktop_input_id FROM messages WHERE status='unknown'").all()){if(row.desktop_input_id)this.runs.nativeIntent(row.id,row.desktop_input_id);this.runs.transportStatus(row.id,'unknown',{source:'receiver_restart'});}
       this.listener = await inbox(directory, frame => {
         if (this.closing) return;
         if (frame.type === 'user') this.incomingMessages++;
@@ -194,7 +193,7 @@ export class Bridge {
         [createHmac('sha256', randomBytes(32)).update(this.listener.address).digest('hex').slice(0, 24)]);
       if (this.closing) throw new Error('Receiver is closing');
       this.closeOutbound = await outboundServer(socketPath(this.listener.address).replace(/\.sock$/, '.out'), this.configDir, this.listener.address,
-        (frames, peer) => !this.closing && frames.every(frame=>this.runs.allowOutgoingFrame(this.threadId,frame,peer))
+        frames => !this.closing
           && (!frames.some(frame => frame.type === 'control' && frame.action === 'peer_idle_notice' && frame.state === 'idle') || this.canNotifyIdle()),
         () => { this.scheduleExpiry(); void this.exclusive(()=>this.reconcileCoordination()).catch(()=>{}); });
       this.registration = await register(this.configDir, this.threadId, this.listener.address, cwd, this.runtime().status);
@@ -210,7 +209,6 @@ export class Bridge {
 
   private async reconcileCoordination(){
     if(this.closing||!this.db.query('SELECT 1 FROM receiver r JOIN lifecycle l ON l.singleton=r.singleton WHERE r.pid=? AND l.active=1').get(process.pid))return;
-    this.runs.activeFor(this.threadId);
     if(this.db.query("SELECT 1 FROM messages WHERE direction='in' AND status IN ('submitting','unknown') AND desktop_input_id IS NOT NULL").get())await this.syncInputs();
     for(const message of this.db.query<Message,[]>("SELECT * FROM messages WHERE direction='in' AND status='buffered' ORDER BY created_at,rowid").all())await this.deliver(message);
   }
@@ -244,7 +242,7 @@ export class Bridge {
       const messages=this.db.query<{id:string;desktop_input_id:string|null},[string|null,string]>("SELECT id,desktop_input_id FROM messages WHERE direction='in' AND (desktop_input_id=? OR native_input_id=?) AND status IN ('submitting','started','steered','unknown')").all(input.clientId,input.id);
       for(const message of messages){
         this.db.run("UPDATE messages SET awaiting_input=0,native_input_id=?,status=CASE WHEN status='unknown' THEN 'consumed' ELSE status END WHERE id=?",[input.id,message.id]);
-        if(message.desktop_input_id){this.runs.nativeConsumed(message.id,message.desktop_input_id);this.desktopRuns.nativeConsumed(message.id,message.desktop_input_id);}
+        if(message.desktop_input_id)this.desktopRuns.nativeConsumed(message.id,message.desktop_input_id);
       }
     }
     return inputs;
@@ -272,16 +270,11 @@ export class Bridge {
     return receiver;
   }
 
-  sendMessage(sessionId: string, text?: string, notifyWhenIdle = false, managed?: {runId:string;messageId:string}) {
+  sendMessage(sessionId: string, text?: string, notifyWhenIdle = false) {
     return this.exclusive(async () => {
       await this.expireSubscriptions();
       if (sessionId === this.threadId) throw new Error('Cannot send to this task itself');
       const peer = findPeer(this.configDir, sessionId);
-      if (text && !managed && this.runs.activeForPeer(peer)) throw new SendRefused('Participant belongs to a managed collaboration; use collaboration_send so its limits and log apply');
-      if (managed) {
-        const participant=this.runs.participants(managed.runId).find(p=>p.provider==='claude');
-        if (!participant || !matchesProcess(participant,peer)) throw new SendRefused('Managed participant process changed; prepare a new collaboration');
-      }
       if (!text && !notifyWhenIdle) throw new Error('A message or notify_when_idle is required');
       if (notifyWhenIdle && (!peer.peerFeatures.includes('notify_idle') || this.policy() === 'refuse')) {
         throw new Error('Idle subscription unavailable: target must support notify_idle and this inbox must not refuse incoming notices');
@@ -293,10 +286,6 @@ export class Bridge {
       const frames: unknown[] = [];
       const messageFrame = id && text ? userFrame(peer, address, receiver.name, this.threadId, id, text, this.runtime().mode, this.ownHop(), await this.outgoingHops()) : null;
       if (messageFrame) serializeFrame(messageFrame);
-      if (id && managed) {
-        try { this.runs.claimOutgoing(managed.runId,this.threadId,managed.messageId,id,messageFrame?.message.content); }
-        catch (error) { throw new SendRefused(error instanceof Error?error.message:'Managed delivery not admitted'); }
-      }
       if (subscriptionId) this.subscribe(subscriptionId, peer, 'out');
       if (id && text) {
         this.db.run("INSERT INTO messages (id,peer_id,direction,text,status,peer_address,peer_start) VALUES (?,?,'out',?,'submitting',?,?)",
@@ -309,16 +298,13 @@ export class Bridge {
       try {
         if (!await this.writePeer(peer, frames)) throw new SendRefused('Delivery stopped by the receiver before writing; nothing sent');
         if (id) this.db.run("UPDATE messages SET status='socket-written' WHERE id=? AND status='submitting'", [id]);
-        if (id) this.runs.transportStatus(id,'socket-written');
       } catch (error) {
         if (error instanceof SendRefused) {
           if (id) this.db.run("UPDATE messages SET status='not-sent' WHERE id=? AND status='submitting'", [id]);
-          if (id) this.runs.transportStatus(id,'not-sent');
           if (subscriptionId) this.db.run("UPDATE idle_requests SET status='expired' WHERE id=?", [subscriptionId]);
           throw error;
         }
         if (id) this.db.run("UPDATE messages SET status='unknown' WHERE id=? AND status='submitting'", [id]);
-        if (id) this.runs.transportStatus(id,'unknown');
         if (subscriptionId) this.db.run("UPDATE idle_requests SET status='unknown' WHERE id=? AND status='waiting'", [subscriptionId]);
         throw new Error(`Send outcome unknown for ${id ?? subscriptionId}; inspect status before sending again`);
       }
@@ -334,7 +320,6 @@ export class Bridge {
     if (!peer) return;
     if (peer.procStart && await processStart(peer.pid) !== peer.procStart) return;
     if (frame.session_id && frame.session_id !== this.threadId) return;
-    const changedSession = this.runs.observePeerSession(this.threadId, peer);
     if (frame.type === 'control') {
       if (frame.action === 'peer_message_status') {
         const status = frame.status === 'expired' && frame.status_detail === 'refused' ? 'refused' : frame.status;
@@ -347,7 +332,6 @@ export class Bridge {
           this.db.run('UPDATE messages SET status=?,drop_reason=?,status_reason=? WHERE id=?',
             [status, frame.drop_reason ?? null, frame.reason ?? null, id]);
           accountReceipt(peer, status, previous.status);
-          this.runs.transportStatus(id,status,{source:'verified_peer_receipt',dropReason:frame.drop_reason??null,reason:frame.reason??null});
         }
       } else if (frame.action === 'notify_when_idle') {
         if (this.policy() === 'refuse') return;
@@ -356,7 +340,7 @@ export class Bridge {
       } else {
         const consumed = this.db.run("UPDATE idle_requests SET status='received' WHERE id=? AND direction='out' AND peer_address=? AND peer_start IS ? AND status IN ('waiting','unknown') AND expires_at>?",
           [frame.orig_msg_id, frame.from, peer.procStart ?? null, Date.now()]);
-        if (!consumed.changes || changedSession) return;
+        if (!consumed.changes) return;
         const id = frame.msg_id ?? randomUUID();
         const text = JSON.stringify({ event: 'peer_idle_notice', state: ['idle', 'exited'].includes(frame.state) ? frame.state : 'unavailable',
           subscriptionId: frame.orig_msg_id, finishedAt: frame.finished_at, detail: frame.detail });
@@ -381,17 +365,14 @@ export class Bridge {
     const result = this.db.run("INSERT OR IGNORE INTO messages (id,peer_id,direction,text,status,peer_address,peer_start,from_mode,kind) VALUES (?,?,'in',?,'pending',?,?,?,?)",
       [id, peer.sessionId, text, peerAddress(peer.messagingSocketPath), peer.procStart ?? null, mode, kind]);
     if (result.changes === 0) return;
-    if (kind==='idle-notice' && this.runs.recordNotice(this.threadId,peer,id,text)) {
-      this.db.run("UPDATE messages SET status='recorded',text='' WHERE id=?",[id]); return;
-    }
     if (kind==='message') {
       let neutral: ReturnType<typeof parseDesktopMessage>;
       try {neutral=parseDesktopMessage(text);} catch {neutral=null; if(text.includes('CC_CDX_DESKTOP_V2 ')){this.db.run("UPDATE messages SET status='dropped',drop_reason='invalid-desktop-header' WHERE id=?",[id]);return;}}
-      let admission:{managed:boolean;admitted:boolean;reason:string|null};try{admission=neutral?{managed:true,admitted:this.desktopRuns.admit({provider:'codex',sessionId:this.threadId},{provider:peer.entrypoint===codexEntrypoint?'codex':'claude',sessionId:peer.sessionId},neutral.header,id,text),reason:'desktop-admission'}:this.desktopRuns.activeFor({provider:'codex',sessionId:this.threadId})?{managed:true,admitted:false,reason:'unreserved-desktop-message'}:this.runs.admitIncoming(this.threadId,peer,id,text);}catch{admission={managed:true,admitted:false,reason:'invalid-desktop-admission'};}
-      if (!admission.admitted) {
-        this.db.run("UPDATE messages SET status='dropped',drop_reason=? WHERE id=?",[admission.reason,id]);
+      let rejection:string|null;try{rejection=neutral?(this.desktopRuns.admit({provider:'codex',sessionId:this.threadId},{provider:peer.entrypoint===codexEntrypoint?'codex':'claude',sessionId:peer.sessionId},neutral.header,id,text)?null:'desktop-admission'):this.desktopRuns.activeFor({provider:'codex',sessionId:this.threadId})?'unreserved-desktop-message':retiredHeader.test(text)?'retired-protocol':null;}catch{rejection='invalid-desktop-admission';}
+      if (rejection) {
+        this.db.run("UPDATE messages SET status='dropped',drop_reason=? WHERE id=?",[rejection,id]);
         const rejected=this.db.query<Message,[string]>('SELECT * FROM messages WHERE id=?').get(id)!;
-        await this.receipt(rejected,'dropped',admission.reason??'managed-route'); return;
+        await this.receipt(rejected,'dropped',rejection); return;
       }
     }
     const message = this.db.query<Message, [string]>('SELECT * FROM messages WHERE id=?').get(id);
@@ -417,7 +398,7 @@ export class Bridge {
     if(!cwd)return false;
     try {
       const project=this.authorizations.status(cwd).project;
-      const candidate=this.runs.projectAuthorizationCandidate(message.id,this.threadId,project)??this.desktopRuns.projectAuthorizationCandidate(message.id,{provider:'codex',sessionId:this.threadId},project);
+      const candidate=this.desktopRuns.projectAuthorizationCandidate(message.id,{provider:'codex',sessionId:this.threadId},project);
       return this.desktopRuns.consentAllows(message.id,{provider:'codex',sessionId:this.threadId},project)||!!candidate&&this.authorizations.allows(project,candidate.receivedAt);
     }catch{return false;}
   }
@@ -442,7 +423,6 @@ export class Bridge {
     const status = decision === 'hold' ? 'held' : 'refused';
     this.db.run('UPDATE messages SET status=?,expires_at=? WHERE id=? AND status=\'pending\'', [status, expires, message.id]);
     await this.receipt(message, status);
-    this.runs.transportStatus(message.id,status,{source:'codex_inbound_policy'});
     for (const old of this.db.query<Message, []>("SELECT * FROM messages WHERE direction='in' AND status='held' ORDER BY created_at DESC,rowid DESC LIMIT -1 OFFSET 100").all()) {
       this.db.run("UPDATE messages SET status='dropped' WHERE id=? AND status='held'", [old.id]);
       await this.receipt(old, 'dropped');
@@ -452,7 +432,6 @@ export class Bridge {
 
   private async receipt(message: Message, status: string, dropReason = 'queue-full') {
     if (message.kind !== 'message') return;
-    this.runs.transportStatus(message.id,status,{source:'codex_inbound_receipt',dropReason:status==='dropped'?dropReason:null});
     this.desktopRuns.transport(message.id,status);
     try {
       if (!message.peer_address) return;
@@ -473,7 +452,7 @@ export class Bridge {
 
   private async writePeer(peer: Peer, frames: unknown[], canWrite?: () => boolean) {
     if (this.ownsReceiver) return sendFrames(this.configDir, peer, frames, {
-      canWrite:()=>!this.closing && (!canWrite || canWrite()) && frames.every(frame=>this.runs.allowOutgoingFrame(this.threadId,frameSchema.parse(frame),peer)) });
+      canWrite:()=>!this.closing && (!canWrite || canWrite()) });
     const receiver = this.receiver();
     return sendViaReceiver(receiver.messagingSocketPath.replace(/\.sock$/, '.out'), peer, frames);
   }
@@ -632,7 +611,7 @@ export class Bridge {
     // another process can revoke between route() and this entry point.
     const checkPolicy=recheckPolicy||message.status==='buffered';
     if(message.status==='buffered'&&this.decision(message)!=='accept'){this.db.run("UPDATE messages SET status='pending' WHERE id=? AND status='buffered'",[message.id]);await this.route(message);return;}
-    if(message.kind==='message'){const gate=this.desktopRuns.authorizeIncoming(message.id)??this.runs.authorizeIncoming(message.id);
+    if(message.kind==='message'){const gate=this.desktopRuns.authorizeIncoming(message.id);
       if(gate==='buffer'){this.db.run("UPDATE messages SET status='buffered' WHERE id=? AND status IN ('pending','held','buffered')",[message.id]);return;}
       if(gate==='drop'){this.db.run("UPDATE messages SET status='dropped',awaiting_input=0 WHERE id=? AND status IN ('pending','held','buffered')",[message.id]);await this.receipt(message,'dropped','run-not-active');return;}
     }
@@ -652,7 +631,7 @@ export class Bridge {
       try { await this.syncInputs(); }
       catch {
         this.db.run("UPDATE messages SET status='unknown' WHERE id=? AND status IN ('pending','held','buffered')", [message.id]);
-        this.runs.transportStatus(message.id,'unknown',{source:'native_history_unavailable'});this.desktopRuns.transport(message.id,'unknown');
+        this.desktopRuns.transport(message.id,'unknown');
         return;
       }
     }
@@ -667,19 +646,7 @@ export class Bridge {
     if (claim === 'full') { await this.receipt(message, 'dropped', 'queue-full'); return; }
 
     try {
-      const neutral=this.desktopRuns.incomingParticipants(message.id);if(neutral){try{const fresh=await Promise.all(neutral.participants.map(p=>inspectParticipant({configDir:this.configDir,stateDir:this.stateDir,ipcPath:this.ipcPath},p.sessionId,p.provider)));const plan=this.desktopRuns.implementationPlan(neutral.runId);if(neutral.participants.some((p,i)=>!sameDesktopParticipant(p,fresh[i]!,plan)))throw new Error('Participant changed');if(plan)await captureImplementation(plan,this.desktopRuns.status(neutral.runId,{provider:'codex',sessionId:this.threadId}).contextVersion);}catch{this.db.run("UPDATE messages SET status='dropped',drop_reason='participant-or-project-changed',awaiting_input=0 WHERE id=?",[message.id]);await this.receipt(message,'dropped','participant-or-project-changed');return;}}const managed=this.runs.incomingParticipants(message.id);
-      if (managed) {
-        try {
-          const fresh=await Promise.all(managed.participants.map(peer=>inspectParticipant({configDir:this.configDir,stateDir:this.stateDir,ipcPath:this.ipcPath},peer.sessionId,peer.provider)));
-          const plan=this.runs.implementationPlan(managed.runId);
-          if (managed.participants.some((peer,index)=>!sameScopedSnapshot(peer,fresh[index]!,plan))) throw new Error('Managed project or process changed');
-          if(plan)await captureImplementation(plan,this.runs.status(managed.runId,this.threadId).contextVersion);
-        } catch {
-          this.runs.block(managed.runId,'participant_or_project_changed');
-          this.db.run("UPDATE messages SET status='dropped',drop_reason='participant-or-project-changed',awaiting_input=0 WHERE id=?",[message.id]);
-          await this.receipt(message,'dropped','participant-or-project-changed'); return;
-        }
-      }
+      const neutral=this.desktopRuns.incomingParticipants(message.id);if(neutral){try{const fresh=await Promise.all(neutral.participants.map(p=>inspectParticipant({configDir:this.configDir,stateDir:this.stateDir,ipcPath:this.ipcPath},p.sessionId,p.provider)));const plan=this.desktopRuns.implementationPlan(neutral.runId);if(neutral.participants.some((p,i)=>!sameDesktopParticipant(p,fresh[i]!,plan)))throw new Error('Participant changed');if(plan)await captureImplementation(plan,this.desktopRuns.status(neutral.runId,{provider:'codex',sessionId:this.threadId}).contextVersion);}catch{this.db.run("UPDATE messages SET status='dropped',drop_reason='participant-or-project-changed',awaiting_input=0 WHERE id=?",[message.id]);await this.receipt(message,'dropped','participant-or-project-changed');return;}}
       // Recheck after native/project inspection: revocation must cover queued deliveries.
       if(checkPolicy&&this.decision(message)!=='accept') {
         this.db.run("UPDATE messages SET status='pending',awaiting_input=0,desktop_input_id=NULL WHERE id=? AND status='submitting'",[message.id]);
@@ -694,22 +661,17 @@ export class Bridge {
           return;
         }
       }
-      const neutralClaim=this.desktopRuns.claimRecipient(message.id);
-      if (!(neutralClaim===null?this.runs.claimIncoming(message.id):neutralClaim)) {
+      if (this.desktopRuns.claimRecipient(message.id)===false) {
         this.db.run("UPDATE messages SET status='dropped',drop_reason='run-not-active',awaiting_input=0 WHERE id=?",[message.id]);
-        this.runs.transportStatus(message.id,'dropped',{source:'managed_delivery_gate'});
         await this.receipt(message,'dropped','run-not-active'); return;
       }
-      this.runs.nativeIntent(message.id,inputId);
       this.desktopRuns.nativeIntent(message.id,inputId);
       const result = await deliverToDesktop(this.ipcPath, this.threadId, inputId, text);
       this.db.run('UPDATE messages SET status=?,turn_id=? WHERE id=?', [result.status, result.turnId, message.id]);
-      this.runs.transportStatus(message.id,result.status,{turnId:result.turnId,source:'native_codex_acknowledgement'});
       this.desktopRuns.transport(message.id,result.status);
       if (message.status === 'held') await this.receipt(message, 'delivered');
     } catch {
       this.db.run("UPDATE messages SET status='unknown' WHERE id=?", [message.id]);
-      this.runs.transportStatus(message.id,'unknown');
       this.desktopRuns.transport(message.id,'unknown');
     }
   }
@@ -731,7 +693,6 @@ export class Bridge {
     clearTimeout(this.expiryTimer);
     clearInterval(this.coordinationTimer);
     if (this.ownsReceiver && this.listener) {
-      this.runs.participantEnded(this.threadId);
       await this.finishSession(this.listener.address);
     }
     const withdraw = async () => {
@@ -748,7 +709,6 @@ export class Bridge {
     await this.serial;
     await withdraw();
     this.db.close();
-    this.runs.close();
     this.desktopRuns.close();
     this.authorizations.close();
   }

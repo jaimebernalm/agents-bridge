@@ -331,5 +331,4 @@ export const english: Record<string, string> = {
   "Idioma": "Language",
   "Antes de iniciar, confirma «Recordar autorización para este proyecto» en el panel de esta carpeta. Si el receptor es antiguo, recárgalo primero. No se enviará un nuevo encargo hasta resolverlo.": "Before starting, confirm “Remember authorization for this project” in the panel for this folder. Reload an older receiver first. No new task will be sent until this is resolved.",
   "Hay una restricción observada de recepción o mensajería en Claude. Revísala en la conversación de Claude; el puente no modifica sus permisos.": "A reception or messaging restriction was observed in Claude. Review it in the Claude chat; the bridge does not change its permissions.",
-  "El chat Codex tiene recepción explícita {policy}, de una versión anterior del puente. La autorización del proyecto no la sustituye: abre un chat nuevo de Codex.": "The Codex chat has an explicit {policy} reception setting from an earlier version of the bridge. Project authorization does not override it: open a new Codex chat."
 };

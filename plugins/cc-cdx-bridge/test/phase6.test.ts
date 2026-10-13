@@ -16,23 +16,8 @@ import {
   captureImplementation,
   previewIntegration,
   type ImplementationInput,
-  type Candidate,
 } from "../src/implementation";
-import { RunStore, contextSchema, limitsSchema } from "../src/runs";
 import { type Participant } from "../src/participants";
-import { type Peer } from "../src/claude";
-import {
-  routineCatalog,
-  routineSchema,
-  guide,
-  normalizeRoutine,
-  formatWork,
-  type Task,
-} from "../src/routines";
-import { formatManaged } from "../src/managed-message";
-import { nativeFixture, until } from "./collaboration-fixture";
-import { startPanel } from "../src/panel";
-const pluginRoot = join(import.meta.dir, "..");
 export async function gitOK(root: string, args: string[]) {
   const r = await git(root, args);
   if (r.code !== 0) throw new Error(r.error);
@@ -77,149 +62,26 @@ async function fixture() {
   const root = await repo(),
     state = mkdtempSync("/tmp/phase6-state-"),
     ps = await participants(root),
-    plan = await normalizeImplementation(input(root), ps),
-    store = new RunStore(state),
-    owner = ps[0]!.sessionId,
-    peer = ps[1]!.sessionId;
-  const id = store.prepare(
-    owner,
-    randomUUID(),
-    contextSchema.parse({ objective: "Implement scoped changes" }),
-    limitsSchema.parse({ maxMessages: 50, maxSeconds: 1800 }),
-    ps,
-    {},
-    undefined,
-    { initialBarrier: false, leaseSeconds: 300 },
-    plan,
-  );
-  store.start(id, owner);
-  const peerRecord: Peer = {
-    sessionId: peer,
-    pid: 2,
-    procStart: "1",
-    messagingSocketPath: "/tmp/1.sock",
-    entrypoint: "claude-desktop",
-    cwd: root,
-    name: "Claude",
-    status: "idle",
-    peerProtocol: 1,
-    peerFeatures: [],
-  };
-  const status = () => store.status(id, owner);
-  const local = (
-    intent: Task["intent"] = "synthesize",
-    target?: Task["target"],
-  ) => {
-    const task: Task = {
-      taskId: randomUUID(),
-      intent,
-      ...(target ? { target } : {}),
-    };
-    store.control(id, owner, randomUUID(), status().coordination!.revision, {
-      action: "task",
-      task,
-    });
-    return task;
-  };
-  const capture = async () => {
-    const task = local();
-    return (await store.implementationAction(id, owner, randomUUID(), {
-      action: "capture",
-      taskId: task.taskId,
-    })) as { candidate: Candidate };
-  };
-  const check = (c: Candidate, exitCode = 0) =>
-    store.implementationAction(id, owner, randomUUID(), {
-      action: "check",
-      candidateHash: c.contentHash,
-      name: "tests",
-      command: "bun test (fixture declaration)",
-      exitCode,
-      summary: "Declared result; not executed by core",
-    });
-  const review = (
-    c: Candidate,
-    verdict: "agree" | "disagree" | "revise" = "agree",
-  ) => {
-    const task: Task = {
-        taskId: randomUUID(),
-        intent: "review",
-        target: { resultId: c.resultId, version: c.version },
-      },
-      out = randomUUID(),
-      transport = randomUUID();
-    store.reserveOutgoing(
-      id,
-      owner,
-      out,
-      peer,
-      "Review candidate",
-      undefined,
-      task,
-    );
-    store.claimOutgoing(id, owner, out, transport);
-    store.transportStatus(transport, "socket-written");
-    const incoming = randomUUID();
-    expect(
-      store.admitIncoming(
-        owner,
-        peerRecord,
-        incoming,
-        formatManaged(
-          {
-            runId: id,
-            messageId: randomUUID(),
-            contextVersion: status().contextVersion,
-            replyTo: out,
-          },
-          formatWork(
-            {
-              kind: "review",
-              taskId: task.taskId,
-              resultId: c.resultId,
-              version: c.version,
-              verdict,
-              disagreements: verdict === "agree" ? [] : ["Open issue"],
-            },
-            "Fixture review",
-          ),
-        ),
-      ).admitted,
-    ).toBe(true);
-    store.authorizeIncoming(incoming);
-    store.claimIncoming(incoming);
-    store.transportStatus(incoming, "delivered");
-  };
+    plan = await normalizeImplementation(input(root), ps);
+  const capture = async () => ({
+    candidate: {
+      ...(await captureImplementation(plan, 1)),
+      resultId: randomUUID(),
+      version: 1,
+      createdAt: Date.now(),
+    },
+  });
   return {
     root,
     state,
-    store,
-    ps,
     plan,
-    id,
-    owner,
-    status,
-    local,
     capture,
-    check,
-    review,
     close() {
-      store.close();
       rmSync(root, { recursive: true, force: true });
       rmSync(state, { recursive: true, force: true });
     },
   };
 }
-test("nine presets share schema and guidance without implicit write or mandatory rounds", () => {
-  expect(routineCatalog).toHaveLength(9);
-  for (const p of routineCatalog) {
-    const r = normalizeRoutine({ mode: p.id }, {});
-    expect(routineSchema.parse({ mode: p.id }).mode).toBe(p.id);
-    expect(guide(r).guidance.length).toBeGreaterThan(10);
-    expect(r.independence).toBe("not_guaranteed");
-  }
-  expect(() => routineSchema.parse({ mode: "unknown" })).toThrow();
-});
 test("clean base, explicit roots, disjoint scopes and safe paths are mandatory", async () => {
   const root = await repo();
   try {
@@ -281,159 +143,6 @@ test("edits, additions and deletions integrate without changing index, HEAD or s
     expect(readFileSync(join(x.root, "codex.txt"), "utf8")).toBe(
       "codex edited\n",
     );
-    expect(x.status().implementation!.publishesChanges).toBe(false);
-  } finally {
-    x.close();
-  }
-});
-// Multiple fresh captures and private-index previews spawn real Git processes;
-// hosted macOS runners need more than Bun's default 5 s for this whole scenario.
-test("checks and exact other-agent review gate readiness; disk changes, failed checks and stale reviews revoke it", async () => {
-  const x = await fixture();
-  try {
-    writeFileSync(join(x.root, "codex.txt"), "edited\n");
-    const { candidate: c } = await x.capture();
-    expect((await x.store.inspectImplementation(x.id, x.owner)).ready).toBe(
-      false,
-    );
-    await x.check(c);
-    const self = x.local("review", {
-      resultId: c.resultId,
-      version: c.version,
-    });
-    x.store.recordReport(
-      x.id,
-      x.owner,
-      randomUUID(),
-      {
-        kind: "review",
-        taskId: self.taskId,
-        resultId: c.resultId,
-        version: c.version,
-        verdict: "agree",
-        disagreements: [],
-      },
-      "Self review",
-    );
-    expect((await x.store.inspectImplementation(x.id, x.owner)).ready).toBe(
-      false,
-    );
-    x.review(c);
-    expect((await x.store.inspectImplementation(x.id, x.owner)).ready).toBe(
-      true,
-    );
-    await x.check(c, 1);
-    expect((await x.store.inspectImplementation(x.id, x.owner)).ready).toBe(
-      false,
-    );
-    await x.check(c);
-    writeFileSync(join(x.root, "codex.txt"), "later\n");
-    expect((await x.store.inspectImplementation(x.id, x.owner)).ready).toBe(
-      false,
-    );
-    expect(
-      x.store.implementationMaterial(x.id, c.resultId, c.version)?.snapshots[0]!
-        .patch,
-    ).toContain("edited");
-    const { candidate: v2 } = await x.capture();
-    expect(v2.resultId).toBe(c.resultId);
-    expect(v2.version).toBe(2);
-    await x.check(v2);
-    expect((await x.store.inspectImplementation(x.id, x.owner)).ready).toBe(
-      false,
-    );
-    x.review(v2, "disagree");
-    expect((await x.store.inspectImplementation(x.id, x.owner)).ready).toBe(
-      false,
-    );
-    x.review(v2);
-    expect((await x.store.inspectImplementation(x.id, x.owner)).ready).toBe(
-      true,
-    );
-    expect(x.status().reviews[0]!.current).toBe(false);
-  } finally {
-    x.close();
-  }
-}, 20000);
-test("untracked contents and context invalidate candidates; old receipts cannot be relabeled", async () => {
-  const x = await fixture();
-  try {
-    writeFileSync(join(x.root, "new.txt"), "one\n");
-    const { candidate: c } = await x.capture();
-    await x.check(c);
-    x.review(c);
-    expect((await x.store.inspectImplementation(x.id, x.owner)).ready).toBe(
-      true,
-    );
-    writeFileSync(join(x.root, "new.txt"), "two\n");
-    expect(
-      (await x.store.inspectImplementation(x.id, x.owner)).reasons,
-    ).toContain("Workspace or context changed after capture");
-    const { candidate: v2 } = await x.capture();
-    await expect(x.check(c)).rejects.toThrow("current exact");
-    await x.check(v2);
-    x.review(v2);
-    x.store.control(
-      x.id,
-      x.owner,
-      randomUUID(),
-      x.status().coordination!.revision,
-      {
-        action: "context",
-        context: contextSchema.parse({ objective: "New context" }),
-      },
-    );
-    expect((await x.store.inspectImplementation(x.id, x.owner)).ready).toBe(
-      false,
-    );
-  } finally {
-    x.close();
-  }
-});
-test("replay, caller, pause and terminal state fence candidate operations", async () => {
-  const x = await fixture();
-  try {
-    writeFileSync(join(x.root, "codex.txt"), "edit\n");
-    const task = x.local(),
-      op = randomUUID(),
-      action = { action: "capture" as const, taskId: task.taskId };
-    const one = (await x.store.implementationAction(
-      x.id,
-      x.owner,
-      op,
-      action,
-    )) as { candidate: Candidate };
-    expect(
-      (
-        (await x.store.implementationAction(x.id, x.owner, op, action)) as {
-          reused: boolean;
-        }
-      ).reused,
-    ).toBe(true);
-    expect(x.status().implementation!.candidate!.version).toBe(1);
-    await expect(
-      x.store.implementationAction(x.id, x.owner, op, { action: "inspect" }),
-    ).rejects.toThrow("different");
-    await expect(
-      x.store.inspectImplementation(x.id, randomUUID()),
-    ).rejects.toThrow("initiating");
-    x.store.control(
-      x.id,
-      x.owner,
-      randomUUID(),
-      x.status().coordination!.revision,
-      { action: "pause" },
-    );
-    await expect(x.check(one.candidate)).rejects.toThrow("paused");
-    x.store.stop(x.id, x.owner, "cancelled", "End fixture");
-    await expect(x.check(one.candidate)).rejects.toThrow();
-    expect(
-      (
-        (await x.store.implementationAction(x.id, x.owner, op, action)) as {
-          reused: boolean;
-        }
-      ).reused,
-    ).toBe(true);
   } finally {
     x.close();
   }
@@ -526,48 +235,6 @@ test("workspace identity and frozen HEAD remain mandatory after writes", async (
     );
   } finally {
     x.close();
-  }
-});
-test("lease loss prevents candidate/check mutation", async () => {
-  const f = await fixture();
-  try {
-    writeFileSync(join(f.root, "codex.txt"), "lease test");
-    const { candidate } = await f.capture();
-    const { Database } = await import("bun:sqlite");
-    const db = new Database(join(f.state, "collaborations.sqlite"));
-    db.run("UPDATE controller_processes SET proc_start='dead process'");
-    db.close();
-    await expect(f.check(candidate)).rejects.toThrow();
-    expect(f.status().state).toBe("recovery_required");
-  } finally {
-    f.close();
-  }
-}, 15000);
-test("candidate result IDs cannot be replaced by unrelated reports", async () => {
-  const f = await fixture();
-  try {
-    writeFileSync(join(f.root, "codex.txt"), "immutable");
-    const { candidate } = await f.capture(),
-      task = f.local();
-    expect(() =>
-      f.store.recordReport(
-        f.id,
-        f.owner,
-        randomUUID(),
-        {
-          kind: "result",
-          taskId: task.taskId,
-          resultId: candidate.resultId,
-          version: 2,
-          title: "Not captured",
-          disagreements: [],
-        },
-        "unrelated text",
-      ),
-    ).toThrow("captured");
-    expect(f.status().implementation!.candidate!.version).toBe(1);
-  } finally {
-    f.close();
   }
 });
 test("renames cannot hide a deleted source outside scope and pathspec metacharacters stay literal", async () => {

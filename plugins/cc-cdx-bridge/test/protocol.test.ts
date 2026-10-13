@@ -316,7 +316,8 @@ test('mode changes recheck held input without extending deadlines; explicit hold
     expect(f.bridge.held()[0]?.expires_at).toBe(deadline);
     f.bridge.updateRuntime({ status: 'busy', mode: 'bypass' });
     await until(() => f.desktop.submissions.length === 1);
-    expect(f.bridge.status().messages.find(row => row.id === id)?.status).toBe('started');
+    // The status is recorded once Codex acknowledges the submission, just after the fixture sees it.
+    await until(() => f.bridge.status().messages.find(row => row.id === id)?.status === 'started');
     await f.bridge.setPolicy('hold');
     const explicit = await f.message('prompting');
     await until(() => f.bridge.status().heldCount === 1);
@@ -635,7 +636,8 @@ test('the lifecycle hook opens held dialogs without model calls', async () => {
     expect(dialogs).toHaveLength(1);
     dialogs[0]!.answer.resolve({ action: 'accept', content: { decision: 'approve' } });
     await until(() => f.desktop.submissions.length === 1);
-    expect(f.bridge.status().messages.find(row => row.id === id)?.status).toBe('started');
+    // The status is recorded once Codex acknowledges the submission, just after the fixture sees it.
+    await until(() => f.bridge.status().messages.find(row => row.id === id)?.status === 'started');
     const denied = await f.message('bypass');
     await until(() => dialogs.length === 2);
     dialogs[1]!.answer.resolve({ action: 'cancel' });
