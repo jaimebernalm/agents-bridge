@@ -12,7 +12,7 @@ When the person acts in the panel and the work must continue in a chat, that cha
 
 ## Approving a collaboration
 
-A collaboration started by Claude waits until the person approves it in the panel. One approval covers the whole collaboration and, when `consent.coversLaterContexts` is true, its later contexts too. For a collaboration started by Codex, Claude's answers reach the Codex chat once the person has remembered the project (below).
+A collaboration started by Claude waits until the person approves it in the panel. One approval covers the whole collaboration and, when `consent.coversLaterContexts` is true, its later contexts too. Before approving, the person may change its message and time limits; the change is recorded in its events, so read `limits` from `get_status` rather than from memory. For a collaboration started by Codex, Claude's answers reach the Codex chat once the person has remembered the project (below).
 
 ## Letting the other chat edit
 

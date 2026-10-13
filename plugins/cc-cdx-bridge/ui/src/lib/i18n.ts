@@ -3,15 +3,14 @@ import {english} from './messages';
 
 export type Language = 'en' | 'es';
 const preference = 'cc-cdx-language';
-// An explicit choice wins; otherwise follow the browser so Spanish speakers start in Spanish.
-export function readLanguage(storage?: Pick<Storage, 'getItem'>, browser?: readonly string[]): Language {
+// English unless the person chose another language in the panel.
+export function readLanguage(storage?: Pick<Storage, 'getItem'>): Language {
   try { const stored = storage?.getItem(preference); if (stored === 'es' || stored === 'en') return stored; }
-  catch { /* Fall back to the browser language. */ }
-  return browser?.find(tag => /^(es|en)\b/i.test(tag))?.toLowerCase().startsWith('es') ? 'es' : 'en';
+  catch { /* Use the default. */ }
+  return 'en';
 }
 function initialLanguage(): Language {
-  try { return readLanguage(typeof window === 'undefined' ? undefined : window.localStorage, typeof navigator === 'undefined' ? undefined : navigator.languages); }
-  catch { return 'en'; }
+  return readLanguage(typeof window === 'undefined' ? undefined : window.localStorage);
 }
 let language: Language = initialLanguage();
 const spanish = Object.fromEntries(Object.entries(english).map(([es, en]) => [en, es]));

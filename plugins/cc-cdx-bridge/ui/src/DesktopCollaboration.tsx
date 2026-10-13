@@ -106,15 +106,19 @@ function EditOption({peer,value,onChange}:{peer:string;value:EditChoice;onChange
 }
 
 // Laid out like the form a suggestion opens: the objective, the other chat, the edit switch and the
-// limits as tiles, then a wide start. What the chat prepared stays fixed; Change reopens it in that form.
+// limits as tiles, then a wide start. Messages and time can still change here, saved just before approving;
+// the objective and the chat stay as prepared, and Change reopens them in that form.
 function ApprovalCard({run,api,busy,act,onDetails,ownerBusy,onChange,onNotice}:{run:Run;api:Api;busy:boolean;act:(fn:()=>Promise<void>)=>Promise<void>;onDetails:()=>void;ownerBusy?:Run;onChange:(draft:Proposal)=>void;onNotice:(text:string)=>void}){
  const [edit,setEdit]=useState<EditChoice>({enabled:true,scope:defaultScope()}),[scopeOpen,setScopeOpen]=useState(false),peer=providerName(otherOf(run)),with_=peerOf(run)?.name??peer,compact=useCompact();
- useDraft(edit);
- const change=()=>act(async()=>{await cancelRun(api,run);onChange({id:'draft:'+run.id,requester:run.initiator,createdAt:run.createdAt,objective:run.context.objective,newChat:false,peerId:peerOf(run)?.sessionId,allowEdits:edit.enabled,editScope:edit.scope,maxMessages:run.limits.maxMessages,minutes:Math.round(run.limits.maxSeconds/60),initialBarrier:false})});
+ const [messages,setMessages]=useState(run.limits.maxMessages===null?'':String(run.limits.maxMessages)),[minutes,setMinutes]=useState(String(Math.round(run.limits.maxSeconds/60)));
+ useDraft({edit,messages,minutes});
+ const change=()=>act(async()=>{const limits=parseLimits(messages,minutes);await cancelRun(api,run);onChange({id:'draft:'+run.id,requester:run.initiator,createdAt:run.createdAt,objective:run.context.objective,newChat:false,peerId:peerOf(run)?.sessionId,allowEdits:edit.enabled,editScope:edit.scope,maxMessages:limits.maxMessages,minutes:limits.maxSeconds/60,initialBarrier:false})});
+ const approve=()=>act(async()=>{const limits=parseLimits(messages,minutes),same=limits.maxMessages===run.limits.maxMessages&&limits.maxSeconds===run.limits.maxSeconds;
+  const current=same?run:await api<Run>('desktop/limits',{runId:run.id,expectedRevision:run.coordination.revision,limits});
+  onNotice(startedNotice(await approveAndStart(api,current,edit),peer))});
  const prepared=l(`Prepared by ${providerName(run.initiator.provider)} · ${ago(run.createdAt)}`,`Preparada por ${providerName(run.initiator.provider)} · ${ago(run.createdAt)}`);
  const waiting=l('Waiting for your approval','Esperando tu aprobación');
  const tile=compact?'rounded-2xl bg-card p-3.5 shadow-tile':'rounded-xl border bg-background p-4',label=compact?'text-[14px] font-medium tracking-[-0.01em]':'text-sm font-medium';
- const amount='rounded-full bg-muted px-3 py-1.5 text-sm font-semibold tabular-nums';
  const body=<>
   <p className={`whitespace-pre-wrap leading-relaxed ${compact?'rounded-2xl bg-card px-4 py-3 text-[15px] shadow-tile':'rounded-xl border bg-background px-4 py-3 text-base'}`}>{run.context.objective}</p>
   <div className="grid gap-3 sm:grid-cols-2">
@@ -124,11 +128,11 @@ function ApprovalCard({run,api,busy,act,onDetails,ownerBusy,onChange,onNotice}:{
    </Choice>
   </div>
   <div className="grid gap-3 sm:grid-cols-2">
-   <div className={`flex items-center justify-between gap-3 ${tile}`}><p className={label}>{l('Messages','Mensajes')}</p><span className={amount}>{run.limits.maxMessages??l('No limit','Sin límite')}</span></div>
-   <div className={`flex items-center justify-between gap-3 ${tile}`}><p className={label}>{l('Time','Tiempo')}</p><span className={amount}>{duration(Math.round(run.limits.maxSeconds/60))}</span></div>
+   <div className={`flex items-center justify-between gap-3 ${tile}`}><div><p className={label}>{l('Messages','Mensajes')}</p><MessagesShortcut value={messages} onChange={setMessages}/></div><MessagesControl value={messages} onChange={setMessages} className="h-9 w-40 rounded-full bg-muted"/></div>
+   <div className={`flex items-center justify-between gap-3 ${tile}`}><div><p className={label}>{l('Time','Tiempo')}</p><TimeShortcut value={minutes} onChange={setMinutes}/></div><TimeControl value={minutes} onChange={setMinutes} className="h-9 w-40 rounded-full bg-muted"/></div>
   </div>
   <p className="text-xs leading-5 text-muted-foreground">{l('Covers every phase of this collaboration; you will not be asked again for the next one.','Cubre todas las fases de esta colaboración; no se te volverá a pedir para la siguiente.')}{ownerBusy&&' '+l('It can start once the collaboration in progress ends.','Podrá empezar cuando termine la colaboración en curso.')}</p>
-  <div className="flex items-center gap-2"><Button className="h-11 flex-1 rounded-xl text-[15px] font-semibold shadow-sm" disabled={busy||!!ownerBusy||edit.enabled&&!edit.scope.trim()} onClick={()=>void act(async()=>{onNotice(startedNotice(await approveAndStart(api,run,edit),peer))})}><Play/>{l('Approve and start','Aprobar e iniciar')}</Button><Button variant="ghost" className="h-11 rounded-xl" disabled={busy||!!ownerBusy} onClick={()=>void change()}>{l('Change','Cambiar')}</Button><Button variant="ghost" className="h-11 rounded-xl" onClick={onDetails}>{l('See details','Ver detalles')}</Button></div>
+  <div className="flex items-center gap-2"><Button className="h-11 flex-1 rounded-xl text-[15px] font-semibold shadow-sm" disabled={busy||!!ownerBusy||edit.enabled&&!edit.scope.trim()} onClick={()=>void approve()}><Play/>{l('Approve and start','Aprobar e iniciar')}</Button><Button variant="ghost" className="h-11 rounded-xl" disabled={busy||!!ownerBusy} onClick={()=>void change()}>{l('Change','Cambiar')}</Button><Button variant="ghost" className="h-11 rounded-xl" onClick={onDetails}>{l('See details','Ver detalles')}</Button></div>
  </>;
  if(compact)return <div className="reveal flex min-w-0 flex-col gap-3">
   <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"><p className="flex items-center gap-1.5 text-[13px] text-muted-foreground"><Sparkles className="size-3.5 text-primary"/>{prepared}</p><p className="text-[13px] font-medium text-warning">{waiting}</p></div>
@@ -181,6 +185,13 @@ function TimeControl({value,onChange,className}:{value:string;onChange:(v:string
  </div>;
 }
 
+// Limits as the form and the approval card read them: empty messages means no limit.
+const parseLimits=(messages:string,minutes:string)=>{const maxMessages=messages===''?null:Number(messages),maxSeconds=Number(minutes)*60;if(maxMessages!==null&&(!Number.isSafeInteger(maxMessages)||maxMessages<2)||!Number.isInteger(maxSeconds)||maxSeconds<60)throw new Error(l('Enter valid limits: at least 2 messages and 1 minute.','Indica límites válidos: al menos 2 mensajes y 1 minuto.'));return {maxMessages,maxSeconds}};
+// Each limit offers one shortcut: no message limit, or the 24-hour maximum for time.
+const shortcutLink='text-xs font-medium text-primary hover:underline';
+const MessagesShortcut=({value,onChange}:{value:string;onChange:(v:string)=>void})=><button type="button" className={shortcutLink} onClick={()=>onChange(value===''?'24':'')}>{value===''?l('Set a limit','Poner límite'):l('No limit','Sin límite')}</button>;
+const TimeShortcut=({value,onChange}:{value:string;onChange:(v:string)=>void})=>value===String(maxMinutes)?<span className="text-xs text-muted-foreground">{l('Maximum','Máximo')}</span>:<button type="button" className={shortcutLink} onClick={()=>onChange(String(maxMinutes))}>{l('Max 24 h','Máx. 24 h')}</button>;
+
 function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{proposal?:Proposal;state:State;other:string;api:Api;busy:boolean;act:(fn:()=>Promise<void>)=>Promise<void>;onCancel?:()=>void;onStarted:(id:string,notice:string)=>void}){
  const peers=state.participants.filter(p=>p.provider===other&&p.cwd===state.project&&p.eligibleSurface),ready=peers.filter(p=>p.symmetricDesktop),peerName=providerName(other);
  const compact=useCompact(),[more,setMore]=useState(false);
@@ -193,7 +204,7 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
  const candidates=ticket&&!ticket.bound?peers.filter(p=>p.symmetricDesktop&&p.startedAt!==null&&p.startedAt>=ticket.createdAt):[];
  const chosen=newChat?boundId:(peer||(ready.length===1?ready[0]!.sessionId:''));
  const ticketId=newChat?(boundId?opening!.ticketId:''):advancedTicket;
- const limits=()=>{const maxMessages=messages===''?null:Number(messages),maxSeconds=Number(minutes)*60;if(maxMessages!==null&&(!Number.isSafeInteger(maxMessages)||maxMessages<2)||!Number.isInteger(maxSeconds)||maxSeconds<60)throw new Error(l('Enter valid limits: at least 2 messages and 1 minute.','Indica límites válidos: al menos 2 mensajes y 1 minuto.'));return {maxMessages,maxSeconds}};
+ const limits=()=>parseLimits(messages,minutes);
  const ready2go=!!objective.trim()&&(!edit.enabled||!!edit.scope.trim());
  const start=()=>act(async()=>{if(!objective.trim()||!chosen)throw new Error(l('Choose a conversation and an objective.','Elige una conversación y un objetivo.'));if(edit.enabled&&!edit.scope.trim())throw new Error(l('Describe what it may edit first.','Describe primero qué puede editar.'));
   const payload={peerId:chosen,context:{objective:objective.trim(),constraints:[],references:[],priorAnalysis:{...(priorCodex.trim()?{codex:priorCodex}:{}),...(priorClaude.trim()?{claude:priorClaude}:{})}},limits:limits(),routine:{mode:'free'},...(initialBarrier?{coordination:{initialBarrier:true}}:{}),...(ticketId?{ticketId}:{}),...(implementation.trim()?{implementation:JSON.parse(implementation)}:{}),openPanel:false};
@@ -240,10 +251,7 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
    <details><summary className="cursor-pointer text-muted-foreground">{l(`Other ways to get a ${peerName} chat`,`Otras formas de conseguir un chat de ${peerName}`)}</summary><div className="mt-4"><DesktopTickets state={state} api={api} busy={busy} act={act} onBound={(id,ticket)=>{setNewChat(false);setPeer(id);setAdvancedTicket(ticket)}} onNotice={()=>{}}/></div></details>
   </>;
 
- // Each limit offers one shortcut: no message limit, or the 24-hour maximum for time.
- const link='text-xs font-medium text-primary hover:underline';
- const messagesShortcut=<button type="button" className={link} onClick={()=>setMessages(messages===''?'24':'')}>{messages===''?l('Set a limit','Poner límite'):l('No limit','Sin límite')}</button>;
- const timeShortcut=minutes===String(maxMinutes)?<span className="text-xs text-muted-foreground">{l('Maximum','Máximo')}</span>:<button type="button" className={link} onClick={()=>setMinutes(String(maxMinutes))}>{l('Max 24 h','Máx. 24 h')}</button>;
+ const messagesShortcut=<MessagesShortcut value={messages} onChange={setMessages}/>,timeShortcut=<TimeShortcut value={minutes} onChange={setMinutes}/>;
  
  // The small window fills its height with only what starting needs: the objective, two switches,
  // two limits and a wide start button. Everything else waits behind Options.
