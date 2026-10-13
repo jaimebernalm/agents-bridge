@@ -86,6 +86,10 @@ const endedReason=(reason:string,peer:string)=>reason==='peer_still_busy'?l(`${p
 const peerOf=(run:Run)=>run.participants?.find(p=>p.provider!==run.initiator.provider);
 const cancelRun=(api:Api,run:Run)=>api('desktop/control',{runId:run.id,commandId:crypto.randomUUID(),expectedRevision:run.coordination.revision,control:{action:'cancel'}});
 
+// The edit rules and the short summary of the default permission, shared by the form and the approval card.
+const scopeRules=()=>l('Covers every phase until you revoke it. Push, PRs, merges, deploys and paid API calls only if you write them here.','Cubre todas las fases hasta que lo revoques. Push, PR, merges, despliegues y APIs de pago solo si los escribes aquí.');
+const editSummary=(scope:string)=>scope===defaultScope()?l('Local edits and commits only; no push, pull requests or merges.','Solo ediciones y commits locales; sin push, PR ni merges.'):undefined;
+
 // What the peer may do reads as the text that grants it; the rules for writing it show while editing.
 // A summary may stand in for the default text, which it restates; any other text shows as written.
 function Scope({value,summary,onChange,editing,setEditing,rules}:{value:string;summary?:string;onChange:(v:string)=>void;editing:boolean;setEditing:(v:boolean)=>void;rules:string}){
@@ -94,24 +98,46 @@ function Scope({value,summary,onChange,editing,setEditing,rules}:{value:string;s
   :<p className="text-xs leading-5 text-muted-foreground"><span className="whitespace-pre-line">{summary??(value.trim()||l('Describe what it may do.','Describe qué puede hacer.'))}</span> {link(l('Change','Cambiar'),true)}</p>;
 }
 
-function EditOption({peer,value,onChange,brief=false}:{peer:string;value:EditChoice;onChange:(v:EditChoice)=>void;brief?:boolean}){
+function EditOption({peer,value,onChange}:{peer:string;value:EditChoice;onChange:(v:EditChoice)=>void}){
  const [editing,setEditing]=useState(false);
  return <div className="space-y-2 text-sm compact:space-y-1"><label className="flex gap-2"><input type="checkbox" checked={value.enabled} onChange={e=>onChange({...value,enabled:e.target.checked})}/>{l(`Let ${peer} edit files and make local commits`,`Permitir que ${peer} edite archivos y haga commits locales`)}</label>
-  {value.enabled&&<div className="pl-6"><Scope value={value.scope} onChange={scope=>onChange({...value,scope})} editing={editing} setEditing={setEditing} rules={brief?l('Never covers push, pull requests, merges, deploys or paid API calls unless you write them here.','Nunca cubre push, PR, merges, despliegues ni llamadas de pago a APIs salvo que lo escribas aquí.'):l('Covers every phase of this collaboration until you revoke it. Never covers push, pull requests, merges, deploys or paid API calls unless you write them here.','Cubre todas las fases de esta colaboración hasta que lo revoques. Nunca cubre push, PR, merges, despliegues ni llamadas de pago a APIs salvo que lo escribas aquí.')}/></div>}
+  {value.enabled&&<div className="pl-6"><Scope value={value.scope} onChange={scope=>onChange({...value,scope})} editing={editing} setEditing={setEditing} rules={l('Covers every phase of this collaboration until you revoke it. Never covers push, pull requests, merges, deploys or paid API calls unless you write them here.','Cubre todas las fases de esta colaboración hasta que lo revoques. Nunca cubre push, PR, merges, despliegues ni llamadas de pago a APIs salvo que lo escribas aquí.')}/></div>}
  </div>;
 }
 
+// Laid out like the form a suggestion opens: the objective, the other chat, the edit switch and the
+// limits as tiles, then a wide start. What the chat prepared stays fixed; Change reopens it in that form.
 function ApprovalCard({run,api,busy,act,onDetails,ownerBusy,onChange,onNotice}:{run:Run;api:Api;busy:boolean;act:(fn:()=>Promise<void>)=>Promise<void>;onDetails:()=>void;ownerBusy?:Run;onChange:(draft:Proposal)=>void;onNotice:(text:string)=>void}){
- const [edit,setEdit]=useState<EditChoice>({enabled:true,scope:defaultScope()}),peer=providerName(otherOf(run)),with_=peerOf(run)?.name??peer,size=useCompact()?'sm':'default';
+ const [edit,setEdit]=useState<EditChoice>({enabled:true,scope:defaultScope()}),[scopeOpen,setScopeOpen]=useState(false),peer=providerName(otherOf(run)),with_=peerOf(run)?.name??peer,compact=useCompact();
  useDraft(edit);
- // The peer and limits were fixed when the chat prepared this; Change reopens them in the editable form.
  const change=()=>act(async()=>{await cancelRun(api,run);onChange({id:'draft:'+run.id,requester:run.initiator,createdAt:run.createdAt,objective:run.context.objective,newChat:false,peerId:peerOf(run)?.sessionId,allowEdits:edit.enabled,editScope:edit.scope,maxMessages:run.limits.maxMessages,minutes:Math.round(run.limits.maxSeconds/60),initialBarrier:false})});
- return <div className="reveal space-y-4 rounded-xl border border-warning/35 bg-warning/[.07] p-5 compact:space-y-2 compact:p-3"><div><p className="text-sm font-medium text-warning">{l('Waiting for your approval','Esperando tu aprobación')}</p><p className="mt-1 text-base compact:mt-0.5 compact:text-sm">{run.context.objective}</p>
-  <p className="mt-2 text-sm text-muted-foreground compact:mt-1 compact:text-xs">{l('With','Con')} <strong className="font-medium text-foreground">{with_}</strong> · {run.limits.maxMessages??'∞'} {l('messages','mensajes')} · {Math.round(run.limits.maxSeconds/60)} min<span className="hidden compact:inline"> · {l('covers every phase','cubre todas las fases')}</span></p>
-  <p className="mt-1 text-xs text-muted-foreground compact:hidden">{l('Covers every phase of this collaboration; you will not be asked again for the next one.','Cubre todas las fases de esta colaboración; no se te volverá a pedir para la siguiente.')}</p></div>
-  <EditOption peer={peer} value={edit} onChange={setEdit} brief/>
-  {ownerBusy&&<p className="text-sm text-muted-foreground compact:text-xs">{l('It can start once the collaboration in progress ends.','Podrá empezar cuando termine la colaboración en curso.')}</p>}
-  <div className="flex flex-wrap gap-2"><Button size={size} disabled={busy||!!ownerBusy||edit.enabled&&!edit.scope.trim()} onClick={()=>void act(async()=>{onNotice(startedNotice(await approveAndStart(api,run,edit),peer))})}><Play/>{l('Approve and start','Aprobar e iniciar')}</Button><Button size={size} variant="outline" disabled={busy||!!ownerBusy} onClick={()=>void change()}>{l('Change','Cambiar')}</Button><Button size={size} variant="ghost" onClick={onDetails}>{l('See details','Ver detalles')}</Button></div></div>;
+ const prepared=l(`Prepared by ${providerName(run.initiator.provider)} · ${ago(run.createdAt)}`,`Preparada por ${providerName(run.initiator.provider)} · ${ago(run.createdAt)}`);
+ const waiting=l('Waiting for your approval','Esperando tu aprobación');
+ const tile=compact?'rounded-2xl bg-card p-3.5 shadow-tile':'rounded-xl border bg-background p-4',label=compact?'text-[14px] font-medium tracking-[-0.01em]':'text-sm font-medium';
+ const amount='rounded-full bg-muted px-3 py-1.5 text-sm font-semibold tabular-nums';
+ const body=<>
+  <p className={`whitespace-pre-wrap leading-relaxed ${compact?'rounded-2xl bg-card px-4 py-3 text-[15px] shadow-tile':'rounded-xl border bg-background px-4 py-3 text-base'}`}>{run.context.objective}</p>
+  <div className="grid gap-3 sm:grid-cols-2">
+   <div className={tile}><p className={label}>{l(`${peer} chat`,`Chat de ${peer}`)}</p><p className="mt-1 truncate text-xs leading-5 text-muted-foreground" title={with_}>{with_}</p></div>
+   <Choice checked={edit.enabled} onChange={v=>setEdit({...edit,enabled:v})} title={l(`${peer} can edit and commit`,`${peer} puede editar y hacer commits`)} detail={edit.enabled?undefined:l('Read and discuss only.','Solo leer y debatir.')}>
+    {edit.enabled&&<div className="mt-1"><Scope value={edit.scope} summary={compact?editSummary(edit.scope):undefined} onChange={scope=>setEdit({...edit,scope})} editing={scopeOpen} setEditing={setScopeOpen} rules={scopeRules()}/></div>}
+   </Choice>
+  </div>
+  <div className="grid gap-3 sm:grid-cols-2">
+   <div className={`flex items-center justify-between gap-3 ${tile}`}><p className={label}>{l('Messages','Mensajes')}</p><span className={amount}>{run.limits.maxMessages??l('No limit','Sin límite')}</span></div>
+   <div className={`flex items-center justify-between gap-3 ${tile}`}><p className={label}>{l('Time','Tiempo')}</p><span className={amount}>{duration(Math.round(run.limits.maxSeconds/60))}</span></div>
+  </div>
+  <p className="text-xs leading-5 text-muted-foreground">{l('Covers every phase of this collaboration; you will not be asked again for the next one.','Cubre todas las fases de esta colaboración; no se te volverá a pedir para la siguiente.')}{ownerBusy&&' '+l('It can start once the collaboration in progress ends.','Podrá empezar cuando termine la colaboración en curso.')}</p>
+  <div className="flex items-center gap-2"><Button className="h-11 flex-1 rounded-xl text-[15px] font-semibold shadow-sm" disabled={busy||!!ownerBusy||edit.enabled&&!edit.scope.trim()} onClick={()=>void act(async()=>{onNotice(startedNotice(await approveAndStart(api,run,edit),peer))})}><Play/>{l('Approve and start','Aprobar e iniciar')}</Button><Button variant="ghost" className="h-11 rounded-xl" disabled={busy||!!ownerBusy} onClick={()=>void change()}>{l('Change','Cambiar')}</Button><Button variant="ghost" className="h-11 rounded-xl" onClick={onDetails}>{l('See details','Ver detalles')}</Button></div>
+ </>;
+ if(compact)return <div className="reveal flex min-w-0 flex-col gap-3">
+  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"><p className="flex items-center gap-1.5 text-[13px] text-muted-foreground"><Sparkles className="size-3.5 text-primary"/>{prepared}</p><p className="text-[13px] font-medium text-warning">{waiting}</p></div>
+  {body}
+ </div>;
+ return <div className="reveal space-y-5 rounded-xl border border-warning/35 bg-card p-6 shadow-sm">
+  <div className="-mx-6 -mt-6 rounded-t-xl border-b border-warning/20 bg-warning/[.07] px-6 py-3"><p className="text-sm font-medium text-warning">{waiting}</p><p className="text-xs text-muted-foreground">{prepared}</p></div>
+  {body}
+ </div>;
 }
 
 function EditAuthorization({run,api,busy,act,edit,setEdit}:{run:Run;api:Api;busy:boolean;act:(fn:()=>Promise<void>)=>Promise<void>;edit:EditChoice;setEdit:(v:EditChoice)=>void}){
@@ -197,8 +223,7 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
  const cancel=onCancel&&!proposal&&<Button variant="ghost" onClick={onCancel}>{l('Cancel','Cancelar')}</Button>;
  const chatPicker=ready.length===0?<p className="text-xs text-muted-foreground">{l(`No ${peerName} chat is open in this folder.`,`No hay ningún chat de ${peerName} abierto en esta carpeta.`)}</p>
   :<NativeSelect size="sm" className="w-full" aria-label={l(`${peerName} chat`,`Chat de ${peerName}`)} value={chosen} onChange={e=>{setPeer(e.target.value);setAdvancedTicket('')}}><NativeSelectOption value="">{l('Choose…','Elige…')}</NativeSelectOption>{peers.map(p=><NativeSelectOption key={p.sessionId} value={p.sessionId} disabled={!p.symmetricDesktop}>{p.name}{p.startedAt?' · '+opened(p.startedAt):''}{p.symmetricDesktop?(p.status==='busy'?' · '+l('busy','ocupado'):''):' · '+l('reload plugin','recarga el plugin')}</NativeSelectOption>)}</NativeSelect>;
- const scopeRules=l('Covers every phase until you revoke it. Push, PRs, merges, deploys and paid API calls only if you write them here.','Cubre todas las fases hasta que lo revoques. Push, PR, merges, despliegues y APIs de pago solo si los escribes aquí.');
- // Built only while a new chat is being opened, which is when there is a request to show.
+  // Built only while a new chat is being opened, which is when there is a request to show.
  const waitingBox=(request:{ticketId:string;prompt:string})=><div className="reveal space-y-3 rounded-xl border bg-muted/50 p-4 text-sm compact:space-y-2 compact:p-3">
     {ticketEnded?<><p className="font-medium">{l('That new chat request ended before it was linked.','La solicitud del chat nuevo terminó antes de vincularse.')}</p><Button size="sm" disabled={busy} onClick={()=>void startOver()}>{l('Try again','Intentar de nuevo')}</Button></>
     :<><p className="flex items-center gap-2 font-medium"><Loader2 className="size-4 animate-spin text-primary"/>{l(`Press send in the new ${peerName} chat`,`Pulsa enviar en el chat nuevo de ${peerName}`)}</p>
@@ -219,8 +244,7 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
  const link='text-xs font-medium text-primary hover:underline';
  const messagesShortcut=<button type="button" className={link} onClick={()=>setMessages(messages===''?'24':'')}>{messages===''?l('Set a limit','Poner límite'):l('No limit','Sin límite')}</button>;
  const timeShortcut=minutes===String(maxMinutes)?<span className="text-xs text-muted-foreground">{l('Maximum','Máximo')}</span>:<button type="button" className={link} onClick={()=>setMinutes(String(maxMinutes))}>{l('Max 24 h','Máx. 24 h')}</button>;
- const editSummary=edit.scope===defaultScope()?l('Local edits and commits only; no push, pull requests or merges.','Solo ediciones y commits locales; sin push, PR ni merges.'):undefined;
-
+ 
  // The small window fills its height with only what starting needs: the objective, two switches,
  // two limits and a wide start button. Everything else waits behind Options.
  // The fieldset only disables; it renders as contents because a fieldset box does not hand its height on.
@@ -232,7 +256,7 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
     {!newChat&&<div className="mt-2">{chatPicker}</div>}
    </Choice>
    <Choice checked={edit.enabled} onChange={v=>setEdit({...edit,enabled:v})} title={l(`${peerName} can edit and commit`,`${peerName} puede editar y hacer commits`)} detail={edit.enabled?undefined:l('Read and discuss only.','Solo leer y debatir.')}>
-    {edit.enabled&&<div className="mt-1"><Scope value={edit.scope} summary={editSummary} onChange={scope=>setEdit({...edit,scope})} editing={scopeOpen} setEditing={setScopeOpen} rules={scopeRules}/></div>}
+    {edit.enabled&&<div className="mt-1"><Scope value={edit.scope} summary={editSummary(edit.scope)} onChange={scope=>setEdit({...edit,scope})} editing={scopeOpen} setEditing={setScopeOpen} rules={scopeRules()}/></div>}
    </Choice>
   </div>
   <div className="grid grid-cols-2 gap-3">
@@ -253,7 +277,7 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
     {!newChat&&<div className="mt-3">{chatPicker}</div>}
    </Choice>
    <Choice checked={edit.enabled} onChange={v=>setEdit({...edit,enabled:v})} title={l(`${peerName} can edit and commit`,`${peerName} puede editar y hacer commits`)} detail={edit.enabled?undefined:l('Read and discuss only.','Solo leer y debatir.')}>
-    {edit.enabled&&<div className="mt-1"><Scope value={edit.scope} onChange={scope=>setEdit({...edit,scope})} editing={scopeOpen} setEditing={setScopeOpen} rules={scopeRules}/></div>}
+    {edit.enabled&&<div className="mt-1"><Scope value={edit.scope} onChange={scope=>setEdit({...edit,scope})} editing={scopeOpen} setEditing={setScopeOpen} rules={scopeRules()}/></div>}
    </Choice>
   </div>
 
