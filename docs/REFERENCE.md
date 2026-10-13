@@ -14,7 +14,7 @@ Fork maintained at [jaimebernalm/cc-cdx-bridge](https://github.com/jaimebernalm/
 | Skill | `bridge-collaboration` |
 | Marketplace | `jaimebernalm` |
 
-A few internal names keep the upstream name `claude-uds-bridge` because they are stored on disk or travel between chats: the state folder `$CODEX_HOME/plugin-state/claude-uds-bridge/`, the entrypoint a Codex receiver registers with (`codex-claude-uds-bridge`) and the client type sent to Codex Desktop. Renaming them would lose past collaborations and grants, or stop older chats from recognizing a Codex receiver. The message headers (`CC_CDX_DESKTOP_V2`, `CC_CDX_PANEL_COMMAND`) are part of the protocol. [`names.ts`](../plugins/cc-cdx-bridge/src/names.ts) defines all of them.
+A few internal names keep the upstream name `claude-uds-bridge` because they are stored on disk or travel between chats: the state folder `$CODEX_HOME/plugin-state/claude-uds-bridge/`, the entrypoint a Codex receiver registers with (`codex-claude-uds-bridge`) and the client type sent to Codex Desktop. Renaming them would lose past collaborations and grants, or stop older chats from recognizing a Codex receiver. The message headers (`CC_CDX_DESKTOP_V2`, `CC_CDX_DESKTOP_PANEL_COMMAND`) are part of the protocol. [`names.ts`](../plugins/cc-cdx-bridge/src/names.ts) defines all of them.
 
 ## Requirements
 
@@ -69,7 +69,7 @@ Both apps expose the same collaboration tools under the same names. The bridge d
 
 Codex also has `connect_this_chat`, which connects a Codex chat opened before the hooks were trusted, keeping the conversation; and a hidden `session_start` that its hook calls. The agents' guide, with arguments and report shapes, is the [`bridge-collaboration` skill](../plugins/cc-cdx-bridge/skills/bridge-collaboration/SKILL.md).
 
-Version 0.12.0 retired the tools of the earlier Codex-only protocol (`collaboration_*`), the free messaging tools (`send_message` without a collaboration, `list_sessions`, `status`, `inbox`) and the panel's **Classic** page. Earlier collaborations stay in the state folder.
+Version 0.12.0 retired the tools of the earlier Codex-only protocol (`collaboration_*`), the free messaging tools (`send_message` without a collaboration, `list_sessions`, `status`, `inbox`) and the panel's **Classic** page; 0.12.1 removed the code behind them. Earlier collaborations stay in the state folder, and a message in their format (`CC_CDX_RUN_V1`) is dropped.
 
 ## How a message arrives
 

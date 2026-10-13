@@ -4,13 +4,15 @@ import { join } from 'node:path';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { privateDirectory, uuid } from './claude';
-import { contextSchema, RunStore } from './runs';
 import { reportSchema, taskSchema, normalizeRoutine, type Report, type Task, type RoutineInput, type Closure } from './routines';
 import { revisionFrozen, revisionMove, sameIdentity, type Participant, type RevisionMove } from './participants';
 import type { ImplementationPlan } from './implementation';
 import {DesktopCoordination,type DesktopPhase} from './desktop-coordination';
 import {DesktopImplementation} from './desktop-implementation';
 
+export const contextSchema = z.object({ objective: z.string().trim().min(1).max(16000),
+  constraints: z.array(z.string().max(4000)).max(50).default([]), references: z.array(z.string().max(4000)).max(50).default([]),
+  priorAnalysis: z.object({ codex: z.string().max(32000).optional(), claude: z.string().max(32000).optional() }).default({}) }).strict();
 export type Principal = {provider:'codex'|'claude';sessionId:string};
 export const principalSchema=z.object({provider:z.enum(['codex','claude']),sessionId:uuid}).strict();
 export const desktopLimitsSchema=z.object({maxMessages:z.number().int().min(2).max(1000000).nullable().default(24),maxSeconds:z.number().int().min(1).max(86400).default(1800)}).strict();
@@ -23,8 +25,8 @@ const hash=(v:unknown)=>createHash('sha256').update(typeof v==='string'?v:JSON.s
 const key=(p:Principal)=>p.provider+':'+uuid.parse(p.sessionId);
 const same=(a:Principal,b:Principal)=>key(a)===key(b);
 
-/** Additive namespace in the existing private database. Legacy IDs, logs and
- * grants remain byte-for-byte records; legacy writers cannot steal new claims.
+/** Collaborations live in the private collaborations.sqlite. Tables from earlier versions stay
+ * there untouched and are no longer read.
  * This is local same-UID attribution, not protection from a compromised UID. */
 export class DesktopRunStore {
   readonly db:Database;
@@ -32,10 +34,9 @@ export class DesktopRunStore {
   constructor(readonly stateDir:string,private now=()=>Date.now()){
     mkdirSync(stateDir,{recursive:true,mode:0o700});privateDirectory(stateDir);
     const path=join(stateDir,'collaborations.sqlite');
-    if(!existsSync(path)){const legacy=new RunStore(stateDir,now);legacy.close();}
-    const st=lstatSync(path);if(!st.isFile()||st.isSymbolicLink()||st.uid!==process.getuid?.()||(st.mode&0o077))throw new Error('Desktop state must be a private owned file');
-    this.db=new Database(path,{strict:true});chmodSync(path,0o600);
-    this.db.exec('PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON;');
+    if(existsSync(path)){const st=lstatSync(path);if(!st.isFile()||st.isSymbolicLink()||st.uid!==process.getuid?.()||(st.mode&0o077))throw new Error('Desktop state must be a private owned file');}
+    this.db=new Database(path,{create:true,strict:true});chmodSync(path,0o600);
+    this.db.exec('PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL;');
     this.db.transaction(()=>this.db.exec(`
       CREATE TABLE IF NOT EXISTS desktop_runs(id TEXT PRIMARY KEY,initiator TEXT NOT NULL,request_id TEXT NOT NULL UNIQUE,request_hash TEXT NOT NULL,state TEXT NOT NULL,context TEXT NOT NULL,context_version INTEGER NOT NULL,routine TEXT NOT NULL,limits TEXT NOT NULL,participants TEXT NOT NULL,deadline INTEGER,messages_used INTEGER NOT NULL,revision INTEGER NOT NULL,lease_holder TEXT,lease_epoch INTEGER NOT NULL,lease_until INTEGER,created_at INTEGER NOT NULL,reason TEXT);
       CREATE TABLE IF NOT EXISTS desktop_claims(session_id TEXT PRIMARY KEY,run_id TEXT NOT NULL REFERENCES desktop_runs(id));
@@ -51,7 +52,6 @@ export class DesktopRunStore {
       CREATE TABLE IF NOT EXISTS desktop_contexts(run_id TEXT NOT NULL,version INTEGER NOT NULL,body TEXT NOT NULL,PRIMARY KEY(run_id,version));
       CREATE TABLE IF NOT EXISTS desktop_actions(id TEXT PRIMARY KEY,run_id TEXT NOT NULL,request_hash TEXT NOT NULL,result TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS desktop_events(sequence INTEGER PRIMARY KEY AUTOINCREMENT,run_id TEXT NOT NULL,type TEXT NOT NULL,actor TEXT NOT NULL,at INTEGER NOT NULL,payload TEXT NOT NULL);
-      CREATE TRIGGER IF NOT EXISTS desktop_claim_blocks_legacy BEFORE INSERT ON session_claims WHEN EXISTS(SELECT 1 FROM desktop_claims WHERE session_id=NEW.session_id) BEGIN SELECT RAISE(ABORT,'Session belongs to a Desktop collaboration'); END;
     `)).immediate();
     DesktopCoordination.install(this.db);this.coordination=new DesktopCoordination(this.db,now);
   }
@@ -103,7 +103,7 @@ export class DesktopRunStore {
     }).immediate();
   }
   start(id:string,p:Principal,holder:string,actor?:string){return this.db.transaction(()=>{const r=this.expire(id);if(actor){if(!actor.startsWith('panel_session:'))throw new Error('Only a scoped panel may start as a participant');this.member(r,p);}else this.owner(r,p);if(!this.executorAlive(holder))throw new Error('Executor process is not registered or alive');if(r.state==='active')return r.lease_epoch;if(r.state!=='prepared')throw new Error('Cannot start '+r.state);
-    for(const participant of JSON.parse(r.participants) as Participant[]){const claimed=this.db.query<{run_id:string},[string]>('SELECT run_id FROM desktop_claims WHERE session_id=?').get(participant.sessionId);if(claimed){this.expire(claimed.run_id);if(this.db.query('SELECT 1 FROM desktop_claims WHERE session_id=?').get(participant.sessionId))throw new Error('Conversation already participates in another Desktop collaboration');}const legacy=this.db.query<{run_id:string},[string]>('SELECT run_id FROM session_claims WHERE session_id=?').get(participant.sessionId);if(legacy)throw new Error('Participant has an active legacy collaboration');this.db.run('INSERT INTO desktop_claims VALUES(?,?)',[participant.sessionId,id]);}
+    for(const participant of JSON.parse(r.participants) as Participant[]){const claimed=this.db.query<{run_id:string},[string]>('SELECT run_id FROM desktop_claims WHERE session_id=?').get(participant.sessionId);if(claimed){this.expire(claimed.run_id);if(this.db.query('SELECT 1 FROM desktop_claims WHERE session_id=?').get(participant.sessionId))throw new Error('Conversation already participates in another Desktop collaboration');}this.db.run('INSERT INTO desktop_claims VALUES(?,?)',[participant.sessionId,id]);}
     this.db.run("UPDATE desktop_runs SET state='active',deadline=?,lease_holder=?,lease_epoch=lease_epoch+1,lease_until=?,revision=revision+1 WHERE id=?",[this.now()+JSON.parse(r.limits).maxSeconds*1000,holder,this.now()+300000,id]);this.db.run('UPDATE desktop_run_consents SET expires_at=? WHERE run_id=? AND revoked_at IS NULL',[this.row(id).deadline,id]);this.event(id,'started',actor??key(p),{holder,epoch:r.lease_epoch+1});return r.lease_epoch+1;
   }).immediate();}
   private active(id:string){const r=this.expire(id);if(r.state!=='active')throw new Error('Desktop collaboration is '+r.state);const l=desktopLimitsSchema.parse(JSON.parse(r.limits));if(l.maxMessages!==null&&r.messages_used>=l.maxMessages){this.terminal(id,'limit_reached','message_budget','core');throw new Error('Message budget exhausted');}return r;}

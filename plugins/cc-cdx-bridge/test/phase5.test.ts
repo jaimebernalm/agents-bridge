@@ -1,41 +1,14 @@
 import {test,expect} from 'bun:test';
-import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,rmSync,realpathSync,existsSync} from 'node:fs';
+import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,rmSync,existsSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {Database} from 'bun:sqlite';
-import {nativeFixture,until} from './collaboration-fixture';
-import {startPanel} from '../src/panel';
+import {nativeFixture} from './collaboration-fixture';
 import {doctor} from '../src/doctor';
 import {ProjectAuthorizations,observeProjectAuthorization} from '../src/project-authorization';
 import {inspectProject,compareProjects} from '../src/project';
 import {version} from '../src/version';
-
 const pluginRoot=resolve(import.meta.dir,'..');
-async function authenticate(panel:ReturnType<typeof startPanel>){
- const auth=await fetch(panel.origin+'/api/v1/session',{method:'POST',headers:{Origin:panel.origin},body:JSON.stringify({token:new URL(panel.url).hash.slice(7)})});
- expect(auth.status).toBe(200);const {csrf}=await auth.json() as {csrf:string};const cookie=auth.headers.get('set-cookie')!.split(';')[0]!;
- return {cookie,call:(path:string,body?:unknown)=>fetch(panel.origin+'/api/v1/'+path,{method:body===undefined?'GET':'POST',headers:{Cookie:cookie,...(body===undefined?{}:{Origin:panel.origin,'X-CSRF-Token':csrf})},body:body===undefined?undefined:JSON.stringify(body)})};
-}
-function request(f:Awaited<ReturnType<typeof nativeFixture>>){return {commandId:randomUUID(),ownerThread:f.desktop.threadId,project:f.root,command:{action:'create',peerId:f.peerId,context:{objective:'Restart regression',constraints:['Read only'],references:[],priorAnalysis:{}},limits:{maxMessages:4,maxSeconds:300},routine:{mode:'free'},coordination:{initialBarrier:false},revisionPolicy:'same'}};}
-
-test('panel restart keeps actions and project grants; stale credentials fail and consumed unknown wakes reconcile via API without replay',async()=>{
- const f=await nativeFixture(true,{reception:'default'});const options={configDir:f.config,stateDir:f.state,codexHome:f.root,pluginRoot,ipcPath:f.desktop.path};let panel=startPanel(options);
- try{
-  const grants=new ProjectAuthorizations(f.state);grants.change({project:f.root,ownerThread:f.desktop.threadId,actionId:randomUUID(),enabled:true,expectedRevision:0,confirmed:true});grants.close();
-  const auth=await authenticate(panel),data=request(f);expect((await auth.call('commands',data)).status).toBe(202);
-  await until(()=>panel.commands.get(data.commandId)?.state==='unknown');expect(f.desktop.submissions).toHaveLength(1);
-  const input=panel.commands.get(data.commandId)!.input_id;
-  const oldPort=new URL(panel.origin).port;await panel.close();panel=startPanel({...options,port:Number(oldPort)});
-  expect((await fetch(panel.origin+'/api/v1/commands',{headers:{Cookie:auth.cookie}})).status).toBe(401);
-  const connected=await authenticate(panel);
-  f.desktop.setHistory({turns:[{items:[{type:'userMessage',id:randomUUID(),clientId:randomUUID()}]}]});
-  expect((await (await connected.call('commands')).json() as {state:string}[])[0]!.state).toBe('unknown');
-  f.desktop.setHistory({turns:[{items:[{type:'userMessage',id:randomUUID(),clientId:input}]}]});
-  expect((await (await connected.call('commands')).json() as {state:string}[])[0]!.state).toBe('notified');
-  expect((await connected.call('commands',data)).status).toBe(202);expect(f.desktop.submissions).toHaveLength(1);
-  expect(panel.commands.get(data.commandId)!.run_id).toBeNull();expect(observeProjectAuthorization(f.state,f.root).enabled).toBe(true);expect(f.bridge.policy()).toBe('default');
- }finally{await panel.close();await f.close();}
-},15000);
 
 test('diagnosis observes inherited reception and live distribution without creating state or changing policies',async()=>{
  const f=await nativeFixture(false,{reception:'default'});try{
@@ -72,42 +45,3 @@ test('shareable pilot evidence projects only allowlisted facts and refuses free 
  const safe=publicPilotEvidence(raw);expect(JSON.stringify(safe)).not.toContain(secret);expect(safe.checks[0]?.count).toBe(131);
  expect(()=>publicPilotEvidence({...raw,version:secret})).toThrow();expect(()=>publicPilotEvidence({...raw,checks:[{check:secret,passed:true}]})).toThrow();
 });
-
-test('new wakes persist their owner atomically; crashed and legacy queued commands become visible without replay',async()=>{
- const f=await nativeFixture(false,{reception:'default'});const panel=startPanel({configDir:f.config,stateDir:f.state,codexHome:f.root,pluginRoot,ipcPath:f.desktop.path});
- try{
-  const {processStart}=await import('../src/claude');const {panelRequestSchema}=await import('../src/panel-commands');
-  const atomicInput=panelRequestSchema.parse(request(f)),legacyInput=panelRequestSchema.parse(request(f));const atomic=panel.commands.enqueue(atomicInput,await processStart(process.pid));expect(atomic.command.state).toBe('waking');expect(atomic.command.processor_pid).toBe(process.pid);expect(atomic.command.processor_start).toBeTruthy();
-  const legacy=panel.commands.enqueue(legacyInput);const db=new Database(join(f.state,'panel.sqlite'));
-  db.run('UPDATE panel_commands SET processor_pid=? WHERE id=?',[2147483647,atomic.command.id]);db.run('UPDATE panel_commands SET created_at=0 WHERE id=?',[legacy.command.id]);db.close();
-  const auth=await authenticate(panel);const rows=await (await auth.call('commands')).json() as {id:string;state:string;error:string}[];
-  expect(rows.find(c=>c.id===atomic.command.id)?.state).toBe('unknown');expect(rows.find(c=>c.id===legacy.command.id)?.state).toBe('unknown');
-  expect((await auth.call('commands',atomicInput)).status).toBe(202);expect((await auth.call('commands',legacyInput)).status).toBe(202);expect(f.desktop.submissions).toHaveLength(0);
-  expect(panel.commands.get(atomic.command.id)?.state).toBe('unknown');expect(panel.commands.get(legacy.command.id)?.state).toBe('unknown');
- }finally{await panel.close();await f.close();}
-});
-
-test('exact consumption in a changed project is rejected and native history failures remain visible',async()=>{
- const f=await nativeFixture(false,{reception:'default'});const panel=startPanel({configDir:f.config,stateDir:f.state,codexHome:f.root,pluginRoot,ipcPath:f.desktop.path});
- try{
-  const {panelRequestSchema}=await import('../src/panel-commands');const queued=panel.commands.enqueue(panelRequestSchema.parse(request(f))).command;
-  const db=new Database(join(f.state,'panel.sqlite'));db.run("UPDATE panel_commands SET state='unknown' WHERE id=?",[queued.id]);db.close();
-  f.desktop.setHistory({turns:[{items:[{type:'userMessage',id:randomUUID(),clientId:queued.input_id}]}]});const changed=join(f.root,'other');mkdirSync(changed);f.desktop.setProject(changed);
-  const auth=await authenticate(panel);let rows=await (await auth.call('commands')).json() as {state:string;inspection:string}[];expect(rows[0]!.state).toBe('unknown');expect(rows[0]!.inspection).toContain('project changed');
-  f.desktop.setHistory({turnHistory:{kind:'unknown-contract'}});f.desktop.setProject(f.root);rows=await (await auth.call('commands')).json() as typeof rows;expect(rows[0]!.state).toBe('unknown');expect(rows[0]!.inspection).toContain('unavailable');expect(f.desktop.submissions).toHaveLength(0);
- }finally{await panel.close();await f.close();}
-});
-
-test('bounded history reconciliation rotates past unavailable owners instead of starving the selected chat',async()=>{
- const f=await nativeFixture(false,{rejectUnknownOwners:true});const panel=startPanel({configDir:f.config,stateDir:f.state,codexHome:f.root,pluginRoot,ipcPath:f.desktop.path});
- try{
-  const {panelRequestSchema}=await import('../src/panel-commands');const ids=[];
-  // Unknown native owners cannot return a snapshot; the Desktop fixture returns
-  // only its selected UUID. The second poll must still reach the fifth owner.
-  for(let i=0;i<4;i++)ids.push(panel.commands.enqueue(panelRequestSchema.parse({...request(f),ownerThread:randomUUID()})).command.id);
-  const selected=panel.commands.enqueue(panelRequestSchema.parse(request(f))).command;ids.push(selected.id);
-  const db=new Database(join(f.state,'panel.sqlite'));for(let i=0;i<ids.length;i++)db.run("UPDATE panel_commands SET state='unknown',created_at=? WHERE id=?",[100+ids.length-i,ids[i]!]);db.close();
-  f.desktop.setHistory({turns:[{items:[{type:'userMessage',id:randomUUID(),clientId:selected.input_id}]}]});
-  const auth=await authenticate(panel);await auth.call('commands');expect(panel.commands.get(selected.id)?.state).toBe('unknown');await auth.call('commands');expect(panel.commands.get(selected.id)?.state).toBe('notified');expect(f.desktop.submissions).toHaveLength(0);
- }finally{await panel.close();await f.close();}
-},15000);

@@ -52,7 +52,7 @@ The permitted deadline values come from the [settings reference](https://code.cl
 
 ## Sizes, repeats, and loops
 
-The fork's phase-1 `collaboration_*` API adds a private, versioned run log and exact participant bindings above this transport. Its `CC_CDX_RUN_V1` header is our correlation format, not a native Claude protocol guarantee. Receivers advertise `managed_runs_v1`; older receivers cannot start a managed run. Time/message budgets and cancellation gate managed writes and queued incoming deliveries. Idle notices are logged without model delivery for managed participants. A socket write, receipt or explicit closure is not proof of model consumption or agreement. Unmanaged conversations retain the original transport behavior. Presets, independent-analysis barriers and autonomous scheduling are not implemented.
+Collaborations add a private, versioned log and exact participant bindings above this transport. Their `CC_CDX_DESKTOP_V2` header is our correlation format, not a native Claude protocol guarantee. A Codex receiver advertises `symmetric_desktop_v1`; `list_chats` reports a chat without it as needing a reload. Time and message limits and cancellation gate writes and queued incoming deliveries, and a Codex chat in an active collaboration drops messages that do not belong to it. A socket write, receipt or explicit closure is not proof of model consumption or agreement. Conversations outside a collaboration keep the original transport behavior. A message carrying `CC_CDX_RUN_V1`, the header of the Codex-only collaborations retired in 0.12.0, is dropped. Autonomous scheduling is not implemented.
 
 | Case | Bridge |
 | --- | --- |
@@ -110,11 +110,11 @@ The fork's phase-1 `collaboration_*` API adds a private, versioned run log and e
 | Organization-wide tool blocks | Codex manages MCP access. Claude deny rules are not imported. |
 | Concurrent file changes | No file locks. Agreed ownership or separate worktrees stay necessary. |
 
-## Guided work extension (fork 0.4.0)
+## Tasks and reports
 
-`CC_CDX_RUN_V1` remains the transport correlation envelope. Optional `CC_CDX_WORK_V1` adds task/report metadata in the body; it is an application-level convention, not a new Claude peer protocol or unknown advertised capability. Receiver capability `guided_runs_v1` is stored in private Codex receiver state with PID/start identity. Authorship is derived from verified transport/caller identity. Only permitted delivered responses can materialize peer results/reviews. Held, denied and late content is redacted from managed status/export. Existing unstructured correlated responses remain supported.
+`CC_CDX_DESKTOP_V2` is the transport correlation envelope. An optional `CC_CDX_WORK_V1` line in the body marks a message as a task; it is an application-level convention, not a new Claude peer protocol or an advertised capability. Each agent records its own results and reviews with `record_report`, and authorship comes from the verified caller, never from message text.
 
-Guidance defaults to free collaboration; research/review and existing/mixed starts are optional. Exact-version review and a declared closure do not certify intellectual consensus. Independence barriers and autonomous phase transitions remain outside this version.
+Guidance defaults to free collaboration; the other orientations and existing or mixed starts are optional. An exact-version review and a declared closure do not certify intellectual consensus.
 
 ## Scope of testing
 

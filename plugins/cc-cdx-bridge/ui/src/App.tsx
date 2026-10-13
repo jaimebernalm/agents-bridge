@@ -14,7 +14,7 @@ import {hasDraft,trackDrafts} from './lib/drafts';
 import {useCompact} from './lib/compact';
 import {displayName} from '../../src/names';
 
-type Participant={sessionId:string;name:string;cwd:string;provider:'codex'|'claude';status:string;eligibleSurface:boolean;panelReceiver:boolean|null;projectAuthorizationReceiver:boolean|null;implementationReceiver?:boolean|null};
+type Participant={sessionId:string;name:string;cwd:string;provider:'codex'|'claude';status:string;eligibleSurface:boolean;projectAuthorizationReceiver:boolean|null;implementationReceiver?:boolean|null};
 // A name is a label, not an identity. Expand the suffix if homonyms share a prefix.
 function participantLabel(p:Participant,participants:Participant[]){
  const homonyms=participants.filter(other=>other.provider===p.provider&&other.name===p.name&&other.sessionId!==p.sessionId);
@@ -26,7 +26,7 @@ function participantLabel(p:Participant,participants:Participant[]){
 const date=(time:number)=>new Intl.DateTimeFormat(getLanguage(),{dateStyle:'medium',timeStyle:'short'}).format(time);
 let csrf='';
 const initialNavigation=panelNavigation(location.hash);
-async function api<T>(path:string,body?:unknown):Promise<T>{let response:Response;try{response=await fetch('/api/v1/'+path,{method:body===undefined?'GET':'POST',signal:AbortSignal.timeout(18000),headers:body===undefined?{}:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:body===undefined?undefined:JSON.stringify(body)})}catch{throw new PanelOffline(t(offlineNotice))}if(!response.ok){const err=await response.json().catch(()=>({error:t("No se pudo conectar")}));throw new Error(err.preflight?.code==='explicit_reception_block'?t('El chat Codex tiene recepción explícita {policy}, de una versión anterior del puente. La autorización del proyecto no la sustituye: abre un chat nuevo de Codex.',{policy:err.preflight.chatPolicy}):t(err.error))}return response.json()}
+async function api<T>(path:string,body?:unknown):Promise<T>{let response:Response;try{response=await fetch('/api/v1/'+path,{method:body===undefined?'GET':'POST',signal:AbortSignal.timeout(18000),headers:body===undefined?{}:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:body===undefined?undefined:JSON.stringify(body)})}catch{throw new PanelOffline(t(offlineNotice))}if(!response.ok){const err=await response.json().catch(()=>({error:t("No se pudo conectar")}));throw new Error(t(err.error))}return response.json()}
 function Field({label,children,hint}:{label:string;children:React.ReactNode;hint?:string}){return <div className="space-y-2"><Label>{label}</Label>{children}{hint&&<p className="text-xs text-muted-foreground">{hint}</p>}</div>}
 function LanguageSelector(){
  const [language,setLanguage]=useLanguage();
