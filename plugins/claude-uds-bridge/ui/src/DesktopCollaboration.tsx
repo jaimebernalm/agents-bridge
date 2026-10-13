@@ -8,13 +8,14 @@ import {Label} from '@/components/ui/label';
 import {NativeSelect,NativeSelectOption} from '@/components/ui/native-select';
 import {Badge} from '@/components/ui/badge';
 import {Alert,AlertDescription} from '@/components/ui/alert';
-import {Play,Pause,RefreshCw,Download,Plus,Minus,Check,ArrowLeft,ChevronRight,X,Loader2} from 'lucide-react';
+import {Play,Pause,RefreshCw,Download,Plus,Minus,Check,ArrowLeft,ChevronRight,SlidersHorizontal,Sparkles,X,Loader2} from 'lucide-react';
 import {DesktopTickets,FirstMessage,openNewChat} from './DesktopTickets';
 import {Switch} from '@/components/ui/switch';
-import {serializedRefresh} from './lib/live-refresh';
+import {serializedRefresh,PanelOffline} from './lib/live-refresh';
 import {State as RunState,providerName} from './RunState';
 import {syncEditAuthorization,type EditChoice} from './lib/collaboration-form';
 import {useDraft} from './lib/drafts';
+import {useCompact} from './lib/compact';
 
 const l=(en:string,es:string)=>getLanguage()==='es'?es:en;
 type Principal={provider:'codex'|'claude';sessionId:string};
@@ -33,12 +34,12 @@ const ago=(ms:number)=>{const m=Math.round((Date.now()-ms)/60000);return m<1?l('
 const delivery=():Record<string,string>=>({reserved:l('Queued','En cola'),submitting:l('Sending','Enviando'),'socket-written':l('Sent','Enviado'),started:l('Delivered','Entregado'),steered:l('Delivered','Entregado'),delivered:l('Delivered','Entregado'),consumed:l('Read','Leído'),held:l('Held by the other chat','Retenido por el otro chat'),denied:l('Denied','Denegado'),expired:l('Expired','Caducado'),unknown:l('Uncertain — not resent','Incierto — no se reenvía')});
 
 export function DesktopCollaboration({api,onError,initialRun=''}:{api:Api;onError:(s:string)=>void;initialRun?:string}){
- useLanguage();
+ useLanguage();const compact=useCompact();
  const [draft,setDraft]=useState<Proposal|null>(null),[toastRoot,setToastRoot]=useState<HTMLElement|null>(null),[state,setState]=useState<State|null>(null),[selected,setSelectedRun]=useState(''),[composing,setComposing]=useState(false),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[direction,setDirection]=useState<'forward'|'back'|null>(null);
  // Remember which way the user travelled so the next view enters along that path.
  const setSelected=(id:string)=>{setDirection(id?'forward':'back');setSelectedRun(id)};
  const refresh=useRef<()=>Promise<void>>(()=>Promise.resolve()),focused=useRef(false),actionLock=useRef(false);
- useEffect(()=>{let alive=true;const worker=serializedRefresh(async()=>{try{const value=await api<State>('desktop/state');if(alive)setState(value)}catch(e){if(alive)onError((e as Error).message)}});refresh.current=worker.request;void worker.request();const timer=setInterval(()=>void worker.request(),2500),focus=()=>{if(document.visibilityState==='visible')void worker.request()};window.addEventListener('focus',focus);document.addEventListener('visibilitychange',focus);return()=>{alive=false;worker.stop();clearInterval(timer);window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',focus)}},[api,onError]);
+ useEffect(()=>{let alive=true;const worker=serializedRefresh(async()=>{try{const value=await api<State>('desktop/state');if(alive)setState(value)}catch(e){if(alive&&!(e instanceof PanelOffline))onError((e as Error).message)}});refresh.current=worker.request;void worker.request();const timer=setInterval(()=>void worker.request(),2500),focus=()=>{if(document.visibilityState==='visible')void worker.request()};window.addEventListener('focus',focus);document.addEventListener('visibilitychange',focus);return()=>{alive=false;worker.stop();clearInterval(timer);window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',focus)}},[api,onError]);
  // A focus link opens on its run once; later selections are the human's.
  useEffect(()=>{if(focused.current||!state||!initialRun)return;focused.current=true;if(state.runs.some(r=>r.id===initialRun))setSelected(initialRun)},[state,initialRun]);
  useEffect(()=>{window.scrollTo({top:0})},[selected,composing]);
@@ -55,15 +56,16 @@ export function DesktopCollaboration({api,onError,initialRun=''}:{api:Api;onErro
  // One chat runs one collaboration at a time; while it is busy, new ones start from another chat.
  const ownerBusy=state.runs.find(r=>['active','paused','blocked'].includes(r.state)),own=providerName(state.principal.provider);
  const approvals=state.runs.filter(needsApproval),proposal=draft??state.proposals?.[0],showComposer=!ownerBusy&&(composing||state.runs.length===0||!!proposal);
- return <div className={`mx-auto max-w-3xl space-y-6 ${direction==='back'?'view-back':''}`}>{toast}
+ return <div className={`mx-auto max-w-3xl space-y-6 compact:space-y-3 ${direction==='back'?'view-back':''}`}>{toast}
   {approvals.map(r=><ApprovalCard key={r.id} run={r} api={api} busy={busy} act={act} ownerBusy={ownerBusy} onChange={setDraft} onNotice={setNotice} onDetails={()=>setSelected(r.id)}/>)}
-  <div className="flex items-center justify-between gap-4"><h1 className="text-2xl font-semibold tracking-tight">{l('Collaborations','Colaboraciones')}</h1>{!showComposer&&!ownerBusy&&<Button onClick={()=>setComposing(true)}><Plus/>{l('New','Nueva')}</Button>}</div>
-  {ownerBusy&&<div className="reveal flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4 text-sm shadow-sm"><div className="min-w-0 flex-1"><p className="font-medium">{l(`This ${own} chat is busy with a collaboration`,`Este chat de ${own} está ocupado con una colaboración`)}</p><p className="mt-1 text-muted-foreground">{l(`This panel belongs to it and it is working on “${ownerBusy.context.objective}”. To start another collaboration, open a new ${own} chat and ask there.`,`Este panel le pertenece y está trabajando en «${ownerBusy.context.objective}». Para empezar otra colaboración, abre un chat nuevo de ${own} y pídela allí.`)}</p></div><Button variant="outline" disabled={busy} onClick={()=>void act(async()=>{await api('desktop/apps/new_chat',{})})}><Plus/>{l(`Open a new ${own} chat`,`Abrir un chat nuevo de ${own}`)}</Button></div>}
+  {/* The window title already names the page; the small window keeps only the New button. */}
+  {(!compact||!showComposer&&!ownerBusy)&&<div className="flex items-center justify-between gap-4 compact:justify-end"><h1 className="text-2xl font-semibold tracking-tight compact:hidden">{l('Collaborations','Colaboraciones')}</h1>{!showComposer&&!ownerBusy&&<Button size={compact?'sm':'default'} onClick={()=>setComposing(true)}><Plus/>{l('New','Nueva')}</Button>}</div>}
+  {ownerBusy&&<div className="reveal flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4 text-sm shadow-sm compact:gap-2 compact:p-3"><div className="min-w-0 flex-1"><p className="font-medium">{l(`This ${own} chat is busy with a collaboration`,`Este chat de ${own} está ocupado con una colaboración`)}</p><p className="mt-1 text-muted-foreground compact:line-clamp-2 compact:text-xs">{l(`For another one, ask from a new chat. It is working on “${ownerBusy.context.objective}”.`,`Para otra, pídela desde un chat nuevo. Ahora trabaja en «${ownerBusy.context.objective}».`)}</p></div><Button variant="outline" size={compact?'sm':'default'} disabled={busy} onClick={()=>void act(async()=>{await api('desktop/apps/new_chat',{})})}><Plus/>{l(`Open a new ${own} chat`,`Abrir un chat nuevo de ${own}`)}</Button></div>}
   {showComposer&&<Composer key={proposal?.id??'blank'} proposal={proposal} state={state} other={other} api={api} busy={busy} act={act} onCancel={state.runs.length||draft?()=>{setComposing(false);setDraft(null)}:undefined} onStarted={(id,text)=>{setComposing(false);setDraft(null);setSelected(id);setNotice(text)}}/>}
-  {state.runs.length>0&&<div className="overflow-hidden rounded-xl border bg-card">{state.runs.map(r=>{
+  {state.runs.length>0&&!(compact&&showComposer)&&<div className="overflow-hidden rounded-xl border bg-card">{state.runs.map(r=>{
    // A prepared run that never started is a draft: say so and offer its two actions on the row.
    const waitingFor=queue.waiting[r.id],draftRow=r.state==='prepared'&&!needsApproval(r)&&!waitingFor,peer=providerName(otherOf(r));
-   return <div key={r.id} className="flex items-center gap-2 border-b pr-4 last:border-0 hover:bg-muted/60"><button onClick={()=>setSelected(r.id)} className="pressable flex min-w-0 flex-1 items-center gap-4 px-5 py-4 text-left active:bg-muted"><div className="min-w-0 flex-1"><p className="truncate font-medium">{r.context.objective}</p><p className="mt-0.5 text-xs text-muted-foreground">{providerName(r.initiator.provider)} ↔ {peer} · {r.messagesUsed}/{r.limits.maxMessages??'∞'} {l('messages','mensajes')} · {ago(r.createdAt)}</p></div>
+   return <div key={r.id} className="flex items-center gap-2 border-b pr-4 last:border-0 hover:bg-muted/60"><button onClick={()=>setSelected(r.id)} className="pressable flex min-w-0 flex-1 items-center gap-4 px-5 py-4 text-left active:bg-muted compact:gap-3 compact:px-4 compact:py-2.5"><div className="min-w-0 flex-1"><p className="truncate font-medium">{r.context.objective}</p><p className="mt-0.5 text-xs text-muted-foreground">{providerName(r.initiator.provider)} ↔ {peer} · {r.messagesUsed}/{r.limits.maxMessages??'∞'} {l('messages','mensajes')} · {ago(r.createdAt)}</p></div>
     {needsApproval(r)?<Badge className="bg-warning text-warning-foreground">{l('Needs approval','Requiere aprobación')}</Badge>:waitingFor?<Badge variant="outline" className="border-warning/30 bg-warning/10 text-warning"><Loader2 className="animate-spin"/>{l(`Waiting for ${peer}`,`Esperando a ${peer}`)}</Badge>:draftRow?<Badge variant="outline" className="text-muted-foreground">{l('Draft','Borrador')}</Badge>:<RunState state={r.state}/>}</button>
     {draftRow&&<><Button size="sm" disabled={busy||!!ownerBusy} onClick={()=>void act(async()=>{setNotice(startedNotice(await approveAndStart(api,r),peer))})}><Play/>{l('Start','Empezar')}</Button><Button size="sm" variant="ghost" disabled={busy} onClick={()=>void act(async()=>{await cancelRun(api,r)})}>{l('Discard','Descartar')}</Button></>}
     <ChevronRight className="size-4 shrink-0 text-muted-foreground"/></div>})}</div>}
@@ -84,56 +86,80 @@ const endedReason=(reason:string,peer:string)=>reason==='peer_still_busy'?l(`${p
 const peerOf=(run:Run)=>run.participants?.find(p=>p.provider!==run.initiator.provider);
 const cancelRun=(api:Api,run:Run)=>api('desktop/control',{runId:run.id,commandId:crypto.randomUUID(),expectedRevision:run.coordination.revision,control:{action:'cancel'}});
 
+// What the peer may do reads as the text that grants it; the rules for writing it show while editing.
+// A summary may stand in for the default text, which it restates; any other text shows as written.
+function Scope({value,summary,onChange,editing,setEditing,rules}:{value:string;summary?:string;onChange:(v:string)=>void;editing:boolean;setEditing:(v:boolean)=>void;rules:string}){
+ const link=(label:string,next:boolean)=><button type="button" className="font-medium text-primary hover:underline" onClick={()=>setEditing(next)}>{label}</button>;
+ return editing?<div className="reveal space-y-1.5"><Textarea rows={2} maxLength={4000} className="compact:min-h-12" value={value} onChange={e=>onChange(e.target.value)} aria-label={l('What it may do','Qué puede hacer')}/><p className="text-xs leading-5 text-muted-foreground">{rules} {link(l('Done','Listo'),false)}</p></div>
+  :<p className="text-xs leading-5 text-muted-foreground"><span className="whitespace-pre-line">{summary??(value.trim()||l('Describe what it may do.','Describe qué puede hacer.'))}</span> {link(l('Change','Cambiar'),true)}</p>;
+}
+
 function EditOption({peer,value,onChange,brief=false}:{peer:string;value:EditChoice;onChange:(v:EditChoice)=>void;brief?:boolean}){
- return <div className="space-y-2 text-sm"><label className="flex gap-2"><input type="checkbox" checked={value.enabled} onChange={e=>onChange({...value,enabled:e.target.checked})}/>{l(`Let ${peer} edit files and make local commits`,`Permitir que ${peer} edite archivos y haga commits locales`)}</label>
-  {value.enabled&&<><Textarea rows={2} maxLength={4000} value={value.scope} onChange={e=>onChange({...value,scope:e.target.value})} aria-label={l('What it may do','Qué puede hacer')}/><p className="text-xs text-muted-foreground">{brief?l('Never covers push, pull requests, merges, deploys or paid API calls unless you write them here.','Nunca cubre push, PR, merges, despliegues ni llamadas de pago a APIs salvo que lo escribas aquí.'):l('Covers every phase of this collaboration until you revoke it. Never covers push, pull requests, merges, deploys or paid API calls unless you write them here.','Cubre todas las fases de esta colaboración hasta que lo revoques. Nunca cubre push, PR, merges, despliegues ni llamadas de pago a APIs salvo que lo escribas aquí.')}</p></>}
+ const [editing,setEditing]=useState(false);
+ return <div className="space-y-2 text-sm compact:space-y-1"><label className="flex gap-2"><input type="checkbox" checked={value.enabled} onChange={e=>onChange({...value,enabled:e.target.checked})}/>{l(`Let ${peer} edit files and make local commits`,`Permitir que ${peer} edite archivos y haga commits locales`)}</label>
+  {value.enabled&&<div className="pl-6"><Scope value={value.scope} onChange={scope=>onChange({...value,scope})} editing={editing} setEditing={setEditing} rules={brief?l('Never covers push, pull requests, merges, deploys or paid API calls unless you write them here.','Nunca cubre push, PR, merges, despliegues ni llamadas de pago a APIs salvo que lo escribas aquí.'):l('Covers every phase of this collaboration until you revoke it. Never covers push, pull requests, merges, deploys or paid API calls unless you write them here.','Cubre todas las fases de esta colaboración hasta que lo revoques. Nunca cubre push, PR, merges, despliegues ni llamadas de pago a APIs salvo que lo escribas aquí.')}/></div>}
  </div>;
 }
 
 function ApprovalCard({run,api,busy,act,onDetails,ownerBusy,onChange,onNotice}:{run:Run;api:Api;busy:boolean;act:(fn:()=>Promise<void>)=>Promise<void>;onDetails:()=>void;ownerBusy?:Run;onChange:(draft:Proposal)=>void;onNotice:(text:string)=>void}){
- const [edit,setEdit]=useState<EditChoice>({enabled:true,scope:defaultScope()}),peer=providerName(otherOf(run)),with_=peerOf(run)?.name??peer;
+ const [edit,setEdit]=useState<EditChoice>({enabled:true,scope:defaultScope()}),peer=providerName(otherOf(run)),with_=peerOf(run)?.name??peer,size=useCompact()?'sm':'default';
  useDraft(edit);
  // The peer and limits were fixed when the chat prepared this; Change reopens them in the editable form.
  const change=()=>act(async()=>{await cancelRun(api,run);onChange({id:'draft:'+run.id,requester:run.initiator,createdAt:run.createdAt,objective:run.context.objective,newChat:false,peerId:peerOf(run)?.sessionId,allowEdits:edit.enabled,editScope:edit.scope,maxMessages:run.limits.maxMessages,minutes:Math.round(run.limits.maxSeconds/60),initialBarrier:false})});
- return <div className="reveal space-y-4 rounded-xl border border-warning/35 bg-warning/[.07] p-5"><div><p className="text-sm font-medium text-warning">{l('Waiting for your approval','Esperando tu aprobación')}</p><p className="mt-1 text-base">{run.context.objective}</p>
-  <p className="mt-2 text-sm text-muted-foreground">{l('With','Con')} <strong className="font-medium text-foreground">{with_}</strong> · {run.limits.maxMessages??'∞'} {l('messages','mensajes')} · {Math.round(run.limits.maxSeconds/60)} min</p>
-  <p className="mt-1 text-xs text-muted-foreground">{l('Covers every phase of this collaboration; you will not be asked again for the next one.','Cubre todas las fases de esta colaboración; no se te volverá a pedir para la siguiente.')}</p></div>
+ return <div className="reveal space-y-4 rounded-xl border border-warning/35 bg-warning/[.07] p-5 compact:space-y-2 compact:p-3"><div><p className="text-sm font-medium text-warning">{l('Waiting for your approval','Esperando tu aprobación')}</p><p className="mt-1 text-base compact:mt-0.5 compact:text-sm">{run.context.objective}</p>
+  <p className="mt-2 text-sm text-muted-foreground compact:mt-1 compact:text-xs">{l('With','Con')} <strong className="font-medium text-foreground">{with_}</strong> · {run.limits.maxMessages??'∞'} {l('messages','mensajes')} · {Math.round(run.limits.maxSeconds/60)} min<span className="hidden compact:inline"> · {l('covers every phase','cubre todas las fases')}</span></p>
+  <p className="mt-1 text-xs text-muted-foreground compact:hidden">{l('Covers every phase of this collaboration; you will not be asked again for the next one.','Cubre todas las fases de esta colaboración; no se te volverá a pedir para la siguiente.')}</p></div>
   <EditOption peer={peer} value={edit} onChange={setEdit} brief/>
-  {ownerBusy&&<p className="text-sm text-muted-foreground">{l(`This chat is busy with “${ownerBusy.context.objective}”. This one can start once that ends.`,`Este chat está ocupado con «${ownerBusy.context.objective}». Esta podrá empezar cuando termine.`)}</p>}
-  <div className="flex flex-wrap gap-2"><Button disabled={busy||!!ownerBusy||edit.enabled&&!edit.scope.trim()} onClick={()=>void act(async()=>{onNotice(startedNotice(await approveAndStart(api,run,edit),peer))})}><Play/>{l('Approve and start','Aprobar e iniciar')}</Button><Button variant="outline" disabled={busy||!!ownerBusy} onClick={()=>void change()}>{l('Change','Cambiar')}</Button><Button variant="ghost" onClick={onDetails}>{l('See details','Ver detalles')}</Button></div></div>;
+  {ownerBusy&&<p className="text-sm text-muted-foreground compact:text-xs">{l('It can start once the collaboration in progress ends.','Podrá empezar cuando termine la colaboración en curso.')}</p>}
+  <div className="flex flex-wrap gap-2"><Button size={size} disabled={busy||!!ownerBusy||edit.enabled&&!edit.scope.trim()} onClick={()=>void act(async()=>{onNotice(startedNotice(await approveAndStart(api,run,edit),peer))})}><Play/>{l('Approve and start','Aprobar e iniciar')}</Button><Button size={size} variant="outline" disabled={busy||!!ownerBusy} onClick={()=>void change()}>{l('Change','Cambiar')}</Button><Button size={size} variant="ghost" onClick={onDetails}>{l('See details','Ver detalles')}</Button></div></div>;
 }
 
 function EditAuthorization({run,api,busy,act,edit,setEdit}:{run:Run;api:Api;busy:boolean;act:(fn:()=>Promise<void>)=>Promise<void>;edit:EditChoice;setEdit:(v:EditChoice)=>void}){
  const peer=providerName(otherOf(run)),grant=run.editAuthorization;
  const send=(body:Record<string,unknown>)=>act(async()=>{await api('desktop/edit_authorization',{runId:run.id,expectedRevision:run.coordination.revision,...body})});
- if(grant?.valid)return <div className="space-y-2 rounded-xl border p-4 text-sm"><div className="flex items-center justify-between gap-3"><p className="font-medium">{l(`${peer} may edit and commit locally`,`${peer} puede editar y hacer commits locales`)}</p><Button variant="ghost" size="sm" disabled={busy} onClick={()=>void send({revoke:true})}>{l('Revoke','Revocar')}</Button></div><p className="whitespace-pre-wrap text-muted-foreground">{grant.scope}</p></div>;
- return <div className="space-y-3 rounded-xl border p-4">{grant?.revokedAt&&<p className="text-sm text-muted-foreground">{l('Editing permission revoked.','Permiso de edición revocado.')}</p>}<EditOption peer={peer} value={edit} onChange={setEdit}/>{run.state!=='prepared'&&edit.enabled&&<Button size="sm" disabled={busy||!edit.scope.trim()} onClick={()=>void send({scope:edit.scope}).then(()=>setEdit({...edit,enabled:false}))}>{l('Authorize','Autorizar')}</Button>}</div>;
+ if(grant?.valid)return <div className="space-y-2 rounded-xl border p-4 text-sm compact:space-y-0.5 compact:px-3 compact:py-2"><div className="flex items-center justify-between gap-3"><p className="font-medium">{l(`${peer} may edit and commit locally`,`${peer} puede editar y hacer commits locales`)}</p><Button variant="ghost" size="sm" disabled={busy} onClick={()=>void send({revoke:true})}>{l('Revoke','Revocar')}</Button></div><p className="whitespace-pre-wrap text-muted-foreground compact:text-xs">{grant.scope}</p></div>;
+ return <div className="space-y-3 rounded-xl border p-4 compact:space-y-2 compact:px-3 compact:py-2">{grant?.revokedAt&&<p className="text-sm text-muted-foreground">{l('Editing permission revoked.','Permiso de edición revocado.')}</p>}<EditOption peer={peer} value={edit} onChange={setEdit}/>{run.state!=='prepared'&&edit.enabled&&<Button size="sm" disabled={busy||!edit.scope.trim()} onClick={()=>void send({scope:edit.scope}).then(()=>setEdit({...edit,enabled:false}))}>{l('Authorize','Autorizar')}</Button>}</div>;
 }
 
 // A setting that reads as a choice: title, consequence, and a switch on the same surface.
-function Choice({checked,onChange,title,detail,children}:{checked:boolean;onChange:(v:boolean)=>void;title:string;detail:string;children?:React.ReactNode}){
- return <div className={`rounded-xl border p-4 transition-colors duration-200 ${checked?'border-primary/40 bg-primary/[.05]':'bg-background'}`}>
-  <label className="flex cursor-pointer items-start justify-between gap-3"><span><span className="block text-sm font-medium">{title}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{detail}</span></span><Switch className="mt-0.5" checked={checked} onCheckedChange={onChange}/></label>
+// In the small window it is a neutral grouped tile and the switch alone shows the state.
+function Choice({checked,onChange,title,detail,children}:{checked:boolean;onChange:(v:boolean)=>void;title:string;detail?:string;children?:React.ReactNode}){
+ const compact=useCompact();
+ return <div className={compact?'rounded-2xl bg-card p-3.5 shadow-tile':`rounded-xl border p-4 transition-colors duration-200 ${checked?'border-primary/40 bg-primary/[.05]':'bg-background'}`}>
+  <label className="flex cursor-pointer items-start justify-between gap-3"><span><span className={`block font-medium ${compact?'text-[14px] tracking-[-0.01em]':'text-sm'}`}>{title}</span>{detail&&<span className="mt-1 block text-xs leading-5 text-muted-foreground">{detail}</span>}</span><Switch className="mt-0.5" aria-label={title} checked={checked} onCheckedChange={onChange}/></label>
   {children}
  </div>;
 }
 
-function Stepper({label,value,onChange,step,min,max,unit,action}:{label:string;value:string;onChange:(v:string)=>void;step:number;min:number;max:number;unit:string;action?:React.ReactNode}){
- const n=Number(value),limited=value!=='';
- const set=(next:number)=>onChange(String(Math.min(max,Math.max(min,next))));
- return <div className="space-y-1.5"><div className="flex items-center justify-between gap-2"><Label>{label}</Label>{action}</div>
-  <div className="flex h-10 items-center rounded-lg border bg-background focus-within:ring-[3px] focus-within:ring-ring/40">
-   <button type="button" className="pressable flex h-full items-center px-3 text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={!limited||n<=min} aria-label={l(`Fewer ${unit}`,`Menos ${unit}`)} onClick={()=>set(n-step)}><Minus className="size-4"/></button>
-   <input inputMode="numeric" aria-label={label} className="w-full min-w-0 bg-transparent text-center text-sm font-semibold tabular-nums outline-none placeholder:text-foreground" placeholder={l('No limit','Sin límite')} value={value} onChange={e=>onChange(e.target.value.replace(/\D/g,''))}/>
-   {limited&&<span className="pr-1 text-xs text-muted-foreground">{unit}</span>}
-   <button type="button" className="pressable flex h-full items-center px-3 text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={limited&&n>=max} aria-label={l(`More ${unit}`,`Más ${unit}`)} onClick={()=>set(limited?n+step:min)}><Plus className="size-4"/></button>
-  </div></div>;
+const StepButton=({label,disabled,onClick,children}:{label:string;disabled:boolean;onClick:()=>void;children:React.ReactNode})=><button type="button" className="pressable flex h-full items-center rounded-full px-3 text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={disabled} aria-label={label} onClick={onClick}>{children}</button>;
+
+// Minus and plus around the count. Empty means no message limit, and plus brings the usual 24 back.
+function MessagesControl({value,onChange,className}:{value:string;onChange:(v:string)=>void;className:string}){
+ const n=Number(value),limited=value!=='',set=(next:number)=>onChange(String(Math.min(500,Math.max(2,next))));
+ return <div className={`flex items-center focus-within:ring-[3px] focus-within:ring-ring/40 ${className}`}>
+  <StepButton label={l('Fewer messages','Menos mensajes')} disabled={!limited||n<=2} onClick={()=>set(n-4)}><Minus className="size-4"/></StepButton>
+  <input inputMode="numeric" aria-label={l('Messages','Mensajes')} className="w-full min-w-0 bg-transparent text-center text-sm font-semibold tabular-nums outline-none placeholder:text-foreground" placeholder={l('No limit','Sin límite')} value={value} onChange={e=>onChange(e.target.value.replace(/\D/g,''))}/>
+  <StepButton label={l('More messages','Más mensajes')} disabled={limited&&n>=500} onClick={()=>limited?set(n+4):onChange('24')}><Plus className="size-4"/></StepButton>
+ </div>;
+}
+
+// Time moves through the usual durations, up to the bridge's 24-hour maximum.
+const durations=[5,10,15,20,30,45,60,90,120,180,240,360,480,720,1440],maxMinutes=1440;
+const duration=(m:number)=>m<60?`${m} min`:m%60?`${Math.floor(m/60)} h ${m%60} min`:`${m/60} h`;
+function TimeControl({value,onChange,className}:{value:string;onChange:(v:string)=>void;className:string}){
+ const n=Number(value),lower=durations.filter(d=>d<n).at(-1),higher=durations.find(d=>d>n);
+ return <div role="group" aria-label={l('Time','Tiempo')} className={`flex items-center ${className}`}>
+  <StepButton label={l('Less time','Menos tiempo')} disabled={lower===undefined} onClick={()=>onChange(String(lower))}><Minus className="size-4"/></StepButton>
+  <span className="w-full text-center text-sm font-semibold tabular-nums" aria-live="polite">{duration(n)}</span>
+  <StepButton label={l('More time','Más tiempo')} disabled={higher===undefined} onClick={()=>onChange(String(higher))}><Plus className="size-4"/></StepButton>
+ </div>;
 }
 
 function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{proposal?:Proposal;state:State;other:string;api:Api;busy:boolean;act:(fn:()=>Promise<void>)=>Promise<void>;onCancel?:()=>void;onStarted:(id:string,notice:string)=>void}){
  const peers=state.participants.filter(p=>p.provider===other&&p.cwd===state.project&&p.eligibleSurface),ready=peers.filter(p=>p.symmetricDesktop),peerName=providerName(other);
+ const compact=useCompact(),[more,setMore]=useState(false);
  // Defaults: a fresh chat for each collaboration, allowed to edit and commit locally.
- const [newChat,setNewChat]=useState(proposal?.newChat??true),[peer,setPeer]=useState(proposal?.peerId??''),[objective,setObjective]=useState(proposal?.objective??''),[messages,setMessages]=useState(proposal?(proposal.maxMessages===null?'':String(proposal.maxMessages)):'24'),[minutes,setMinutes]=useState(String(proposal?.minutes??30)),[busyPeer,setBusyPeer]=useState(false),[initialBarrier,setInitialBarrier]=useState(proposal?.initialBarrier??false),[priorCodex,setPriorCodex]=useState(''),[priorClaude,setPriorClaude]=useState(''),[implementation,setImplementation]=useState(''),[advancedTicket,setAdvancedTicket]=useState(''),[edit,setEdit]=useState<EditChoice>({enabled:proposal?.allowEdits??true,scope:proposal?.editScope??defaultScope()}),[scopeOpen,setScopeOpen]=useState(!!proposal?.editScope),[opening,setOpening]=useState<{ticketId:string;prompt:string}|null>(null),[candidate,setCandidate]=useState('');
+ const [newChat,setNewChat]=useState(proposal?.newChat??true),[peer,setPeer]=useState(proposal?.peerId??''),[objective,setObjective]=useState(proposal?.objective??''),[messages,setMessages]=useState(proposal?(proposal.maxMessages===null?'':String(proposal.maxMessages)):'24'),[minutes,setMinutes]=useState(String(proposal?.minutes??30)),[busyPeer,setBusyPeer]=useState(false),[initialBarrier,setInitialBarrier]=useState(proposal?.initialBarrier??false),[priorCodex,setPriorCodex]=useState(''),[priorClaude,setPriorClaude]=useState(''),[implementation,setImplementation]=useState(''),[advancedTicket,setAdvancedTicket]=useState(''),[edit,setEdit]=useState<EditChoice>({enabled:proposal?.allowEdits??true,scope:proposal?.editScope??defaultScope()}),[scopeOpen,setScopeOpen]=useState(false),[opening,setOpening]=useState<{ticketId:string;prompt:string}|null>(null),[candidate,setCandidate]=useState('');
  // A chat being opened for an automatic start also counts: closing this window would drop that start.
  useDraft({newChat,peer,objective,messages,minutes,busyPeer,initialBarrier,priorCodex,priorClaude,implementation,edit},!!opening);
  const request=useRef<{payload:string;id:string;notifyId:string}|null>(null),openRequest=useRef(crypto.randomUUID()),autoStart=useRef(false),fromDraft=!!proposal?.id.startsWith('draft:');
@@ -163,48 +189,82 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
 
  const dismiss=()=>act(async()=>{if(proposal&&!fromDraft)await api('desktop/proposal_resolve',{id:proposal.id,state:'dismissed'});onCancel?.()});
  const suggester=proposal?providerName(proposal.requester.provider):'';
- return <div className={`reveal space-y-6 rounded-xl border bg-card p-6 shadow-sm ${proposal?'border-primary/40':''}`}>
-  <fieldset disabled={busy} className="min-w-0 space-y-6">
-  {proposal&&<div className="-mx-6 -mt-6 flex flex-wrap items-center justify-between gap-3 rounded-t-xl border-b border-primary/20 bg-primary/[.06] px-6 py-3"><div><p className="text-sm font-medium text-primary">{fromDraft?l(`Prepared by ${suggester} · ${ago(proposal.createdAt)}`,`Preparada por ${suggester} · ${ago(proposal.createdAt)}`):l(`Suggested by ${suggester} · ${ago(proposal.createdAt)}`,`Sugerida por ${suggester} · ${ago(proposal.createdAt)}`)}</p><p className="text-xs text-muted-foreground">{l('Change anything below. Nothing happens until you press start.','Cambia lo que quieras. No pasa nada hasta que pulses empezar.')}</p></div><Button variant="ghost" size="sm" disabled={busy} onClick={()=>void dismiss()}>{l('Dismiss','Descartar')}</Button></div>}
-  <div className="space-y-2"><Label htmlFor="objective">{l('What should they work on?','¿En qué tienen que trabajar?')}</Label><Textarea id="objective" value={objective} onChange={e=>setObjective(e.target.value)} rows={3} maxLength={16000} placeholder={l('E.g. Review the panel design together and propose improvements.','Ej.: Revisad juntos el diseño del panel y proponed mejoras.')}/></div>
-
-  <div className="grid items-start gap-3 sm:grid-cols-2">
-   <Choice checked={newChat} onChange={v=>{setNewChat(v);if(!v)autoStart.current=false}} title={l(`Open a new ${peerName} chat`,`Abrir un chat nuevo de ${peerName}`)} detail={newChat?l(`${peerName} opens in this folder with the first message ready. You press send.`,`${peerName} se abre en esta carpeta con el primer mensaje listo. Tú pulsas enviar.`):l('Work with a chat that is already open.','Trabajar con un chat que ya está abierto.')}>
-    {!newChat&&<div className="mt-3">{ready.length===0?<p className="text-xs text-muted-foreground">{l(`No ${peerName} chat is open in this folder.`,`No hay ningún chat de ${peerName} abierto en esta carpeta.`)}</p>
-     :<NativeSelect size="sm" className="w-full" aria-label={l(`${peerName} chat`,`Chat de ${peerName}`)} value={chosen} onChange={e=>{setPeer(e.target.value);setAdvancedTicket('')}}><NativeSelectOption value="">{l('Choose…','Elige…')}</NativeSelectOption>{peers.map(p=><NativeSelectOption key={p.sessionId} value={p.sessionId} disabled={!p.symmetricDesktop}>{p.name}{p.startedAt?' · '+opened(p.startedAt):''}{p.symmetricDesktop?(p.status==='busy'?' · '+l('busy','ocupado'):''):' · '+l('reload plugin','recarga el plugin')}</NativeSelectOption>)}</NativeSelect>}</div>}
-   </Choice>
-   <Choice checked={edit.enabled} onChange={v=>setEdit({...edit,enabled:v})} title={l(`${peerName} can edit and commit`,`${peerName} puede editar y hacer commits`)} detail={edit.enabled?l('Local edits and commits only. No push, pull requests or merges.','Solo ediciones y commits locales. Sin push, PR ni merges.'):l('Read and discuss only.','Solo leer y debatir.')}>
-    {edit.enabled&&<div className="mt-2"><button type="button" className="text-xs font-medium text-primary hover:underline" onClick={()=>setScopeOpen(!scopeOpen)}>{scopeOpen?l('Hide details','Ocultar detalles'):l('Change what it may do','Cambiar qué puede hacer')}</button>
-     {scopeOpen&&<div className="reveal mt-2 space-y-1.5"><Textarea rows={3} maxLength={4000} value={edit.scope} onChange={e=>setEdit({...edit,scope:e.target.value})} aria-label={l('What it may do','Qué puede hacer')}/><p className="text-xs text-muted-foreground">{l('Covers every phase until you revoke it. Push, PRs, merges, deploys and paid API calls only if you write them here.','Cubre todas las fases hasta que lo revoques. Push, PR, merges, despliegues y APIs de pago solo si los escribes aquí.')}</p></div>}</div>}
-   </Choice>
-  </div>
-
-  <div className="grid grid-cols-2 gap-3 sm:max-w-md">
-   <Stepper label={l('Messages','Mensajes')} unit={l('msgs','msjs')} value={messages} onChange={setMessages} step={4} min={2} max={500} action={<button type="button" className="text-xs text-primary hover:underline" onClick={()=>setMessages(messages===''?'24':'')}>{messages===''?l('Set a limit','Poner límite'):l('No limit','Sin límite')}</button>}/>
-   <Stepper label={l('Time','Tiempo')} unit="min" value={minutes} onChange={setMinutes} step={5} min={5} max={1440}/>
-  </div>
-
-  {newChat&&opening&&!boundId?<div className="reveal space-y-3 rounded-xl border bg-muted/50 p-4 text-sm">
+ const suggested=proposal&&(fromDraft?l(`Prepared by ${suggester} · ${ago(proposal.createdAt)}`,`Preparada por ${suggester} · ${ago(proposal.createdAt)}`):l(`Suggested by ${suggester} · ${ago(proposal.createdAt)}`,`Sugerida por ${suggester} · ${ago(proposal.createdAt)}`));
+ const waiting=newChat&&!!opening&&!boundId;
+ const objectiveField=(className:string)=><Textarea id="objective" aria-label={l('What should they work on?','¿En qué tienen que trabajar?')} className={className} value={objective} onChange={e=>setObjective(e.target.value)} rows={3} maxLength={16000} placeholder={l('E.g. Review the panel design together and propose improvements.','Ej.: Revisad juntos el diseño del panel y proponed mejoras.')}/>;
+ const startButton=(className?:string)=>newChat&&!boundId?<Button className={className} disabled={busy||!ready2go} onClick={()=>void openAndStart()}><Play/>{l(`Open ${peerName} and start`,`Abrir ${peerName} y empezar`)}</Button>
+  :<Button className={className} disabled={busy||!chosen||!ready2go} onClick={()=>void start()}><Play/>{l('Start','Empezar')}</Button>;
+ const cancel=onCancel&&!proposal&&<Button variant="ghost" onClick={onCancel}>{l('Cancel','Cancelar')}</Button>;
+ const chatPicker=ready.length===0?<p className="text-xs text-muted-foreground">{l(`No ${peerName} chat is open in this folder.`,`No hay ningún chat de ${peerName} abierto en esta carpeta.`)}</p>
+  :<NativeSelect size="sm" className="w-full" aria-label={l(`${peerName} chat`,`Chat de ${peerName}`)} value={chosen} onChange={e=>{setPeer(e.target.value);setAdvancedTicket('')}}><NativeSelectOption value="">{l('Choose…','Elige…')}</NativeSelectOption>{peers.map(p=><NativeSelectOption key={p.sessionId} value={p.sessionId} disabled={!p.symmetricDesktop}>{p.name}{p.startedAt?' · '+opened(p.startedAt):''}{p.symmetricDesktop?(p.status==='busy'?' · '+l('busy','ocupado'):''):' · '+l('reload plugin','recarga el plugin')}</NativeSelectOption>)}</NativeSelect>;
+ const scopeRules=l('Covers every phase until you revoke it. Push, PRs, merges, deploys and paid API calls only if you write them here.','Cubre todas las fases hasta que lo revoques. Push, PR, merges, despliegues y APIs de pago solo si los escribes aquí.');
+ // Built only while a new chat is being opened, which is when there is a request to show.
+ const waitingBox=(request:{ticketId:string;prompt:string})=><div className="reveal space-y-3 rounded-xl border bg-muted/50 p-4 text-sm compact:space-y-2 compact:p-3">
     {ticketEnded?<><p className="font-medium">{l('That new chat request ended before it was linked.','La solicitud del chat nuevo terminó antes de vincularse.')}</p><Button size="sm" disabled={busy} onClick={()=>void startOver()}>{l('Try again','Intentar de nuevo')}</Button></>
     :<><p className="flex items-center gap-2 font-medium"><Loader2 className="size-4 animate-spin text-primary"/>{l(`Press send in the new ${peerName} chat`,`Pulsa enviar en el chat nuevo de ${peerName}`)}</p>
      <p className="text-muted-foreground">{l('It links here on its own and the collaboration starts. You can stay in that chat.','Se vincula aquí solo y la colaboración empieza. Puedes quedarte en ese chat.')}</p>
-     {other==='codex'&&candidates.length>0&&<details className="text-xs text-muted-foreground"><summary className="cursor-pointer">{l('Not linking? Choose the chat yourself','¿No se vincula? Elige el chat tú')}</summary><div className="mt-2 flex flex-wrap items-center gap-2"><NativeSelect size="sm" aria-label={l('New chat','Chat nuevo')} value={candidate} onChange={e=>setCandidate(e.target.value)}><NativeSelectOption value="">{l('Choose the new chat','Elige el chat nuevo')}</NativeSelectOption>{candidates.map(p=><NativeSelectOption key={p.sessionId} value={p.sessionId}>{p.name} · {opened(p.startedAt)}</NativeSelectOption>)}</NativeSelect><Button size="sm" disabled={busy||!candidate} onClick={()=>void act(async()=>{await api('desktop/tickets/bind',{id:opening.ticketId,sessionId:candidate})})}>{l('Link and start','Vincular y empezar')}</Button></div></details>}
-     <FirstMessage text={opening.prompt}/>
+     {other==='codex'&&candidates.length>0&&<details className="text-xs text-muted-foreground"><summary className="cursor-pointer">{l('Not linking? Choose the chat yourself','¿No se vincula? Elige el chat tú')}</summary><div className="mt-2 flex flex-wrap items-center gap-2"><NativeSelect size="sm" aria-label={l('New chat','Chat nuevo')} value={candidate} onChange={e=>setCandidate(e.target.value)}><NativeSelectOption value="">{l('Choose the new chat','Elige el chat nuevo')}</NativeSelectOption>{candidates.map(p=><NativeSelectOption key={p.sessionId} value={p.sessionId}>{p.name} · {opened(p.startedAt)}</NativeSelectOption>)}</NativeSelect><Button size="sm" disabled={busy||!candidate} onClick={()=>void act(async()=>{await api('desktop/tickets/bind',{id:request.ticketId,sessionId:candidate})})}>{l('Link and start','Vincular y empezar')}</Button></div></details>}
+     <FirstMessage text={request.prompt}/>
      <button type="button" className="text-xs text-muted-foreground hover:text-foreground hover:underline" onClick={()=>void startOver()}>{l('Start over','Empezar de nuevo')}</button></>}
-   </div>
-  :<div className="flex flex-wrap items-center gap-2">
-    {newChat&&!boundId?<Button disabled={busy||!ready2go} onClick={()=>void openAndStart()}><Play/>{l(`Open ${peerName} and start`,`Abrir ${peerName} y empezar`)}</Button>
-     :<Button disabled={busy||!chosen||!ready2go} onClick={()=>void start()}><Play/>{l('Start','Empezar')}</Button>}
-    {onCancel&&!proposal&&<Button variant="ghost" onClick={onCancel}>{l('Cancel','Cancelar')}</Button>}
-   </div>}
-
-  <details className="border-t pt-4 text-sm"><summary className="cursor-pointer select-none text-muted-foreground">{l('More options','Más opciones')}</summary><div className="mt-4 space-y-4">
+   </div>;
+ const moreOptions=<>
    <label className="flex gap-2"><input type="checkbox" checked={busyPeer} onChange={e=>setBusyPeer(e.target.checked)}/><span>{l('Start now, adding to its current reply','Empezar ya, añadiéndolo a su respuesta actual')}<span className="block text-xs text-muted-foreground">{l(`Otherwise it waits until ${peerName} finishes what it is doing.`,`Si no, espera a que ${peerName} termine lo que está haciendo.`)}</span></span></label>
    <label className="flex gap-2"><input type="checkbox" checked={initialBarrier} onChange={e=>setInitialBarrier(e.target.checked)}/>{l('Each analyses first, then they compare','Que cada uno analice primero y luego comparen')}</label>
    <details><summary className="cursor-pointer text-muted-foreground">{l('Continue earlier analyses','Continuar análisis anteriores')}</summary><div className="mt-3 space-y-3"><Label>Codex</Label><Textarea value={priorCodex} onChange={e=>setPriorCodex(e.target.value)} maxLength={32000}/><Label>Claude</Label><Textarea value={priorClaude} onChange={e=>setPriorClaude(e.target.value)} maxLength={32000}/></div></details>
    <details><summary className="cursor-pointer text-muted-foreground">{l('Implementation contract (advanced)','Contrato de implementación (avanzado)')}</summary><p className="my-2 text-xs text-muted-foreground">{l('Clean Git base; separate files or worktrees; required checks. Grants no editing permission.','Base Git limpia; archivos o worktrees separados; comprobaciones obligatorias. No da permisos de edición.')}</p><Textarea className="font-mono text-xs" rows={8} value={implementation} onChange={e=>setImplementation(e.target.value)} placeholder={JSON.stringify({strategy:'files',workspaces:{codex:{root:state.project,paths:['src/a.ts']},claude:{root:state.project,paths:['src/b.ts']}},requiredChecks:['tests']},null,2)}/></details>
    <details><summary className="cursor-pointer text-muted-foreground">{l(`Other ways to get a ${peerName} chat`,`Otras formas de conseguir un chat de ${peerName}`)}</summary><div className="mt-4"><DesktopTickets state={state} api={api} busy={busy} act={act} onBound={(id,ticket)=>{setNewChat(false);setPeer(id);setAdvancedTicket(ticket)}} onNotice={()=>{}}/></div></details>
-  </div></details>
+  </>;
+
+ // Each limit offers one shortcut: no message limit, or the 24-hour maximum for time.
+ const link='text-xs font-medium text-primary hover:underline';
+ const messagesShortcut=<button type="button" className={link} onClick={()=>setMessages(messages===''?'24':'')}>{messages===''?l('Set a limit','Poner límite'):l('No limit','Sin límite')}</button>;
+ const timeShortcut=minutes===String(maxMinutes)?<span className="text-xs text-muted-foreground">{l('Maximum','Máximo')}</span>:<button type="button" className={link} onClick={()=>setMinutes(String(maxMinutes))}>{l('Max 24 h','Máx. 24 h')}</button>;
+ const editSummary=edit.scope===defaultScope()?l('Local edits and commits only; no push, pull requests or merges.','Solo ediciones y commits locales; sin push, PR ni merges.'):undefined;
+
+ // The small window fills its height with only what starting needs: the objective, two switches,
+ // two limits and a wide start button. Everything else waits behind Options.
+ // The fieldset only disables; it renders as contents because a fieldset box does not hand its height on.
+ if(compact)return <div className="reveal flex min-h-[calc(100dvh-24px)] min-w-0 flex-col gap-3"><fieldset disabled={busy} className="contents">
+  {proposal&&<div className="flex items-center justify-between gap-3"><p className="flex items-center gap-1.5 text-[13px] text-muted-foreground"><Sparkles className="size-3.5 text-primary"/>{suggested}</p><Button variant="ghost" size="sm" className="-mr-2 h-7 text-primary hover:text-primary" disabled={busy} onClick={()=>void dismiss()}>{l('Dismiss','Descartar')}</Button></div>}
+  <textarea id="objective" aria-label={l('What should they work on?','¿En qué tienen que trabajar?')} className="min-h-20 w-full flex-1 resize-none rounded-2xl bg-card px-4 py-3 text-[15px] leading-relaxed shadow-tile outline-none placeholder:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/40" value={objective} onChange={e=>setObjective(e.target.value)} maxLength={16000} placeholder={l('E.g. Review the panel design together and propose improvements.','Ej.: Revisad juntos el diseño del panel y proponed mejoras.')}/>
+  <div className="grid grid-cols-2 gap-3">
+   <Choice checked={newChat} onChange={v=>{setNewChat(v);if(!v)autoStart.current=false}} title={l(`New ${peerName} chat`,`Chat nuevo de ${peerName}`)} detail={newChat?l('Opens with the first message ready.','Se abre con el primer mensaje listo.'):undefined}>
+    {!newChat&&<div className="mt-2">{chatPicker}</div>}
+   </Choice>
+   <Choice checked={edit.enabled} onChange={v=>setEdit({...edit,enabled:v})} title={l(`${peerName} can edit and commit`,`${peerName} puede editar y hacer commits`)} detail={edit.enabled?undefined:l('Read and discuss only.','Solo leer y debatir.')}>
+    {edit.enabled&&<div className="mt-1"><Scope value={edit.scope} summary={editSummary} onChange={scope=>setEdit({...edit,scope})} editing={scopeOpen} setEditing={setScopeOpen} rules={scopeRules}/></div>}
+   </Choice>
+  </div>
+  <div className="grid grid-cols-2 gap-3">
+   <div className="flex items-center justify-between gap-3 rounded-2xl bg-card p-3.5 shadow-tile"><div><p className="text-[14px] font-medium tracking-[-0.01em]">{l('Messages','Mensajes')}</p>{messagesShortcut}</div><MessagesControl value={messages} onChange={setMessages} className="h-9 w-40 rounded-full bg-muted"/></div>
+   <div className="flex items-center justify-between gap-3 rounded-2xl bg-card p-3.5 shadow-tile"><div><p className="text-[14px] font-medium tracking-[-0.01em]">{l('Time','Tiempo')}</p>{timeShortcut}</div><TimeControl value={minutes} onChange={setMinutes} className="h-9 w-40 rounded-full bg-muted"/></div>
+  </div>
+  {waiting&&opening?waitingBox(opening):<div className="flex items-center gap-2">{startButton('h-11 flex-1 rounded-xl text-[15px] font-semibold shadow-sm')}{cancel}<Button variant="ghost" className="h-11 rounded-xl" aria-expanded={more} onClick={()=>setMore(!more)}><SlidersHorizontal/>{l('Options','Opciones')}</Button></div>}
+  {more&&<div className="reveal space-y-3 border-t pt-3 text-sm">{moreOptions}</div>}
+ </fieldset></div>;
+
+ return <div className={`reveal space-y-6 rounded-xl border bg-card p-6 shadow-sm ${proposal?'border-primary/40':''}`}>
+  <fieldset disabled={busy} className="min-w-0 space-y-6">
+  {proposal&&<div className="-mx-6 -mt-6 flex flex-wrap items-center justify-between gap-3 rounded-t-xl border-b border-primary/20 bg-primary/[.06] px-6 py-3"><div><p className="text-sm font-medium text-primary">{suggested}</p><p className="text-xs text-muted-foreground">{l('Nothing happens until you press start.','No pasa nada hasta que pulses empezar.')}</p></div><Button variant="ghost" size="sm" disabled={busy} onClick={()=>void dismiss()}>{l('Dismiss','Descartar')}</Button></div>}
+  <div className="space-y-2"><Label htmlFor="objective">{l('What should they work on?','¿En qué tienen que trabajar?')}</Label>{objectiveField('')}</div>
+
+  <div className="grid items-start gap-3 sm:grid-cols-2">
+   <Choice checked={newChat} onChange={v=>{setNewChat(v);if(!v)autoStart.current=false}} title={l(`Open a new ${peerName} chat`,`Abrir un chat nuevo de ${peerName}`)} detail={newChat?l('Opens in this folder with the first message ready; you press send.','Se abre en esta carpeta con el primer mensaje listo; tú pulsas enviar.'):l('Work with a chat that is already open.','Trabajar con un chat que ya está abierto.')}>
+    {!newChat&&<div className="mt-3">{chatPicker}</div>}
+   </Choice>
+   <Choice checked={edit.enabled} onChange={v=>setEdit({...edit,enabled:v})} title={l(`${peerName} can edit and commit`,`${peerName} puede editar y hacer commits`)} detail={edit.enabled?undefined:l('Read and discuss only.','Solo leer y debatir.')}>
+    {edit.enabled&&<div className="mt-1"><Scope value={edit.scope} onChange={scope=>setEdit({...edit,scope})} editing={scopeOpen} setEditing={setScopeOpen} rules={scopeRules}/></div>}
+   </Choice>
+  </div>
+
+  <div className="grid grid-cols-2 gap-3 sm:max-w-md">
+   <div className="space-y-1.5"><div className="flex items-center justify-between gap-2"><Label>{l('Messages','Mensajes')}</Label>{messagesShortcut}</div><MessagesControl value={messages} onChange={setMessages} className="h-10 rounded-lg border bg-background"/></div>
+   <div className="space-y-1.5"><div className="flex items-center justify-between gap-2"><Label>{l('Time','Tiempo')}</Label>{timeShortcut}</div><TimeControl value={minutes} onChange={setMinutes} className="h-10 rounded-lg border bg-background"/></div>
+  </div>
+
+  {waiting&&opening?waitingBox(opening):<div className="flex flex-wrap items-center gap-2">{startButton()}{cancel}</div>}
+
+  <details className="border-t pt-4 text-sm"><summary className="cursor-pointer select-none text-muted-foreground">{l('More options','Más opciones')}</summary><div className="mt-4 space-y-4">{moreOptions}</div></details>
   </fieldset>
  </div>;
 }
@@ -218,21 +278,24 @@ function RunView({run,api,busy,act,onBack,waitingSince,ended,onNotice}:{run:Run;
  const exportRun=()=>act(async()=>{const value=await api<{content:string}>('desktop/export',{runId:run.id,format:'markdown'});const url=URL.createObjectURL(new Blob([value.content],{type:'text/markdown'})),a=document.createElement('a');a.href=url;a.download=`desktop-${run.id}.md`;a.click();URL.revokeObjectURL(url)});
  const inFlight=run.messages.some(m=>['reserved','submitting','unknown'].includes(m.status)),leaseLive=run.state==='active'&&!!run.coordination.lease.expiresAt&&run.coordination.lease.expiresAt>Date.now();
  const closure=run.coordination.structured.closure,moves=(run.events??[]).filter(e=>e.type==='project_revision_moved');
- return <div className="mx-auto max-w-3xl space-y-6">
-  <button onClick={onBack} className="pressable -ml-2 flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"><ArrowLeft className="size-4"/>{l('All collaborations','Todas las colaboraciones')}</button>
-  <div className="space-y-3"><div className="flex items-start justify-between gap-4"><h1 className="text-xl font-semibold leading-snug">{run.context.objective}</h1>{needsApproval(run)?<Badge className="bg-warning text-warning-foreground">{l('Needs approval','Requiere aprobación')}</Badge>:<RunState state={run.state}/>}</div>
-   <p className="text-sm text-muted-foreground">{providerName(run.initiator.provider)} ↔ {providerName(run.initiator.provider==='claude'?'codex':'claude')} · {run.messagesUsed}/{run.limits.maxMessages??'∞'} {l('messages','mensajes')}{run.deadline&&!terminal(run.state)?' · '+l('ends at','termina a las')+' '+new Date(run.deadline).toLocaleTimeString(getLanguage(),{hour:'2-digit',minute:'2-digit'}):''}</p>
-   <div className="flex flex-wrap items-center gap-2">
-    {run.state==='prepared'&&!waitingSince&&<Button disabled={busy||edit.enabled&&!edit.scope.trim()} onClick={()=>void act(async()=>{onNotice(startedNotice(await approveAndStart(api,run,edit),peer))})}><Play/>{needsApproval(run)?l('Approve and start','Aprobar e iniciar'):l('Start','Iniciar')}</Button>}
+ // The small window folds the back link into the title row and puts the summary beside the controls.
+ const compact=useCompact(),size=compact?'sm':'default';
+ return <div className="mx-auto max-w-3xl space-y-6 compact:space-y-3">
+  {!compact&&<button onClick={onBack} className="pressable -ml-2 flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"><ArrowLeft className="size-4"/>{l('All collaborations','Todas las colaboraciones')}</button>}
+  <div className="space-y-3 compact:space-y-2"><div className="flex items-start justify-between gap-4 compact:items-center compact:gap-2">{compact&&<Button variant="ghost" size="icon" className="-ml-2 size-7 shrink-0" aria-label={l('All collaborations','Todas las colaboraciones')} title={l('All collaborations','Todas las colaboraciones')} onClick={onBack}><ArrowLeft/></Button>}<h1 className="text-xl font-semibold leading-snug compact:line-clamp-2 compact:flex-1 compact:text-sm" title={run.context.objective}>{run.context.objective}</h1>{needsApproval(run)?<Badge className="bg-warning text-warning-foreground">{l('Needs approval','Requiere aprobación')}</Badge>:<RunState state={run.state}/>}</div>
+   <div className="space-y-3 compact:flex compact:flex-wrap compact:items-center compact:justify-between compact:gap-2 compact:space-y-0">
+   <p className="text-sm text-muted-foreground compact:text-xs">{providerName(run.initiator.provider)} ↔ {providerName(run.initiator.provider==='claude'?'codex':'claude')} · {run.messagesUsed}/{run.limits.maxMessages??'∞'} {l('messages','mensajes')}{run.deadline&&!terminal(run.state)?' · '+l('ends at','termina a las')+' '+new Date(run.deadline).toLocaleTimeString(getLanguage(),{hour:'2-digit',minute:'2-digit'}):''}</p>
+   <div className="flex flex-wrap items-center gap-2 compact:gap-1">
+    {run.state==='prepared'&&!waitingSince&&<Button size={size} disabled={busy||edit.enabled&&!edit.scope.trim()} onClick={()=>void act(async()=>{onNotice(startedNotice(await approveAndStart(api,run,edit),peer))})}><Play/>{needsApproval(run)?l('Approve and start','Aprobar e iniciar'):l('Start','Iniciar')}</Button>}
     {run.state==='prepared'&&!!waitingSince&&<><span className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin text-primary"/>{l(`Waiting for ${peer} to finish its current reply · since ${ago(waitingSince)}`,`Esperando a que ${peer} termine su respuesta actual · desde ${ago(waitingSince)}`)}</span><Button variant="outline" size="sm" disabled={busy} onClick={()=>void act(async()=>{await api('desktop/start_when_idle',{runId:run.id,commandId:crypto.randomUUID(),cancel:true})})}>{l('Stop waiting','Dejar de esperar')}</Button></>}
     {run.state==='prepared'&&!waitingSince&&ended&&<p className="w-full text-sm text-warning">{endedReason(ended,peer)}</p>}
-    {run.state==='active'&&<Button variant="outline" disabled={busy} onClick={()=>void control('pause')}><Pause/>{l('Pause','Pausar')}</Button>}
-    {run.state==='paused'&&<Button disabled={busy||inFlight} onClick={()=>void control('resume')}><Play/>{l('Resume','Reanudar')}</Button>}
-    {['active','paused','blocked','recovery_required'].includes(run.state)&&!leaseLive&&run.state!=='paused'&&<Button variant="outline" disabled={busy} onClick={()=>void control('recover')}><RefreshCw/>{l('Recover','Recuperar')}</Button>}
-    {!terminal(run.state)&&run.state!=='prepared'&&<Button variant="outline" disabled={busy} onClick={()=>setClosing(!closing)}><Check/>{l('Finish','Finalizar')}</Button>}
-    {!terminal(run.state)&&<Button variant="ghost" disabled={busy} onClick={()=>void control('cancel')}>{run.state==='prepared'?l('Discard','Descartar'):l('Cancel','Cancelar')}</Button>}
+    {run.state==='active'&&<Button size={size} variant="outline" disabled={busy} onClick={()=>void control('pause')}><Pause/>{l('Pause','Pausar')}</Button>}
+    {run.state==='paused'&&<Button size={size} disabled={busy||inFlight} onClick={()=>void control('resume')}><Play/>{l('Resume','Reanudar')}</Button>}
+    {['active','paused','blocked','recovery_required'].includes(run.state)&&!leaseLive&&run.state!=='paused'&&<Button size={size} variant="outline" disabled={busy} onClick={()=>void control('recover')}><RefreshCw/>{l('Recover','Recuperar')}</Button>}
+    {!terminal(run.state)&&run.state!=='prepared'&&<Button size={size} variant="outline" disabled={busy} onClick={()=>setClosing(!closing)}><Check/>{l('Finish','Finalizar')}</Button>}
+    {!terminal(run.state)&&<Button size={size} variant="ghost" disabled={busy} onClick={()=>void control('cancel')}>{run.state==='prepared'?l('Discard','Descartar'):l('Cancel','Cancelar')}</Button>}
     <Button variant="ghost" size="sm" disabled={busy} onClick={()=>void exportRun()}><Download/>{l('Export','Exportar')}</Button>
-   </div>
+   </div></div>
    {closing&&<div className="reveal space-y-3 rounded-lg border bg-card p-4"><Label htmlFor="closing">{l('Outcome (optional)','Resultado (opcional)')}</Label><Textarea id="closing" rows={3} maxLength={4000} value={summary} onChange={e=>setSummary(e.target.value)} placeholder={l('What did they conclude?','¿A qué conclusión llegaron?')}/><div className="flex flex-wrap items-center gap-2"><NativeSelect size="sm" value={disposition} onChange={e=>setDisposition(e.target.value)}><NativeSelectOption value="proposal">{l('Proposal','Propuesta')}</NativeSelectOption><NativeSelectOption value="with_disagreements">{l('With disagreements','Con desacuerdos')}</NativeSelectOption><NativeSelectOption value="incomplete">{l('Incomplete','Incompleta')}</NativeSelectOption></NativeSelect><Button size="sm" disabled={busy} onClick={()=>void finish()}>{l('Finish','Finalizar')}</Button></div></div>}
   </div>
   {!terminal(run.state)&&<EditAuthorization run={run} api={api} busy={busy} act={act} edit={edit} setEdit={setEdit}/>}
@@ -242,9 +305,9 @@ function RunView({run,api,busy,act,onBack,waitingSince,ended,onNotice}:{run:Run;
   {moves.length>0&&<p className="text-sm text-muted-foreground">{l(`The folder changed outside this collaboration ${moves.length===1?'once':moves.length+' times'} (last ${ago(moves.at(-1)!.at)}). It kept going; the chats were told with the next message.`,`La carpeta cambió fuera de esta colaboración ${moves.length===1?'una vez':moves.length+' veces'} (la última ${ago(moves.at(-1)!.at)}). Siguió adelante; se avisó a los chats en el siguiente mensaje.`)}</p>}
   {run.coordination.structured.structured&&<p className="text-sm text-muted-foreground">{run.coordination.barrierOpen?l('Both analyses are in; they can compare now.','Los dos análisis están listos; ya pueden comparar.'):l('Waiting for both independent analyses.','Esperando los dos análisis independientes.')}</p>}
   {run.implementation&&<div className="space-y-2 rounded-xl border p-4 text-sm"><div className="flex items-center justify-between gap-3"><p className="font-medium">{l('Implementation','Implementación')}</p><Button variant="outline" size="sm" disabled={busy} onClick={()=>void act(async()=>{const value=await api<{ready:boolean;reasons:string[];candidate:{contentHash:string}|null}>('desktop/implementation',{runId:run.id,operationId:crypto.randomUUID(),action:{action:'inspect'}});setInspection({hash:value.candidate?.contentHash??'',ready:value.ready,reasons:value.reasons})})}>{l('Check readiness','Comprobar si está lista')}</Button></div><p className="text-muted-foreground">{run.implementation.candidate?`${l('Version','Versión')} ${run.implementation.candidate.version}`:l('No candidate yet','Todavía no hay candidato')}{run.implementation.checks.length?' · '+run.implementation.checks.map(c=>`${c.name} ${c.exitCode===0?'✓':'✗'}`).join(' · '):''}</p>{inspection&&inspection.hash===run.implementation.candidate?.contentHash&&<div><p>{inspection.ready?l('Ready to integrate right now.','Lista para integrar ahora mismo.'):l('Not ready yet:','Todavía no está lista:')}</p><ul className="mt-1 list-disc pl-5 text-muted-foreground">{inspection.reasons.map(reason=><li key={reason}>{reason}</li>)}</ul></div>}</div>}
-  <div className="space-y-3">{run.messages.length===0&&!closure&&<p className="py-8 text-center text-sm text-muted-foreground">{terminal(run.state)?l('No messages were sent.','No se envió ningún mensaje.'):run.state==='prepared'?l('Nothing has been sent yet.','Todavía no se ha enviado nada.'):l('Waiting for the first message…','Esperando el primer mensaje…')}</p>}
-   {run.messages.map(m=>{const mine=m.src.provider===run.initiator.provider;return <div key={m.id} className={`flex ${mine?'justify-start':'justify-end'}`}><div className={`max-w-[85%] rounded-2xl px-4 py-3 ${mine?'rounded-tl-sm bg-card border':'rounded-tr-sm bg-primary/10'}`}><p className="mb-1 text-xs text-muted-foreground"><strong className="text-foreground">{providerName(m.src.provider)}</strong> · {delivery()[m.status]??m.status}</p><p className="whitespace-pre-wrap break-words text-sm">{m.text??l('Content withheld until both analyses are in','Contenido retenido hasta tener ambos análisis')}</p></div></div>})}
-   {run.reports.map(r=><div key={r.id} className="rounded-xl border-l-4 border-primary bg-card p-4"><p className="mb-1 text-xs text-muted-foreground"><strong className="text-foreground">{r.author.startsWith('codex')?'Codex':r.author.startsWith('claude')?'Claude':r.author}</strong> · {({response:l('Report','Informe'),result:l('Result','Resultado'),review:l('Review','Revisión')} as Record<string,string>)[r.report.kind]??r.report.kind}{r.report.version?` v${r.report.version}`:''}{r.report.verdict?' · '+(({agree:l('agrees','de acuerdo'),revise:l('asks for changes','pide cambios'),disagree:l('disagrees','en desacuerdo')} as Record<string,string>)[r.report.verdict]??r.report.verdict):''}</p><p className="whitespace-pre-wrap text-sm">{r.body}</p></div>)}
+  <div className="space-y-3">{run.messages.length===0&&!closure&&<p className="py-8 text-center text-sm text-muted-foreground compact:py-4">{terminal(run.state)?l('No messages were sent.','No se envió ningún mensaje.'):run.state==='prepared'?l('Nothing has been sent yet.','Todavía no se ha enviado nada.'):l('Waiting for the first message…','Esperando el primer mensaje…')}</p>}
+   {run.messages.map(m=>{const mine=m.src.provider===run.initiator.provider;return <div key={m.id} className={`flex ${mine?'justify-start':'justify-end'}`}><div className={`max-w-[85%] rounded-2xl px-4 py-3 compact:px-3 compact:py-2 ${mine?'rounded-tl-sm bg-card border':'rounded-tr-sm bg-primary/10'}`}><p className="mb-1 text-xs text-muted-foreground"><strong className="text-foreground">{providerName(m.src.provider)}</strong> · {delivery()[m.status]??m.status}</p><p className="whitespace-pre-wrap break-words text-sm">{m.text??l('Content withheld until both analyses are in','Contenido retenido hasta tener ambos análisis')}</p></div></div>})}
+   {run.reports.map(r=><div key={r.id} className="rounded-xl border-l-4 border-primary bg-card p-4 compact:p-3"><p className="mb-1 text-xs text-muted-foreground"><strong className="text-foreground">{r.author.startsWith('codex')?'Codex':r.author.startsWith('claude')?'Claude':r.author}</strong> · {({response:l('Report','Informe'),result:l('Result','Resultado'),review:l('Review','Revisión')} as Record<string,string>)[r.report.kind]??r.report.kind}{r.report.version?` v${r.report.version}`:''}{r.report.verdict?' · '+(({agree:l('agrees','de acuerdo'),revise:l('asks for changes','pide cambios'),disagree:l('disagrees','en desacuerdo')} as Record<string,string>)[r.report.verdict]??r.report.verdict):''}</p><p className="whitespace-pre-wrap text-sm">{r.body}</p></div>)}
   </div>
  </div>;
 }

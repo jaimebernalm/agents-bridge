@@ -83,9 +83,9 @@ You should see the other app's chat listed. If you don't, see [Troubleshooting](
 
    > Collaborate with Codex on this: review the error handling in `src/api` and propose fixes. 20 messages, 20 minutes.
 
-2. The panel opens in your browser with the form already filled in (**Suggested by …**). Change anything you like:
+2. The panel opens in its own small window in the top-right corner of your screen, so the chat stays in view, with the form already filled in (**Suggested by …**). Move or resize it and the next panel opens where you left it. Change anything you like:
    - **What should they work on?** The objective.
-   - **Limits:** messages and minutes (or **No limit** for messages).
+   - **Limits:** messages (or **No limit**) and time, up to 24 hours.
    - **Can edit and commit:** whether the other agent may change files, and a short scope describing what it may touch.
    - **Open a new chat:** have the panel open the other app on a fresh chat for you, if you don't already have one open.
 

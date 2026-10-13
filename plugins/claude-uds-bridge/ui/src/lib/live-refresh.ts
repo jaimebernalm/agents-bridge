@@ -30,3 +30,8 @@ export function panelNavigation(hash: string, savedRun = '') {
   const view = params.get('view') === 'authorization' ? 'authorization' : selected ? 'detail' : 'home';
   return {selected, view: view as 'authorization' | 'detail' | 'home'};
 }
+
+// The panel lost its local service: the chat that opened it closed or reloaded. The header and one
+// notice already say so, so background refreshes report it there instead of repeating it.
+export class PanelOffline extends Error {}
+export const offlineNotice = 'El chat que abrió este panel se cerró o se recargó. Para seguir, pide en tu chat «abre el panel del puente».';
