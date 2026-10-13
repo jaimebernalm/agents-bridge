@@ -1,14 +1,14 @@
 {
   "name": "jaimebernalm",
   "interface": {
-    "displayName": "Jaime Bernal · CC–CDX Bridge"
+    "displayName": "Jaime Bernal · Claude ⇄ Codex Bridge"
   },
   "plugins": [
     {
-      "name": "claude-uds-bridge",
+      "name": "cc-cdx-bridge",
       "source": {
         "source": "local",
-        "path": "./plugins/claude-uds-bridge"
+        "path": "./plugins/cc-cdx-bridge"
       },
       "policy": {
         "installation": "AVAILABLE",

@@ -1,6 +1,6 @@
 {
   "name": "jaimebernalm",
-  "description": "CC–CDX Bridge: collaboration between Claude Code Desktop and Codex Desktop.",
+  "description": "Claude ⇄ Codex Bridge: collaboration between Claude Code and Codex chats.",
   "owner": {
     "name": "Jaime Bernal"
   },
@@ -8,7 +8,7 @@
     {
       "name": "cc-cdx-bridge",
       "source": "./plugins/cc-cdx-bridge-claude",
-      "description": "Claude Code Desktop side of CC–CDX Bridge."
+      "description": "Claude Code side of Claude ⇄ Codex Bridge."
     }
   ]
 }
