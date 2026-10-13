@@ -2,6 +2,8 @@
 
 The approved design is [INICIO_BIDIRECCIONAL.md](INICIO_BIDIRECCIONAL.md). This document describes the implemented behavior and distinguishes automated evidence from native model checks. It is a continuation checkpoint, not a claim that every Desktop lifecycle has been verified.
 
+Since 0.12.0 the tools described here as `desktop_collaboration_*` carry plain names, the same in both apps (`list_chats`, `prepare_collaboration`, `send_message`, `get_status`, …), and they are the only collaboration tools; the [reference](REFERENCE.md#tools) lists them. The rest of this document keeps the 0.9.0 names.
+
 ## Runtime and identity
 
 Both plugin roots register the same `desktop_collaboration_*` MCP surface. Codex derives the caller from native turn metadata and its process-verified receiver. Claude resolves the nearest registered Desktop engine ancestor on every call, checks its process start and hook generation, and rejects mismatching metadata, other surfaces and ambiguous bindings. Tool arguments never choose the author. Processes the conversation itself launches (for example its Bash tool) also descend from its engine and authenticate as that same conversation; this does not allow impersonating another conversation.

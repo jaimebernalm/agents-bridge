@@ -1,6 +1,6 @@
 {
   "name": "cc-cdx-bridge-local",
-  "description": "Local build of the CC–CDX Bridge Claude Code Desktop plugin, for testing.",
+  "description": "Local build of the Claude ⇄ Codex Bridge plugin for Claude Code, for testing.",
   "owner": {
     "name": "Jaime Bernal"
   },
@@ -8,7 +8,7 @@
     {
       "name": "cc-cdx-bridge",
       "source": "./",
-      "description": "Claude Code Desktop side of CC–CDX Bridge (local build)."
+      "description": "Claude Code side of Claude ⇄ Codex Bridge (local build)."
     }
   ]
 }

@@ -1,8 +1,8 @@
 {
   "name": "cc-cdx-bridge",
-  "displayName": "CC–CDX Bridge",
-  "version": "0.11.7",
-  "description": "Start and control scoped collaboration between Claude Code Desktop and Codex Desktop, with verified callers, persistent context, exact reviews and a private bilingual local panel.",
+  "displayName": "Claude ⇄ Codex Bridge",
+  "version": "0.12.0",
+  "description": "Let a Claude Code chat and a Codex chat work together on the same project, with a panel where you approve and follow each collaboration.",
   "author": {
     "name": "Jaime Bernal (fork of Leon Kohli)"
   },
