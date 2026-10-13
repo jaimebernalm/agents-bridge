@@ -65,7 +65,7 @@ export const english: Record<string, string> = {
   "No aplicada": "Not applied",
   "Entrega incierta": "Uncertain delivery",
   "Aplicación interrumpida": "Application interrupted",
-  "Este panel ya no está conectado: el chat que lo abrió se cerró o se recargó. Cierra esta pestaña y pide en tu chat «abre el panel del puente».": "This panel is no longer connected: the chat that opened it was closed or reloaded. Close this tab and ask your chat to “open the bridge panel”.",
+  "El chat que abrió este panel se cerró o se recargó. Para seguir, pide en tu chat «abre el panel del puente».": "The chat that opened this panel was closed or reloaded. To continue, ask your chat to “open the bridge panel”.",
   "No se pudo conectar": "Could not connect",
   "Leer aportación completa": "Read full contribution",
   "pausar": "pause",
