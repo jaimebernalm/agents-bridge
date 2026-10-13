@@ -4,6 +4,7 @@ import {randomUUID} from 'node:crypto';
 import {startPanel} from '../src/panel';
 import {nativeFixture} from './collaboration-fixture';
 import {Database} from 'bun:sqlite';
+import {statSync,writeFileSync} from 'node:fs';
 const root=resolve(import.meta.dir,'..');
 async function fixture(dropAcknowledgement=false,reception:'accept'|'default'='accept'){const f=await nativeFixture(dropAcknowledgement,{reception});const p=startPanel({configDir:f.config,stateDir:f.state,codexHome:f.root,pluginRoot:root,ipcPath:f.desktop.path});
  const token=new URL(p.url).hash.slice(7);const auth=await fetch(p.origin+'/api/v1/session',{method:'POST',headers:{Origin:p.origin,'Content-Type':'application/json'},body:JSON.stringify({token})});expect(auth.status).toBe(200);
@@ -38,6 +39,19 @@ test('two local panels use separate cookie names and survive parallel browser se
  expect(second.split('=')[0]).not.toBe(x.cookie.split('=')[0]);const combined=x.cookie+'; '+second;
  expect((await x.call('health',undefined,{Cookie:combined})).status).toBe(200);expect((await fetch(other.origin+'/api/v1/health',{headers:{Cookie:combined}})).status).toBe(200);
  expect((await fetch(other.origin+'/api/v1/health',{headers:{Cookie:x.cookie}})).status).toBe(401);
+ }finally{await other.close();await x.close();}});
+
+test('language and theme are saved for this computer, so every panel opens with them from its first frame',async()=>{const x=await fixture();const other=startPanel({configDir:x.f.config,stateDir:x.f.state,codexHome:x.f.root,pluginRoot:root,ipcPath:x.f.desktop.path});try{
+ const page=async(origin:string)=>(await (await fetch(origin+'/')).text()).match(/<html[^>]*>/)![0];
+ expect(await page(x.p.origin)).toBe('<html lang="en">');
+ expect((await fetch(x.p.origin+'/api/v1/preferences',{method:'POST',headers:{Origin:x.p.origin,'Content-Type':'application/json'},body:'{"theme":"dark"}'})).status).toBe(401);
+ expect((await x.call('preferences',{theme:'dark'},{'X-CSRF-Token':''})).status).toBe(403);
+ expect(await (await x.call('preferences',{theme:'dark'})).json()).toEqual({language:'en',theme:'dark'});
+ expect(await (await x.call('preferences',{language:'es'})).json()).toEqual({language:'es',theme:'dark'});
+ for(const invalid of [{language:'fr'},{theme:'blue'},{other:true}])expect((await x.call('preferences',invalid)).status).toBe(409);
+ const file=join(x.f.state,'panel-preferences.json');expect(statSync(file).mode&0o077).toBe(0);
+ expect(await page(x.p.origin)).toBe('<html lang="es" class="dark">');expect(await page(other.origin)).toBe('<html lang="es" class="dark">');
+ writeFileSync(file,'{broken');expect(await page(other.origin)).toBe('<html lang="en">');
  }finally{await other.close();await x.close();}});
 
 test('human project authorization API is scoped, authenticated, confirmed, versioned and revocable without rewriting chat policy',async()=>{

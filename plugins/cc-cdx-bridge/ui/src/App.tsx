@@ -12,7 +12,7 @@ import {independentRefresh,panelNavigation,PanelOffline,offlineNotice} from './l
 import {claimPanelWindow} from './lib/single-window';
 import {hasDraft,trackDrafts} from './lib/drafts';
 import {useCompact} from './lib/compact';
-import {readDark} from './lib/theme';
+import {pagePreferences,remember,saveWith} from './lib/preferences';
 import {displayName} from '../../src/names';
 
 type Participant={sessionId:string;name:string;cwd:string;provider:'codex'|'claude';status:string;eligibleSurface:boolean;projectAuthorizationReceiver:boolean|null;implementationReceiver?:boolean|null};
@@ -28,6 +28,7 @@ const date=(time:number)=>new Intl.DateTimeFormat(getLanguage(),{dateStyle:'medi
 let csrf='';
 const initialNavigation=panelNavigation(location.hash);
 async function api<T>(path:string,body?:unknown):Promise<T>{let response:Response;try{response=await fetch('/api/v1/'+path,{method:body===undefined?'GET':'POST',signal:AbortSignal.timeout(18000),headers:body===undefined?{}:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:body===undefined?undefined:JSON.stringify(body)})}catch{throw new PanelOffline(t(offlineNotice))}if(!response.ok){const err=await response.json().catch(()=>({error:t("No se pudo conectar")}));throw new Error(t(err.error))}return response.json()}
+saveWith(change=>api('preferences',change));
 function Field({label,children,hint}:{label:string;children:React.ReactNode;hint?:string}){return <div className="space-y-2"><Label>{label}</Label>{children}{hint&&<p className="text-xs text-muted-foreground">{hint}</p>}</div>}
 function LanguageSelector(){
  const [language,setLanguage]=useLanguage();
@@ -40,10 +41,10 @@ export function ReplacedWindow(){
 export default function App({onReplaced}:{onReplaced?:()=>void}){
  const [language,setLanguage]=useLanguage(),compact=useCompact();
  useEffect(()=>{document.documentElement.lang=language;document.title=displayName+' · '+t('Colaboraciones')},[language]);
- const [ready,setReady]=useState(false),[error,setError]=useState(''),[view,setView]=useState<'diagnostic'|'authorization'|'desktop'>(initialNavigation.view),[bound,setBound]=useState<string|null>(null),[participants,setParticipants]=useState<Participant[]>([]),[connected,setConnected]=useState(false),[dark,setDark]=useState(()=>readDark(localStorage));
+ const [ready,setReady]=useState(false),[error,setError]=useState(''),[view,setView]=useState<'diagnostic'|'authorization'|'desktop'>(initialNavigation.view),[bound,setBound]=useState<string|null>(null),[participants,setParticipants]=useState<Participant[]>([]),[connected,setConnected]=useState(false),[dark,setDark]=useState(()=>pagePreferences(document.documentElement).theme==='dark');
  const [desktop,setDesktop]=useState(false),[ownerProvider,setOwnerProvider]=useState('codex');const [serviceVersion,setServiceVersion]=useState('');const [lastUpdated,setLastUpdated]=useState<number|null>(null),[sectionErrors,setSectionErrors]=useState<Record<string,string>>({});const refreshErrors=[...new Set(Object.values(sectionErrors))],refreshError=refreshErrors.map(e=>t(e)).join(' ');
- useEffect(()=>{document.documentElement.classList.toggle('dark',dark);localStorage.setItem('theme',dark?'dark':'light')},[dark]);
- const toggleTheme=()=>{const root=document.documentElement;root.classList.add('theme-transition');setDark(!dark);setTimeout(()=>root.classList.remove('theme-transition'),300)};
+ useEffect(()=>{document.documentElement.classList.toggle('dark',dark)},[dark]);
+ const toggleTheme=()=>{const root=document.documentElement;root.classList.add('theme-transition');setDark(!dark);remember({theme:dark?'light':'dark'});setTimeout(()=>root.classList.remove('theme-transition'),300)};
  useEffect(()=>{(async()=>{try{const token=new URLSearchParams(location.hash.slice(1)).get('token');let spent:unknown;if(token){/* A spent link still opens in the browser that already holds this panel's session. */try{const auth=await api<{csrf:string;ownerThread:string|null}>('session',{token});csrf=auth.csrf;setBound(auth.ownerThread)}catch(e){spent=e}const route=new URLSearchParams(location.hash.slice(1));route.delete('token');history.replaceState(null,'',location.pathname+(route.size?'#'+route.toString():''));}const health=await api<{csrf:string;ownerThread:string|null;version:string;ownerProvider?:string;desktop?:boolean}>('health').catch(e=>{throw spent??e});csrf=health.csrf;setBound(health.ownerThread);setServiceVersion(health.version);setDesktop(health.desktop===true);setOwnerProvider(health.ownerProvider??'codex');if(!health.desktop&&initialNavigation.view==='desktop')setView('authorization');setReady(true)}catch(e){setError((e as Error).message)}})()},[]);
  const loader=useRef<{request:()=>Promise<void>}|null>(null);
  const load=useCallback(()=>loader.current?.request()??Promise.resolve(),[]);
