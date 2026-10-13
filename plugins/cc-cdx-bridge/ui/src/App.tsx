@@ -12,6 +12,7 @@ import {independentRefresh,panelNavigation,PanelOffline,offlineNotice} from './l
 import {claimPanelWindow} from './lib/single-window';
 import {hasDraft,trackDrafts} from './lib/drafts';
 import {useCompact} from './lib/compact';
+import {readDark} from './lib/theme';
 import {displayName} from '../../src/names';
 
 type Participant={sessionId:string;name:string;cwd:string;provider:'codex'|'claude';status:string;eligibleSurface:boolean;projectAuthorizationReceiver:boolean|null;implementationReceiver?:boolean|null};
@@ -39,7 +40,7 @@ export function ReplacedWindow(){
 export default function App({onReplaced}:{onReplaced?:()=>void}){
  const [language,setLanguage]=useLanguage(),compact=useCompact();
  useEffect(()=>{document.documentElement.lang=language;document.title=displayName+' · '+t('Colaboraciones')},[language]);
- const [ready,setReady]=useState(false),[error,setError]=useState(''),[view,setView]=useState<'diagnostic'|'authorization'|'desktop'>(initialNavigation.view),[bound,setBound]=useState<string|null>(null),[participants,setParticipants]=useState<Participant[]>([]),[connected,setConnected]=useState(false),[dark,setDark]=useState(()=>localStorage.getItem('theme')?localStorage.getItem('theme')==='dark':matchMedia('(prefers-color-scheme: dark)').matches);
+ const [ready,setReady]=useState(false),[error,setError]=useState(''),[view,setView]=useState<'diagnostic'|'authorization'|'desktop'>(initialNavigation.view),[bound,setBound]=useState<string|null>(null),[participants,setParticipants]=useState<Participant[]>([]),[connected,setConnected]=useState(false),[dark,setDark]=useState(()=>readDark(localStorage));
  const [desktop,setDesktop]=useState(false),[ownerProvider,setOwnerProvider]=useState('codex');const [serviceVersion,setServiceVersion]=useState('');const [lastUpdated,setLastUpdated]=useState<number|null>(null),[sectionErrors,setSectionErrors]=useState<Record<string,string>>({});const refreshErrors=[...new Set(Object.values(sectionErrors))],refreshError=refreshErrors.map(e=>t(e)).join(' ');
  useEffect(()=>{document.documentElement.classList.toggle('dark',dark);localStorage.setItem('theme',dark?'dark':'light')},[dark]);
  const toggleTheme=()=>{const root=document.documentElement;root.classList.add('theme-transition');setDark(!dark);setTimeout(()=>root.classList.remove('theme-transition'),300)};

@@ -89,3 +89,18 @@ test('only the panel records edit authority for the non-initiating participant, 
  f.store.grantEdit(f.id,f.own,'panel_session:x',2,'Phase 2 only');expect(f.store.editNotice(f.id,f.peer)!.text).toContain('Phase 2 only');
  f.setTime(70000);expect(f.store.editStatus(f.id).valid).toBe(false);expect(()=>f.store.grantEdit(f.id,f.own,'panel_session:x',3,'late')).toThrow('limit_reached');
  }finally{f.close()}});
+test('the panel may change messages and time until a run starts; an earlier consent no longer covers it',()=>{const root=mkdtempSync('/tmp/desktop-runs-'),store=new DesktopRunStore(root);try{
+ const participants=['codex','claude'].map((p,i)=>({provider:p,sessionId:randomUUID(),name:'Same',surface:p==='codex'?'codex-claude-uds-bridge':'claude-desktop',pid:100+i,procStart:'fixed',socketPath:'/tmp/'+i+'.sock',version:'test',status:'idle',project:{directory:root,kind:'directory',worktree:root,commonGitDir:null,head:null,branch:null,dirty:null,diffHash:null,statusHash:null,untrackedPaths:[],untrackedSnapshot:null}})) as Participant[];
+ const own={provider:'claude' as const,sessionId:participants[1]!.sessionId},panel='panel_session:nonsecret',revision=()=>store.status(id,own).coordination.revision;
+ const id=store.prepare(own,randomUUID(),{objective:'Not started yet'},{maxMessages:8,maxSeconds:60},participants);
+ expect(store.consent(id,own,panel,revision(),true).valid).toBe(true);
+ expect(()=>store.setLimits(id,own,'mcp_caller',revision(),{maxMessages:40,maxSeconds:3600})).toThrow('Only the panel');
+ expect(()=>store.setLimits(id,own,panel,revision()+1,{maxMessages:40,maxSeconds:3600})).toThrow('Run changed');
+ expect(()=>store.setLimits(id,{provider:'claude',sessionId:randomUUID()},panel,revision(),{maxMessages:40,maxSeconds:3600})).toThrow('participant');
+ const before=revision();store.setLimits(id,own,panel,before,{maxMessages:40,maxSeconds:3600});
+ const after=store.status(id,own);expect(after.limits).toEqual({maxMessages:40,maxSeconds:3600});expect(after.coordination.revision).toBe(before+1);expect(after.initiator).toEqual(own);expect(after.consent.valid).toBe(false);
+ expect(after.events.at(-1)).toMatchObject({type:'limits_changed',actor:panel,payload:{from:{maxMessages:8,maxSeconds:60},to:{maxMessages:40,maxSeconds:3600}}});
+ store.setLimits(id,own,panel,revision(),{maxMessages:null,maxSeconds:600});expect(store.status(id,own).limits).toEqual({maxMessages:null,maxSeconds:600});
+ store.registerExecutor('executor',process.pid,Bun.spawnSync(['ps','-o','lstart=','-p',String(process.pid)],{env:{...process.env,LC_ALL:'C',TZ:'UTC'}}).stdout.toString().trim());store.start(id,own,'executor');
+ expect(()=>store.setLimits(id,own,panel,revision(),{maxMessages:4,maxSeconds:60})).toThrow('before the collaboration starts');
+}finally{store.close();rmSync(root,{recursive:true,force:true});}});
