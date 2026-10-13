@@ -1,24 +1,15 @@
 import {useSyncExternalStore} from 'react';
 import {english} from './messages';
+import {pagePreferences,remember,type Language} from './preferences';
 
-export type Language = 'en' | 'es';
-const preference = 'cc-cdx-language';
-// English unless the person chose another language in the panel.
-export function readLanguage(storage?: Pick<Storage, 'getItem'>): Language {
-  try { const stored = storage?.getItem(preference); if (stored === 'es' || stored === 'en') return stored; }
-  catch { /* Use the default. */ }
-  return 'en';
-}
-function initialLanguage(): Language {
-  return readLanguage(typeof window === 'undefined' ? undefined : window.localStorage);
-}
-let language: Language = initialLanguage();
+export type {Language};
+let language: Language = pagePreferences(typeof document === 'undefined' ? undefined : document.documentElement).language;
 const spanish = Object.fromEntries(Object.entries(english).map(([es, en]) => [en, es]));
 const listeners = new Set<() => void>();
 export const getLanguage = () => language;
 export function setLanguage(next: Language) {
   language = next;
-  try { localStorage.setItem(preference, next); } catch { /* Still usable without browser storage. */ }
+  remember({language: next});
   listeners.forEach(listener => listener());
 }
 export function useLanguage() {

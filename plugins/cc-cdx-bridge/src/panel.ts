@@ -1,13 +1,14 @@
 import {desktopPanelRoutes,type DesktopPanelAdapter} from './desktop-panel';
 import { Database } from 'bun:sqlite';
 import { existsSync, realpathSync } from 'node:fs';
-import { join, resolve, extname } from 'node:path';
+import { join, resolve } from 'node:path';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { discoverParticipants, inspectParticipant, type ParticipantOptions } from './participants';
 import { doctor } from './doctor';
 import { version } from './version';
 import { ProjectAuthorizations, authorizationIdentitySchema, authorizationChangeSchema } from './project-authorization';
+import { readPanelPreferences, savePanelPreferences, withPanelPreferences } from './panel-preferences';
 
 const equal=(a:string,b:string)=>Buffer.byteLength(a)===Buffer.byteLength(b)&&timingSafeEqual(Buffer.from(a),Buffer.from(b));
 type Options=ParticipantOptions&{codexHome:string;pluginRoot:string;ownerThread?:string;ownerProvider?:'codex'|'claude';desktop?:DesktopPanelAdapter;port?:number};
@@ -54,6 +55,7 @@ export function startPanel(options:Options){
           if(req.method!=='GET'&&(requestOrigin!==origin||!equal(req.headers.get('x-csrf-token')??'',csrf)))return json({error:'Invalid CSRF token'},403);
           if(url.pathname==='/api/v1/health'&&req.method==='GET')return json({version,csrf,ownerThread:options.ownerThread??null,ownerProvider:options.ownerProvider??'codex',desktop:!!desktop});
           if(url.pathname.startsWith('/api/v1/desktop/')&&desktop)return json(await desktop.handle(url.pathname.slice('/api/v1/desktop/'.length),req.method,()=>body(req)));
+          if(url.pathname==='/api/v1/preferences'&&req.method==='POST')return json(savePanelPreferences(options.stateDir,await body(req)));
           if(url.pathname==='/api/v1/participants'&&req.method==='GET')return json(await discoverParticipants(options.configDir,options.stateDir));
           if(url.pathname==='/api/v1/project-authorization'&&req.method==='GET'){
             const id=await authorizationIdentity({ownerThread:url.searchParams.get('ownerThread'),project:url.searchParams.get('project')});
@@ -77,7 +79,8 @@ export function startPanel(options:Options){
         const relative=url.pathname==='/'?'index.html':url.pathname.slice(1);
         if(relative!=='index.html'&&!/^assets\/[\w.-]+\.(js|css|woff2)$/.test(relative))return json({error:'Unknown asset'},404);
         const file=join(assetRoot,relative);if(!existsSync(file))return json({error:'Panel assets missing; build the UI'},503);
-        return new Response(Bun.file(file),{headers:{...headers,'Cache-Control':extname(file)==='.html'?'no-store':'public, max-age=31536000, immutable'}});
+        if(relative==='index.html')return new Response(withPanelPreferences(await Bun.file(file).text(),readPanelPreferences(options.stateDir)),{headers:{...headers,'Content-Type':'text/html;charset=utf-8'}});
+        return new Response(Bun.file(file),{headers:{...headers,'Cache-Control':'public, max-age=31536000, immutable'}});
       }catch(error){return json({error:error instanceof Error?error.message:'Panel request failed'},409);}
     }});
   return {get url(){return `http://127.0.0.1:${server.port}/#token=${token}`;},reopenUrl(){if(closed)throw new Error('Panel closed');token=randomBytes(32).toString('hex');exchanged=false;return `http://127.0.0.1:${server.port}/#token=${token}`;},origin:`http://127.0.0.1:${server.port}`,
