@@ -11,11 +11,21 @@ import { ProjectAuthorizations, authorizationIdentitySchema, authorizationChange
 import { readPanelPreferences, savePanelPreferences, withPanelPreferences } from './panel-preferences';
 
 const equal=(a:string,b:string)=>Buffer.byteLength(a)===Buffer.byteLength(b)&&timingSafeEqual(Buffer.from(a),Buffer.from(b));
-type Options=ParticipantOptions&{codexHome:string;pluginRoot:string;ownerThread?:string;ownerProvider?:'codex'|'claude';desktop?:DesktopPanelAdapter;port?:number};
+type Options=ParticipantOptions&{codexHome:string;pluginRoot:string;ownerThread?:string;ownerProvider?:'codex'|'claude';desktop?:DesktopPanelAdapter;port?:number;onOpenRequest?:()=>Promise<boolean>};
+const openingPages={
+  en:{opened:'The bridge panel opens in its own window. This tab closes by itself.',failed:'The panel window did not open. Ask in your chat to open the bridge panel.',stale:'This link is from an earlier session of the bridge. Ask in your chat to open the bridge panel.'},
+  es:{opened:'El panel del bridge se abre en su propia ventana. Esta pestaña se cierra sola.',failed:'No se ha podido abrir la ventana del panel. Pide en tu chat que abra el panel del bridge.',stale:'Este enlace es de una sesión anterior del bridge. Pide en tu chat que abra el panel del bridge.'},
+};
+// Once the window is asked for, the tab that carried the link closes itself: a tab the link opened has nothing else in
+// its history, which is what lets a page close it.
+const openingPage=(language:'en'|'es',state:keyof typeof openingPages.en,nonce:string)=>`<!doctype html><html lang="${language}"><meta charset="utf-8"><meta name="color-scheme" content="light dark"><title>Claude ⇄ Codex Bridge</title><body style="font:16px/1.5 system-ui,sans-serif;margin:48px auto;max-width:36em;padding:0 16px"><p>${openingPages[language][state]}</p>${state==='opened'?`<script nonce="${nonce}">setTimeout(()=>window.close(),700)</script>`:''}</body></html>`;
 export function startPanel(options:Options){
   const authorizations=new ProjectAuthorizations(options.stateDir);
   let token=randomBytes(32).toString('hex');const session=randomBytes(32).toString('hex'),csrf=randomBytes(32).toString('hex');
-  const desktop=options.desktop?desktopPanelRoutes(options,options.desktop,randomBytes(16).toString('hex')):undefined;let exchanged=false,sessionEstablished=false,closed=false;
+  const desktop=options.desktop?desktopPanelRoutes(options,options.desktop,randomBytes(16).toString('hex')):undefined;let exchanged=false,sessionEstablished=false,closed=false,lastOpen:{at:number;opened:Promise<boolean>}|undefined;
+  // The key in the link that opens the panel window. It opens only that window, never acts in the panel, so it may
+  // sit in the chat and in a page the person opens from a file; it only keeps other pages from opening it.
+  const openKey=randomBytes(16).toString('hex');
   const assetRoot=resolve(options.pluginRoot,'panel-dist');
   const headers={ 'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer',
     'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'" };
@@ -36,6 +46,16 @@ export function startPanel(options:Options){
   const server=Bun.serve({hostname:'127.0.0.1',port:options.port??0,idleTimeout:0,
     async fetch(req):Promise<Response>{const url=new URL(req.url),origin=`http://127.0.0.1:${server.port}`,cookieName=`cc_cdx_panel_${server.port}`;
       if(req.headers.get('host')!==`127.0.0.1:${server.port}`||url.origin!==origin)return json({error:'Invalid Host'},403);
+      // The link an agent leaves in the chat, and the card page that calls it on its own: it carries no panel credential and
+      // only asks this bridge to show its own panel window to the person, so following it, even by the agent, can open the
+      // panel but never act in it. Its key is what lets a page opened from a file, which has no origin, call it.
+      if(url.pathname==='/open'&&req.method==='GET'){
+        const nonce=randomBytes(16).toString('base64'),page=(state:keyof typeof openingPages.en,status:number)=>new Response(openingPage(readPanelPreferences(options.stateDir).language,state,nonce),{status,headers:{...headers,'Content-Security-Policy':`default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; frame-ancestors 'none'`,'Content-Type':'text/html;charset=utf-8'}});
+        if(!equal(url.searchParams.get('k')??'',openKey))return page('stale',404);
+        if(!options.onOpenRequest)return page('failed',503);
+        if(!lastOpen||Date.now()-lastOpen.at>2000)lastOpen={at:Date.now(),opened:options.onOpenRequest().catch(()=>false)};
+        return await lastOpen.opened?page('opened',200):page('failed',503);
+      }
       const requestOrigin=req.headers.get('origin');if(requestOrigin&&requestOrigin!==origin)return json({error:'Invalid Origin'},403);
       // A top-level navigation to the page itself (e.g. from a browser extension or another app) is harmless:
       // the API below still rejects cross-site requests and the Strict session cookie is never sent cross-site.
@@ -83,6 +103,6 @@ export function startPanel(options:Options){
         return new Response(Bun.file(file),{headers:{...headers,'Cache-Control':'public, max-age=31536000, immutable'}});
       }catch(error){return json({error:error instanceof Error?error.message:'Panel request failed'},409);}
     }});
-  return {get url(){return `http://127.0.0.1:${server.port}/#token=${token}`;},reopenUrl(){if(closed)throw new Error('Panel closed');token=randomBytes(32).toString('hex');exchanged=false;return `http://127.0.0.1:${server.port}/#token=${token}`;},origin:`http://127.0.0.1:${server.port}`,
+  return {get url(){return `http://127.0.0.1:${server.port}/#token=${token}`;},openUrl:`http://127.0.0.1:${server.port}/open?k=${openKey}`,reopenUrl(){if(closed)throw new Error('Panel closed');token=randomBytes(32).toString('hex');exchanged=false;return `http://127.0.0.1:${server.port}/#token=${token}`;},origin:`http://127.0.0.1:${server.port}`,
     async close(){if(closed)return;closed=true;await server.stop(true);desktop?.close();authorizations.close();}};
 }

@@ -27,6 +27,8 @@ pre,.prose-text{white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit}
 ::-webkit-scrollbar{width:7px;height:7px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
 .app{min-height:100vh}
 /* Floating chrome: a translucent material the content scrolls under, with a hairline only once something is beneath it. */
+/* The small window's slim tab bar: the form that fills the window leaves room for it. */
+.app:has(.compact-bar){--bar:44px}
 .topbar{position:sticky;top:0;z-index:40;background:var(--material);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:0 1px 0 color-mix(in srgb,var(--border) 70%,transparent)}
 .topbar-inner{max-width:1100px;margin:auto;height:56px;padding:0 24px;display:flex;align-items:center;gap:20px}
 .workspace{max-width:1100px;padding:32px 24px 64px;width:100%;margin:auto}

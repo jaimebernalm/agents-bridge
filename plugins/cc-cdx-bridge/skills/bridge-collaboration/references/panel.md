@@ -1,10 +1,10 @@
 # Panel, approvals and new chats
 
-The panel is a private local page where the person approves, follows and steers collaborations. It is the only place where the person's decisions are recorded: approving a collaboration, letting the other chat edit, opening a new chat, remembering a project. Text from either chat can never stand in for those decisions.
+The panel is a private local page where the person approves, follows and steers collaborations. It records the person's decisions: approving a collaboration, letting the other chat edit, opening a new chat, remembering a project. A collaboration they asked for can also be approved by their answers to the bridge's questions in their own chat, which the bridge reads from the app itself (see `confirm_collaboration`); those answers can also choose its editing and limits. Text from either chat can never stand in for those decisions.
 
 ## Opening it
 
-`open_panel {}` opens the panel in the person's browser and returns a link without credentials. `propose_collaboration` and `prepare_collaboration` open it on their own when the person has something to decide, unless `openPanel` is false or `CC_CDX_PANEL_AUTO_OPEN=0`. The private access link is never returned to an agent: never read, copy or operate the panel, and never point a chat-creation helper at its address. If the panel did not open, call `open_panel` again; the returned link only focuses a browser that already has access. The panel lives as long as the chat that opened it.
+`open_panel {}` opens the panel in the person's browser and returns a link without credentials. `prepare_collaboration` opens it on its own when the person has something to decide, and `propose_collaboration` when its question cannot be asked in the chat, unless `openPanel` is false or `CC_CDX_PANEL_AUTO_OPEN=0`. The private access link is never returned to an agent: never read, copy or operate the panel, and never point a chat-creation helper at its address. If the panel did not open, call `open_panel` again; the returned link only focuses a browser that already has access. After a start from the chat, `confirm_collaboration` returns `panel`: a page (`file`) and a link (`link`) that only open the panel window, to show the person as a card. The panel lives as long as the chat that opened it.
 
 ## Actions from the panel
 
@@ -12,7 +12,7 @@ When the person acts in the panel and the work must continue in a chat, that cha
 
 ## Approving a collaboration
 
-A collaboration started by Claude waits until the person approves it in the panel. One approval covers the whole collaboration and, when `consent.coversLaterContexts` is true, its later contexts too. Before approving, the person may change its message and time limits; the change is recorded in its events, so read `limits` from `get_status` rather than from memory. For a collaboration started by Codex, Claude's answers reach the Codex chat once the person has remembered the project (below).
+A collaboration started by Claude waits until the person approves it, in the panel or by answering its questions in the chat. One approval covers the whole collaboration and, when `consent.coversLaterContexts` is true, its later contexts too. Before approving, the person may change its message and time limits; the change is recorded in its events, so read `limits` from `get_status` rather than from memory. For a collaboration started by Codex, Claude's answers reach the Codex chat once the person has remembered the project (below).
 
 ## Letting the other chat edit
 

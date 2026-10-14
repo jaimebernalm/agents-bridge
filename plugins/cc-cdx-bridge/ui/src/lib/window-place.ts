@@ -1,5 +1,5 @@
-// The panel's own app window opens in the top-right corner, a little smaller than a quarter of the
-// screen, so the Claude or Codex chat stays in view. Each chat's panel gets a new port and Chrome keeps
+// The panel's own app window opens in the top-right corner, under half the screen's width and about
+// three fifths of its height, so the Claude or Codex chat stays in view. Each chat's panel gets a new port and Chrome keeps
 // no placement for it, so the panel remembers where the person left it in a cookie: unlike storage,
 // cookies are shared by every port on 127.0.0.1. A normal browser tab is never moved.
 export type Rect = {x: number; y: number; w: number; h: number};
@@ -8,9 +8,12 @@ type Area = {availLeft?: number; availTop?: number; availWidth: number; availHei
 type PanelWindow = Pick<Window, 'resizeTo' | 'moveTo' | 'matchMedia' | 'addEventListener' | 'screenX' | 'screenY' | 'outerWidth' | 'outerHeight'> & {screen: Area; document: {cookie: string}};
 const cookie = 'cc_cdx_panel_window', gap = 12;
 
+// The smallest window that still shows the tabs and a page's main action without much scrolling.
+const minimum = {w: 520, h: 600};
+
 export function topRight(area: Area): Rect {
-  const w = Math.min(area.availWidth, Math.max(520, Math.round(area.availWidth * 0.44)));
-  const h = Math.min(area.availHeight, Math.max(420, Math.round(area.availHeight * 0.47)));
+  const w = Math.min(area.availWidth, Math.max(minimum.w, Math.round(area.availWidth * 0.44)));
+  const h = Math.min(area.availHeight, Math.max(minimum.h, Math.round(area.availHeight * 0.62)));
   const left = area.availLeft ?? 0, top = area.availTop ?? 0;
   return {x: left + Math.max(0, area.availWidth - w - gap), y: top + Math.max(0, Math.min(gap, area.availHeight - h)), w, h};
 }
@@ -21,9 +24,10 @@ export function savedPlace(cookies: string): Rect | undefined {
   return [x, y, w, h].every(Number.isInteger) ? {x: x!, y: y!, w: w!, h: h!} : undefined;
 }
 
-// A placement from another screen layout, or one too small to use, gives way to the default corner.
+// A placement from another screen layout, or one smaller than the minimum (as earlier versions saved
+// their smaller default), gives way to the default corner.
 const fits = (r: Rect, {availLeft: left = 0, availTop: top = 0, availWidth, availHeight}: Area) =>
-  r.w >= 320 && r.h >= 240 && r.x >= left && r.y >= top && r.x + r.w <= left + availWidth && r.y + r.h <= top + availHeight;
+  r.w >= Math.min(minimum.w, availWidth) && r.h >= Math.min(minimum.h, availHeight) && r.x >= left && r.y >= top && r.x + r.w <= left + availWidth && r.y + r.h <= top + availHeight;
 
 export function placePanelWindow(win: PanelWindow = window) {
   if (!win.matchMedia('(display-mode: standalone)').matches) return;

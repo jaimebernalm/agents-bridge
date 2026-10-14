@@ -128,6 +128,25 @@ test('verified binding needs the correlated, fresh, unused session in the same p
   expect(() => store.bindVerified(second.id, c, receipt(c, second.correlationId))).toThrow('already bound');
 });
 
+test('a chat the app started in its own empty folder binds once that same process works in the project', () => {
+  const scratchRoot = join(root, 'scratch-workspaces'), scratch = join(scratchRoot, 'account', 'org', 'scratch-2026-10-14-abc123'), lookalike = join(root, 'scratch-workspaces-x');
+  mkdirSync(scratch, { recursive: true }); mkdirSync(lookalike);
+  const { id, correlationId } = created(), c = candidate(), fromScratch = receipt(c, correlationId, { cwd: realpathSync(scratch) });
+  expect(() => store.bindVerified(id, c, fromScratch)).toThrow('another project');
+  expect(() => store.bindVerified(id, c, receipt(c, correlationId, { cwd: realpathSync(other) }), { scratchRoot })).toThrow('another project');
+  expect(() => store.bindVerified(id, c, receipt(c, correlationId, { cwd: realpathSync(lookalike) }), { scratchRoot })).toThrow('another project');
+  for (const notMadeByTheApp of [join(scratch, 'repo'), join(scratchRoot, 'account', 'org', 'repo')]) {
+    mkdirSync(notMadeByTheApp, { recursive: true });
+    expect(() => store.bindVerified(id, c, receipt(c, correlationId, { cwd: realpathSync(notMadeByTheApp) }), { scratchRoot })).toThrow('another project');
+  }
+  expect(() => store.bindVerified(id, { ...c, pid: 4343 }, fromScratch, { scratchRoot })).toThrow('disagree');
+  expect(() => store.bindVerified(id, c, { ...fromScratch, priorUserTurns: 1 }, { scratchRoot })).toThrow('already had');
+  // The app may already have removed that folder.
+  rmSync(scratch, { recursive: true });
+  expect(store.bindVerified(id, c, fromScratch, { scratchRoot })).toMatchObject({ state: 'bound', bound: { sessionId: c.sessionId, binding: 'host_receipt' } });
+  expect(store.events(id).at(-1)).toMatchObject({ type: 'bound', payload: { movedFrom: 'app_scratch_folder' } });
+});
+
 test('a host reference is only a pointer that the receipt must match', () => {
   const t = store.requestFromPanel(panel, input()).ticket, claim = store.claimCreating(t.id, 'x'), c = candidate();
   store.markCreated(t.id, claim.epoch, { hostRef: randomUUID() });

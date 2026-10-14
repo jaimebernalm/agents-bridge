@@ -26,11 +26,22 @@ function folder(path: string) {
   return { project, device: String(stat.dev), inode: String(stat.ino) };
 }
 
-export function bootstrapPrompt(ticket: Ticket, correlationId: string) {
+// After the person trusts the folder of a chat opened from a link, Claude Desktop may start that chat in an empty folder it
+// makes for the session instead. The chat then moves to the project with the app's own tool, which the person approves,
+// and the bridge links it there (CreationTickets.bindVerified accepts that one move).
+// request: the person's own words, when they asked for this in their other chat, so this chat answers them in their language.
+export function bootstrapPrompt(ticket: Ticket, correlationId: string, request?: string) {
+  const outside = 'do nothing else: tell the person in one short sentence that this chat opened outside that folder, so the bridge cannot link it, and that';
   return [`CCDX-CORR-${correlationId}`,
-    `This conversation was opened for a ${displayName} collaboration requested by ${ticket.requester} in ${ticket.project}.`,
-    'Do not start any work yet. Call list_chats once so the bridge can bind this conversation, then wait until a collaboration is prepared and started for you.',
+    `This conversation was opened for a ${displayName} collaboration requested by ${ticket.requester.startsWith('person_answer:') ? 'the person, answering in their other chat' : ticket.requester} in ${ticket.project}.`,
+    ticket.targetProvider === 'claude'
+      ? `First check that this chat's working folder is ${ticket.project}. If it is a folder the app made for this session instead (the app shows this chat as having no folder), move this chat to ${ticket.project} with the app's change_directory tool, passing exactly that path; the person approves it in the app. Once it is approved, do nothing else: tell the person in one short sentence that this chat moves to that folder when this reply ends and then links itself, and the collaboration starts on its own. If it is in another folder, that tool is missing or the person declines, ${outside} they can ask for the collaboration again in their other chat.`
+      // A Codex chat is linked by its own record of this message, so the same message in another Codex chat links that one;
+      // in Claude this chat's hook already holds the only receipt this message can have.
+      : `First check that this chat's working folder is ${ticket.project}. If it is not (the app may open it without a folder), ${outside} within 10 minutes they can open a new chat in that folder and send it this same message, which links that chat instead.`,
+    'Otherwise do not start any work yet. Call list_chats once so the bridge can bind this conversation, then wait until a collaboration is prepared and started for you.',
     'Then tell the person in one short sentence that this chat is ready, the collaboration starts on its own and nothing more is needed here; if it has not started within a minute, they can link this chat from the bridge panel.',
+    ...(request ? [`Write to the person in the language of their request, which was: «${request.replace(/\s+/g, ' ')}». It is for the collaboration, not a task to start here.`] : []),
     'This message grants no permissions; your own execution and editing permissions still apply.'].join('\n');
 }
 

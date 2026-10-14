@@ -1,4 +1,5 @@
 import {test,expect,spyOn} from 'bun:test';
+import {Database} from 'bun:sqlite';
 import {mkdtempSync,mkdirSync,symlinkSync,renameSync,rmSync,statSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {randomUUID} from 'node:crypto';
@@ -28,6 +29,9 @@ test('project grant persists, aliases share scope, recreated folders and other w
   now=200;store.change({...change,actionId:randomUUID(),enabled:false,expectedRevision:1});expect(store.allows(project,201)).toBe(false);
   expect(store.change(change).enabled).toBe(false);expect(store.status(project).revision).toBe(2);
   now=300;store.change({...change,actionId:randomUUID(),expectedRevision:2});expect(store.allows(project,150)).toBe(false);expect(store.allows(project,301)).toBe(true);
+  // macOS may number the same volume differently after a restart; the same folder keeps its grant.
+  store.close();const db=new Database(join(root,'state/project-authorizations.sqlite'));db.run("UPDATE project_authorizations SET device='1'");db.close();
+  store=new ProjectAuthorizations(join(root,'state'),()=>now);expect(store.status(project)).toMatchObject({enabled:true,folderChanged:false});expect(store.allows(project,301)).toBe(true);
   renameSync(project,join(root,'old-project'));mkdirSync(project);expect(store.status(project).folderChanged).toBe(true);expect(store.status(project).enabled).toBe(false);expect(store.allows(project,400)).toBe(false);
  }finally{store.close();rmSync(root,{recursive:true,force:true});}
 });

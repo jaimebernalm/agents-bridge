@@ -5,15 +5,13 @@
 // prompt carries one, and a count of earlier user turns.
 import { randomUUID } from 'node:crypto';
 import { basename, dirname, join, isAbsolute } from 'node:path';
-import { homedir } from 'node:os';
 import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { z } from 'zod';
 import { processStart, uuid } from './claude';
 import { registeredAncestor } from './claude-caller';
-import { appendObservation, correlationPattern, privateSubdirectory, readHookSession, writeAtomic, writeOnce, type CorrelationReceipt, type HookSession } from './claude-sidecar';
-import { stateFolder } from './names';
+import { appendObservation, correlationPattern, hookPaths, privateSubdirectory, readHookSession, writeAtomic, writeOnce, type CorrelationReceipt, type HookSession } from './claude-sidecar';
 
-export { consumeCorrelation, correlationPattern, peekCorrelation, readHookSession, type CorrelationReceipt, type HookSession } from './claude-sidecar';
+export { consumeCorrelation, correlationPattern, hookPaths, peekCorrelation, readHookSession, type CorrelationReceipt, type HookSession } from './claude-sidecar';
 
 const maxTranscriptBytes = 64 * 1024 * 1024;
 
@@ -94,13 +92,6 @@ async function hookEngine(configDir: string, start: number): Promise<HookEngine 
     if (!peer.procStart || await processStart(peer.pid) !== peer.procStart) return undefined;
     return { pid: peer.pid, procStart: peer.procStart, registrySessionId: peer.sessionId };
   } catch { return undefined; }
-}
-
-export function hookPaths(env = process.env) {
-  return {
-    configDir: env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude'),
-    stateDir: env.CC_CDX_STATE_DIR ?? join(env.CODEX_HOME ?? join(homedir(), '.codex'), 'plugin-state', stateFolder),
-  };
 }
 
 export async function runHook(raw: string, paths = hookPaths(), start = process.pid) {

@@ -11,7 +11,7 @@ import { z } from 'zod';
 import { Bridge } from '../src/bridge';
 import { peers, peerAddress } from '../src/claude';
 import { version } from '../src/version';
-import { tools } from '../src/names';
+import { questionTestTool, tools } from '../src/names';
 import { Database } from 'bun:sqlite';
 
 test('the Codex server lists its tools, binds state to caller metadata and rejects a different task', async () => {
@@ -24,7 +24,7 @@ test('the Codex server lists its tools, binds state to caller metadata and rejec
     expect(client.getServerVersion()?.version).toBe(version);
     // The same collaboration tools as Claude, plus Codex's own receiver tools.
     expect((await client.listTools()).tools.map(tool => tool.name).sort())
-      .toEqual(['connect_this_chat', 'diagnose', 'session_start', ...Object.values(tools)].sort());
+      .toEqual(['connect_this_chat', 'diagnose', 'session_start', questionTestTool, ...Object.values(tools)].sort());
     // Without caller metadata no tool can tell which Codex task is asking.
     const missing = await client.callTool({ name: 'diagnose', arguments: { cwd: root } });
     expect(missing.isError).toBe(true);

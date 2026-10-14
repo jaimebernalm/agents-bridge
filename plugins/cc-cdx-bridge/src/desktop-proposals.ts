@@ -41,7 +41,11 @@ export class DesktopProposals{
  open(requester:Principal,project:string){
   return this.db.query<Row,[string,string]>("SELECT * FROM desktop_proposals WHERE requester=? AND project=? AND state='open' ORDER BY created_at DESC").all(key(requester),project).map(proposal);
  }
- /** Only the panel resolves a proposal: used when the person started from it, dismissed otherwise. */
+ get(requester:Principal,project:string,id:string){
+  const row=this.db.query<Row,[string,string,string]>("SELECT * FROM desktop_proposals WHERE id=? AND requester=? AND project=? AND state='open'").get(id,key(requester),project);
+  return row?proposal(row):undefined;
+ }
+ /** Only the person resolves a proposal, in the panel or by answering its question: used when they started from it, dismissed otherwise. */
  resolve(requester:Principal,project:string,id:string,state:'used'|'dismissed',actor:string){
   const done=this.db.run("UPDATE desktop_proposals SET state=?,resolved_at=?,resolved_by=? WHERE id=? AND requester=? AND project=? AND state='open'",[state,this.now(),actor,id,key(requester),project]);
   return {id,state:done.changes===1?state:'unchanged'};

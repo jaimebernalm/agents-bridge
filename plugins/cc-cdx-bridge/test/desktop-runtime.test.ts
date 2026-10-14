@@ -8,7 +8,7 @@ import {InMemoryTransport} from '@modelcontextprotocol/sdk/inMemory.js';
 import {registerDesktopTools} from '../src/desktop-runtime';
 import {inspectParticipant} from '../src/participants';
 import {nativeFixture,until} from './collaboration-fixture';
-import {tools as toolNames,type Operation} from '../src/names';
+import {questionTestTool,tools as toolNames,type Operation} from '../src/names';
 const root=resolve(import.meta.dir,'..');
 test('Claude MCP initiates and sends through Codex reception; Codex reads and replies through the same core',async()=>{
  const f=await nativeFixture(),codex=await f.connect(),server=new McpServer({name:'claude-fixture',version:'1'}),client=new Client({name:'fixture',version:'1'});
@@ -33,9 +33,22 @@ test('Codex-origin managed replies inherit the project grant, while Claude initi
  const runtime=registerDesktopTools(server,{configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path,codexHome:f.root,pluginRoot:root,authenticate:async()=>({provider:'claude',sessionId:p.sessionId,pid:p.pid,procStart:p.procStart,project:f.root,binding:{method:'fixture',generation:'fixture',surface:'claude-desktop',evidence:[]}})}),[a,b]=InMemoryTransport.createLinkedPair();await Promise.all([server.connect(a),client.connect(b)]);
  const call=async(name:string,args:Record<string,unknown>)=>{const r=await client.callTool({name:toolNames[name as Operation],arguments:args});if(r.isError)throw new Error(JSON.stringify(r.content));return JSON.parse((r.content as {text:string}[])[0]!.text)};
  try{await call('discover',{});const run=(await f.call(codex,'prepare_collaboration',{requestId:randomUUID(),peerId:f.peerId,context:{objective:'grant response'},openPanel:false})).data;expect(run.id).toBeTruthy();expect((await f.call(codex,'start_collaboration',{runId:run.id,supervised:true})).error).toBeFalsy();const messageId=randomUUID();expect((await f.call(codex,'send_message',{runId:run.id,messageId,text:'GRANT_REQUEST'})).error).toBeFalsy();await until(()=>f.frames.some(x=>x.type==='user'));
-  await Bun.sleep(5);await call('send',{runId:run.id,messageId:randomUUID(),replyTo:messageId,text:'GRANT_RESPONSE'});await until(()=>f.desktop.submissions.length===1);expect(JSON.stringify(f.desktop.submissions)).toContain('GRANT_RESPONSE');expect(f.bridge.policy()).toBe('default');
+  // The chat that did not start it shows its own panel card with its first reply, as the starting chat does.
+  await Bun.sleep(5);const reply=await call('send',{runId:run.id,messageId:randomUUID(),replyTo:messageId,text:'GRANT_RESPONSE'});expect(reply.panel.file).toEndWith('.html');expect(reply.instruction).toContain('panel.file');await until(()=>f.desktop.submissions.length===1);expect(JSON.stringify(f.desktop.submissions)).toContain('GRANT_RESPONSE');expect(f.bridge.policy()).toBe('default');
   await f.call(codex,'control_collaboration',{runId:run.id,commandId:randomUUID(),expectedRevision:1,control:{action:'finish'}});
   const reverse=await call('prepare',{requestId:randomUUID(),peerId:f.desktop.threadId,context:{objective:'new initiation needs consent'},openPanel:false});expect(reverse.preflight.code).toBe('claude_initiation_requires_chat_accept');await expect(call('start',{runId:reverse.id,supervised:true})).rejects.toThrow('explicitly accept');expect(f.desktop.submissions).toHaveLength(1);
+ }finally{await client.close();await server.close();await runtime.close();await codex.close();await f.close()}
+},15000);
+
+test('a collaboration Codex starts is prepared before «Remember authorization» and starts only once the person gives it',async()=>{
+ const f=await nativeFixture(false,{reception:'default'}),codex=await f.connect(),server=new McpServer({name:'claude-fixture',version:'1'}),client=new Client({name:'fixture',version:'1'});f.bridge.updateRuntime({status:'idle',mode:'bypass'});
+ const p=await inspectParticipant({configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path},f.peerId,'claude');
+ const runtime=registerDesktopTools(server,{configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path,codexHome:f.root,pluginRoot:root,authenticate:async()=>({provider:'claude',sessionId:p.sessionId,pid:p.pid,procStart:p.procStart,project:f.root,binding:{method:'fixture',generation:'fixture',surface:'claude-desktop',evidence:[]}})}),[a,b]=InMemoryTransport.createLinkedPair();await Promise.all([server.connect(a),client.connect(b)]);
+ try{await client.callTool({name:toolNames.discover,arguments:{}});
+  const prepared=await f.call(codex,'prepare_collaboration',{requestId:randomUUID(),peerId:f.peerId,context:{objective:'needs the project grant'},openPanel:false});expect(prepared.error).toBeFalsy();expect(prepared.data.preflight.code).toBe('reception_authorization_required');
+  const early=await f.call(codex,'start_collaboration',{runId:prepared.data.id,supervised:true});expect(early.error).toBe(true);expect(early.data).toContain('Recordar autorización');expect(f.frames).toHaveLength(0);
+  const {ProjectAuthorizations}=await import('../src/project-authorization'),grants=new ProjectAuthorizations(f.state);grants.change({project:f.root,ownerThread:f.desktop.threadId,actionId:randomUUID(),enabled:true,expectedRevision:0,confirmed:true});grants.close();
+  const started=await f.call(codex,'start_collaboration',{runId:prepared.data.id,supervised:true});expect(started.error).toBeFalsy();expect(started.data.state).toBe('active');
  }finally{await client.close();await server.close();await runtime.close();await codex.close();await f.close()}
 },15000);
 
@@ -52,7 +65,7 @@ test('private Claude panel authorizes one run without leaking browser credential
   await f.bridge.setPolicy('hold');expect((await post('start',{runId:run.id,supervised:true})).status).toBe(409);await f.bridge.setPolicy('default');expect((await peerPost('start',{runId:run.id,supervised:true})).status).toBe(200);const bootstrapId=randomUUID();await call('send',{runId:run.id,messageId:bootstrapId,text:'RUN_CONSENT_BOOTSTRAP'});await until(()=>f.desktop.submissions.length===1);expect(JSON.stringify(f.desktop.submissions)).toContain('panel_session:');expect(f.bridge.policy()).toBe('default');
   const reply=await f.call(codex,'send_message',{runId:run.id,messageId:randomUUID(),replyTo:bootstrapId,text:'RUN_CONSENT_REPLY_WITHOUT_PROJECT_GRANT'});expect(reply.error).toBeFalsy();await until(()=>f.frames.some(x=>x.type==='user'&&x.message.content.includes('RUN_CONSENT_REPLY_WITHOUT_PROJECT_GRANT')));expect(runtime.store.status(run.id,p).messagesUsed).toBe(2);expect(f.bridge.policy()).toBe('default');
   await f.bridge.setPolicy('hold');const held=await f.call(codex,'send_message',{runId:run.id,messageId:randomUUID(),replyTo:bootstrapId,text:'HOLD_STILL_WINS'});expect(held.error).toBeTruthy();expect(runtime.store.status(run.id,p).messagesUsed).toBe(2);await f.bridge.setPolicy('default');
-  const tools=await client.listTools();expect(tools.tools.map(t=>t.name).sort()).toEqual(Object.values(toolNames).sort());await expect(call('panel_command',{commandId:randomUUID()})).rejects.toThrow('Unknown command');
+  const tools=await client.listTools();expect(tools.tools.map(t=>t.name).sort()).toEqual([questionTestTool,...Object.values(toolNames)].sort());await expect(call('panel_command',{commandId:randomUUID()})).rejects.toThrow('Unknown command');
   const snapshot=await call('status',{runId:run.id});expect(JSON.stringify(snapshot)).not.toContain(secret);expect(JSON.stringify(snapshot)).not.toContain(token);expect(snapshot.events.find((e:any)=>e.type==='started').actor).toStartWith('panel_session:');const id=randomUUID();expect((await peerPost('notify',{runId:run.id,commandId:id})).status).toBe(200);expect((await call('panel_command',{commandId:id})).run.id).toBe(run.id);
   await f.bridge.setPolicy('refuse');await expect(call('send',{runId:run.id,messageId:randomUUID(),text:'REFUSE_WINS'})).rejects.toThrow('refuse');expect(runtime.store.status(run.id,p).messagesUsed).toBe(2);
   const {readdirSync,readFileSync}=await import('node:fs');for(const file of readdirSync(f.state).filter(x=>/sqlite(?:-wal|-shm)?$/.test(x)))expect(readFileSync(resolve(f.state,file)).includes(Buffer.from(secret))).toBe(false);
@@ -174,6 +187,23 @@ test('a panel start waits for a busy peer, can stop waiting, and starts with its
   expect((await state()).startQueue.waiting[run.id]).toBeUndefined();
   // A started run is not something to start again.
   expect((await post('start_when_idle',{runId:run.id,commandId:randomUUID()})).status).toBe(409);
+ }finally{auto===undefined?delete process.env.CC_CDX_PANEL_AUTO_OPEN:process.env.CC_CDX_PANEL_AUTO_OPEN=auto;await client.close();await server.close();await runtime.close();await codex.close();await f.close()}
+},20000);
+
+test('a start made inside the starting chat\'s own call wakes nobody, since that call already says it started',async()=>{
+ const f=await nativeFixture(false,{reception:'default'}),codex=await f.connect(),server=new McpServer({name:'claude-fixture',version:'1'}),client=new Client({name:'fixture',version:'1'});let privateUrl='';const auto=process.env.CC_CDX_PANEL_AUTO_OPEN;delete process.env.CC_CDX_PANEL_AUTO_OPEN;
+ const p=await inspectParticipant({configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path},f.peerId,'claude');f.bridge.updateRuntime({status:'idle',mode:'bypass'});
+ const runtime=registerDesktopTools(server,{configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path,codexHome:f.root,pluginRoot:root,openPrivatePanel:async url=>{privateUrl=url},authenticate:async()=>({provider:'claude',sessionId:p.sessionId,pid:p.pid,procStart:p.procStart,project:f.root,binding:{method:'fixture',generation:'fixture',surface:'claude-desktop',evidence:[]}})}),[a,b]=InMemoryTransport.createLinkedPair();await server.connect(a);await client.connect(b);
+ const call=async(name:string,args:Record<string,unknown>)=>{const r=await client.callTool({name:toolNames[name as Operation],arguments:args});if(r.isError)throw new Error(JSON.stringify(r.content));return JSON.parse((r.content as {text:string}[])[0]!.text)};
+ try{await call('discover',{});await f.call(codex,'list_chats',{});await call('panel',{});const origin=new URL(privateUrl).origin,token=new URLSearchParams(new URL(privateUrl).hash.slice(1)).get('token')!;
+  const session=await fetch(origin+'/api/v1/session',{method:'POST',headers:{Origin:origin},body:JSON.stringify({token})}),{csrf}=await session.json() as {csrf:string},cookie=session.headers.get('set-cookie')!.split(';')[0]!;
+  const post=async(path:string,body:unknown)=>{const r=await fetch(origin+'/api/v1/desktop/'+path,{method:'POST',headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf},body:JSON.stringify(body)});return {status:r.status,data:await r.json() as any}};
+  const state=async()=>(await (await fetch(origin+'/api/v1/desktop/state',{headers:{Origin:origin,Cookie:cookie}})).json()) as any;
+  const run=await call('prepare',{requestId:randomUUID(),peerId:f.desktop.threadId,context:{objective:'Wait for the peer'},limits:{maxMessages:8,maxSeconds:300},openPanel:false});
+  expect((await post('consent',{runId:run.id,expectedRevision:0,coversLaterContexts:true})).status).toBe(200);
+  expect((await post('start_when_idle',{runId:run.id,commandId:randomUUID(),wake:false})).data).toEqual({state:'started',job:null});
+  expect(runtime.store.status(run.id,p).state).toBe('active');
+  expect(runtime.store.db.query('SELECT * FROM desktop_panel_jobs WHERE run_id=?').all(run.id)).toEqual([]);
  }finally{auto===undefined?delete process.env.CC_CDX_PANEL_AUTO_OPEN:process.env.CC_CDX_PANEL_AUTO_OPEN=auto;await client.close();await server.close();await runtime.close();await codex.close();await f.close()}
 },20000);
 

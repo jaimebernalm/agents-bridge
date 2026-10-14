@@ -13,11 +13,11 @@ Every tool works from either app. The bridge derives who is calling from the cha
 `propose_collaboration`, for a request the person made in words:
 
 ```json
-{"requestId": "UUID", "objective": "What they asked for", "newChat": true, "peerId": "UUID when newChat is false",
+{"objective": "What they asked for", "newChat": true, "peerId": "UUID when newChat is false",
  "allowEdits": true, "editScope": "What the other chat may do", "maxMessages": 24, "minutes": 30, "initialBarrier": false}
 ```
 
-`maxMessages` null removes the message limit; `minutes` goes up to 1440 (24 hours). It opens the panel prefilled and grants nothing.
+`maxMessages` null removes the message limit; `minutes` goes up to 1440 (24 hours). `requestId` is optional: pass one only to make a retry return the same proposal. It grants nothing: it returns the card of questions to ask the person (`ask`, `questionId`), or opens the panel prefilled with `"approval": "panel"`.
 
 `prepare_collaboration`:
 
@@ -33,7 +33,7 @@ Every tool works from either app. The bridge derives who is calling from the cha
 }
 ```
 
-- `routine` is optional. `mode` defaults to `free`; `starts` is inferred from non-empty `priorAnalysis`. An explicit `existing` needs the text, and an explicit `new` rejects it.
+- `routine` is optional. `mode` defaults to `free`; `starts` says whether each chat begins new work or continues its earlier analysis, not whether a chat was opened for it; it is inferred from non-empty `priorAnalysis`. An explicit `existing` needs the text, and an explicit `new` rejects it.
 - `limits.maxMessages` counts both chats' messages; null removes the limit. `maxSeconds` goes up to 86400 (24 hours) and always applies.
 - `coordination` and `implementation` are optional: see [coordination.md](coordination.md) and [implementation.md](implementation.md).
 - The panel opens privately when the person must approve, unless `openPanel` is false. A Claude-started collaboration waits as a draft until the person approves it there; that approval covers the whole collaboration, including later contexts when `consent.coversLaterContexts` is true.
@@ -62,7 +62,7 @@ Add `taskId` to tie a report to its task. `declaredState` is `analysis`, `perspe
 
 ## Read, change and close
 
-- `get_status {runId?}`: without `runId`, your collaborations; with it, the participants, context and its version, messages with delivery evidence, tasks, reports, results, reviews (`current: false` once a newer version or context replaces what they reviewed), limits, deadline, `consent`, `editAuthorization` and `coordination` (its `revision`, the controlling lease and, with phases, `structured`).
+- `get_status {runId?}`: without `runId`, your collaborations; with it, the participants, context and its version, messages with delivery evidence (a message to a Claude chat normally ends at `socket-written`, `native_claude_not_observed`: the bridge cannot see Claude read it, and its reply is the proof), tasks, reports, results, reviews (`current: false` once a newer version or context replaces what they reviewed), limits, deadline, `consent`, `editAuthorization` and `coordination` (its `revision`, the controlling lease and, with phases, `structured`).
 - `control_collaboration {runId, commandId, expectedRevision, control}`: `expectedRevision` is `coordination.revision` from `get_status`. Actions: `pause`, `resume`, `context`, `phase`, `task`, `recover`, `cancel`, `finish`; see [coordination.md](coordination.md). Finish with `{"action": "finish", "closure": {"result": {"resultId": "UUID", "version": 1}, "summary": "…", "disposition": "proposal"}}` or `with_disagreements` / `incomplete`; the result is optional. Only the chat that started the collaboration controls it from a chat; the person can also control it in the panel.
 - `export_collaboration {runId, format: "markdown" | "json"}`: the full record as text, without secrets. It writes no file; it includes exact IDs and local paths, so review before sharing.
 
