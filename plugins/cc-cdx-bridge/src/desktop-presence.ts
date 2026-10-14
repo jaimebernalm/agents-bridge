@@ -18,3 +18,9 @@ export async function desktopPresent(stateDir:string,p:Participant|{provider:str
  return r.provider===p.provider&&r.sessionId===p.sessionId&&r.pid===p.pid&&r.procStart===p.procStart&&r.project===project&&r.version===version&&typeof r.runtimePid==='number'&&typeof r.runtimeStart==='string'&&await processStart(r.runtimePid)===r.runtimeStart;
  }catch{return false;}
 }
+// The bridge version a live chat advertised, when it is another one than this process runs: only new chats load an update.
+export function advertisedOtherVersion(stateDir:string,p:{provider:string;sessionId:string;pid:number;procStart:string}){
+ try{const r=ownedJson(join(stateDir,'desktop-presence',p.provider+'-'+p.sessionId+'.json'),16384) as Record<string,unknown>;
+ return r.provider===p.provider&&r.sessionId===p.sessionId&&r.pid===p.pid&&r.procStart===p.procStart&&typeof r.version==='string'&&r.version!==version?r.version:null;
+ }catch{return null;}
+}

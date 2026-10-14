@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { processStart } from '../src/claude';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { tools as toolNames } from '../src/names';
+import { questionTestTool, tools as toolNames } from '../src/names';
 
 // Every Claude conversation with the plugin starts this server, whether or not it ever collaborates.
 // Starting, listing tools and diagnose must never create or migrate the shared SQLite state:
@@ -52,7 +52,7 @@ test('starting the Claude server, listing tools and diagnose create no shared da
     ]);
     const tools = (replies.find(reply => reply.id === 2)?.result as { tools: { name: string }[] }).tools.map(tool => tool.name);
     // The shared collaboration tools plus diagnose; panel-only operations are never model tools.
-    expect([...tools].sort()).toEqual(['diagnose', ...Object.values(toolNames)].sort());
+    expect([...tools].sort()).toEqual(['diagnose', questionTestTool, ...Object.values(toolNames)].sort());
     expect(replies.some(reply => reply.id === 3)).toBe(true);
     const created = files(stateDir).map(path => path.slice(stateDir.length + 1));
     expect(created.filter(path => /\.sqlite(-wal|-shm|-journal)?$/.test(path))).toEqual([]);

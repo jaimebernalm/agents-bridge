@@ -9,6 +9,10 @@
     }],
     "SessionEnd": [{
       "hooks": [{ "type": "command", "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run-bun.sh\" \"${CLAUDE_PLUGIN_ROOT}/dist/claude-hook.js\"", "timeout": 5 }]
+    }],
+    "PostToolUse": [{
+      "matcher": "^AskUserQuestion$",
+      "hooks": [{ "type": "command", "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run-bun.sh\" \"${CLAUDE_PLUGIN_ROOT}/dist/answer-hook.js\"", "timeout": 5 }]
     }]
   }
 }

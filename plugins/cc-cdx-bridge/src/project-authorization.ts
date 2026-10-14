@@ -10,7 +10,9 @@ type Change=z.infer<typeof authorizationChangeSchema>;
 type Row={project:string;device:string;inode:string;enabled:number;revision:number;updated_at:number;actor:string};
 function folder(path:string){const project=realpathSync(path),stat=statSync(project,{bigint:true});if(!stat.isDirectory())throw new Error('Project must be a directory');return {project,device:String(stat.dev),inode:String(stat.ino)};}
 function observedStatus(path:string,r:Row|null){
-  const f=folder(path),valid=!!r&&r.device===f.device&&r.inode===f.inode;
+  // The inode tells a replaced folder apart. The device number is not compared: macOS can number the same volume
+  // differently after a restart, which would silently drop a remembered project.
+  const f=folder(path),valid=!!r&&r.inode===f.inode;
   return {project:f.project,enabled:valid&&r.enabled===1,revision:r?.revision??0,updatedAt:r?.updated_at??null,actor:r?.actor??null,folderChanged:!!r&&!valid,scope:'managed_same_directory' as const};
 }
 // Diagnostics must neither create state nor migrate an existing database.

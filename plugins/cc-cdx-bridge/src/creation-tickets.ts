@@ -7,13 +7,14 @@
 import { Database } from 'bun:sqlite';
 import { createHash, randomUUID } from 'node:crypto';
 import { chmodSync, existsSync, lstatSync, mkdirSync, realpathSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { z } from 'zod';
 import { privateDirectory, uuid } from './claude';
 
 export type Provider = 'codex' | 'claude';
 export type Principal = { provider: Provider; sessionId: string };
-export type PanelActor = { kind: 'panel_session'; id: string; scope?: { project: string } };
+// The person, through their panel session or their verified answer in their own chat (see isPersonActor).
+export type PanelActor = { kind: 'panel_session' | 'person_answer'; id: string; scope?: { project: string } };
 export type Adapter = 'manual' | 'assisted_ui' | 'native_tool_relay';
 export type TicketState = 'requested' | 'authorized' | 'creating' | 'awaiting_receiver' | 'creation_uncertain' | 'bound' | 'ambiguous' | 'expired' | 'cancelled' | 'failed';
 export type Candidate = { provider: Provider; sessionId: string; pid: number; procStart: string; project: string; branch: string | null; head?: string | null; startedAt: number };
@@ -21,7 +22,7 @@ export type CreationReceipt = { correlationId: string; sessionId: string; engine
 
 const provider = z.enum(['codex', 'claude']);
 const principalSchema = z.object({ provider, sessionId: uuid }).strict();
-const panelSchema = z.object({ kind: z.literal('panel_session'), id: z.string().min(16).max(128), scope: z.object({ project: z.string() }).strict().optional() }).strict();
+const panelSchema = z.object({ kind: z.enum(['panel_session', 'person_answer']), id: z.string().min(16).max(128), scope: z.object({ project: z.string() }).strict().optional() }).strict();
 const adapter = z.enum(['manual', 'assisted_ui', 'native_tool_relay']), mode = z.enum(['local', 'worktree']);
 export const ticketInputSchema = z.object({
   requestId: uuid, targetProvider: provider, project: z.string().min(1).max(4096), branch: z.string().max(255).nullable().default(null),
@@ -54,6 +55,16 @@ const open: TicketState[] = ['requested', 'authorized', 'creating', 'awaiting_re
 const expirable: TicketState[] = ['requested', 'authorized', 'awaiting_receiver', 'ambiguous'];
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const key = (p: Principal) => `${p.provider}:${p.sessionId}`;
+
+// Only a folder the app made for one chat counts: <root>/<account>/<organization>/scratch-…, not anything else under root.
+// It may be gone by now (the app may remove it after the chat moves), so the receipt's recorded real path is read as text.
+function appScratchFolder(root: string | undefined, path: string) {
+  if (!root) return false;
+  let base: string;
+  try { base = realpathSync(root) + sep; } catch { return false; }
+  const parts = path.startsWith(base) ? path.slice(base.length).split(sep) : [];
+  return parts.length === 3 && parts.every(part => part !== '' && part !== '.' && part !== '..') && /^scratch-[0-9a-z-]+$/.test(parts[2]!);
+}
 
 function folder(path: string) {
   const project = realpathSync(path), stat = statSync(project, { bigint: true });
@@ -126,7 +137,7 @@ export class CreationTickets {
   private panel(actor: PanelActor, row?: { project: string }) {
     const panel = panelSchema.parse(actor);
     if (row && panel.scope && folder(panel.scope.project).project !== row.project) throw new Error('Panel session is scoped to another project');
-    return `panel_session:${panel.id}`;
+    return `${panel.kind}:${panel.id}`;
   }
   private matchingGrant(row: Pick<Row, 'project' | 'device' | 'inode' | 'target_provider' | 'adapter' | 'mode'>, action: 'create' | 'bind') {
     const now = this.now();
@@ -310,7 +321,10 @@ export class CreationTickets {
     if (row.head !== null && candidate.head !== row.head) throw new Error('Project HEAD moved since the request');
     if (this.db.query('SELECT 1 FROM creation_tickets WHERE bound_session=?').get(candidate.sessionId)) throw new Error('Session is already bound to a ticket');
   }
-  bindVerified(id: string, rawCandidate: Candidate, rawReceipt: CreationReceipt, options: { maxPriorUserTurns?: number } = {}) {
+  /** `scratchRoot` holds the empty folders Claude Desktop makes for chats started without one. A receipt from there still
+   * binds once that same process works in the project: it started with no other project's files or settings, and only
+   * the person, approving in the app, moves a chat to another folder. */
+  bindVerified(id: string, rawCandidate: Candidate, rawReceipt: CreationReceipt, options: { maxPriorUserTurns?: number; scratchRoot?: string } = {}) {
     return this.db.transaction(() => {
       const row = this.row(id), candidate = candidateSchema.parse(rawCandidate), receipt = receiptSchema.parse(rawReceipt);
       this.bindable(row, candidate);
@@ -319,11 +333,12 @@ export class CreationTickets {
       if (receipt.correlationId !== row.correlation_id) throw new Error('Receipt belongs to another ticket');
       if (receipt.sessionId !== candidate.sessionId || receipt.enginePid !== candidate.pid || receipt.procStart !== candidate.procStart) throw new Error('Receipt and candidate disagree');
       if (candidate.startedAt < authorizedAt || receipt.at < authorizedAt) throw new Error('Candidate existed before authorization');
-      if (!this.sameProject(row, receipt.cwd)) throw new Error('Receipt names another project');
+      const moved = !this.sameProject(row, receipt.cwd);
+      if (moved && !appScratchFolder(options.scratchRoot, receipt.cwd)) throw new Error('Receipt names another project');
       if (row.host_ref !== null && row.host_ref !== candidate.sessionId) throw new Error('Candidate differs from the host reference');
       if (receipt.priorUserTurns === null || receipt.priorUserTurns > (options.maxPriorUserTurns ?? 0)) throw new Error('Candidate already had a conversation');
       return this.set(row.id, { state: 'bound', bound_session: candidate.sessionId, bound_pid: candidate.pid, bound_proc_start: candidate.procStart, binding: 'host_receipt' },
-        'bound', 'core', { binding: 'host_receipt', sessionId: candidate.sessionId });
+        'bound', 'core', { binding: 'host_receipt', sessionId: candidate.sessionId, ...(moved ? { movedFrom: 'app_scratch_folder' } : {}) });
     }).immediate();
   }
   /** Codex has no hook receipt; its own chat record of the first composer message is the host evidence. */

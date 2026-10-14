@@ -4,7 +4,7 @@
 
 Both apps install it as `cc-cdx-bridge` (Claude Code + Codex) and show it as **Claude ⇄ Codex Bridge**.
 
-Ask either chat to work with the other one. A small panel opens in your browser where you check the plan, set limits and decide whether the other agent may edit code, then you press **Start**. The two chats message each other directly while you watch. At the end you get a result that shows who said what and where they still disagree.
+Ask either chat to work with the other one. The chat asks you three short questions: whether the other agent may edit code, the limits, and whether to start. You answer **Yes**, or open a small panel to change anything first. The two chats message each other directly while you watch. At the end you get a result that shows who said what and where they still disagree.
 
 It's an easier, collaboration-focused take on [Claude UDS Bridge](https://github.com/LeonKohli/claude-uds-bridge): the same local Claude ↔ Codex bridge, plus a guided panel so you never have to manage sessions or settings by hand.
 
@@ -85,17 +85,19 @@ You should see the other app's chat listed. If you don't, see [Troubleshooting](
 
    > Collaborate with Codex on this: review the error handling in `src/api` and propose fixes. 20 messages, 20 minutes.
 
-2. The panel opens in its own small window in the top-right corner of your screen, so the chat stays in view, with the form already filled in (**Suggested by …**). Move or resize it and the next panel opens where you left it. Change anything you like:
-   - **What should they work on?** The objective.
-   - **Limits:** messages (or **No limit**) and time, up to 24 hours.
-   - **Can edit and commit:** whether the other agent may change files, and a short scope describing what it may touch.
-   - **Open a new chat:** have the panel open the other app on a fresh chat for you, if you don't already have one open.
+2. The chat asks you three short questions:
+   - **Editing:** may the other agent edit files and make local commits (no push, pull requests or merges)? To allow more, write it in **Other**, for example "add push and pull requests".
+   - **Limits:** the proposed messages and time, two larger steps, or unlimited messages · 24 h. You can also write your own, such as "40 messages, 45 min".
+   - **Start:** start with a new chat in the other app (or the one you named)?
+     - **Yes:** the collaboration starts with what you chose. If it needs a new chat, the other app opens on one with a message ready: send it there and the collaboration starts once that chat is linked. If Claude asks you to trust the folder, it may then start that chat without its folder; the chat asks to move to the project folder, and once you approve it links itself.
+     - **Change chat or details in the panel:** the panel opens in its own small window in the top-right corner of your screen, with the form already filled in (**Suggested by …**) and what you chose. Choose one of your open chats instead of a new one, or change the objective, the limits (messages or **No limit**, time up to 24 hours), editing and its scope, then press **Start** there. Move or resize it and the next panel opens where you left it.
+     - **Cancel:** the proposal is discarded.
 
-3. Press **Start**. Nothing is sent until you do.
+   Or write what you'd change instead; the chat asks again with your change. Nothing is sent until you choose **Yes**.
 
-4. Watch the messages arrive. You can **Pause**, **Finish** or **Export** (Markdown or JSON) at any time.
+3. Watch the messages arrive. The chat leaves the panel as a card (**Bridge panel**): open it and press **Open the panel**, and the panel opens in its own window, where you can **Pause**, **Finish** or **Export** (Markdown or JSON) at any time.
 
-Closed the panel? Ask either chat to "open the bridge panel".
+Closed the panel? Open that card again, or ask either chat to "open the bridge panel".
 
 ### Ideas to try
 
@@ -106,13 +108,14 @@ Closed the panel? Ask either chat to "open the bridge panel".
 
 ## What you control
 
-- **Nothing starts without you.** A chat can suggest a collaboration; only your click in the panel starts it.
+- **Nothing starts without you.** A chat can suggest a collaboration; only you start it, by answering **Yes** to its questions or pressing **Start** in the panel. The bridge reads your answer from the app itself, never from what an agent says.
 - **Editing is opt-in.** The other agent may edit only if you switch it on, within the scope you write. That covers local edits and commits only. Push, pull requests, merges and deploys stay excluded unless your scope says otherwise, and each app's own approval prompts still apply.
 - **Messages carry no authority.** Text from the other agent never grants permissions, whatever it says.
 - **Limits are enforced.** Message count and deadline apply to both directions.
 - **Nothing is sent twice.** If a delivery is uncertain, the bridge shows it as uncertain and does not resend it.
 - **It stays local.** Messages travel over local sockets and the Codex app's connection. History is kept in a private SQLite file on your machine.
 - **No fake consensus.** Results record who wrote what. "Agree" is a declaration by an agent, never a verified agreement.
+- **Your account, your sandbox.** The bridge keeps an agent's words and the other chat's messages from counting as your decisions. An agent that can run any command as you, with no sandbox, can also change your files and the bridge's own; keep each app's sandbox and approval prompts on if you need that boundary.
 
 ## Troubleshooting
 

@@ -7,7 +7,7 @@ import {InMemoryTransport} from '@modelcontextprotocol/sdk/inMemory.js';
 import {registerDesktopTools} from '../src/desktop-runtime';
 import {inspectParticipant} from '../src/participants';
 import {nativeFixture,until} from './collaboration-fixture';
-import {tools as toolNames,type Operation} from '../src/names';
+import {questionTestTool,tools as toolNames,type Operation} from '../src/names';
 
 test('Claude panel delegates one native Codex creation to the exact live executor; a wake cannot authorize itself and unknown is final',async()=>{
  const f=await nativeFixture(),codex=await f.connect(),server=new McpServer({name:'fixture-claude',version:'1'}),client=new Client({name:'fixture',version:'1'});let privateUrl='';
@@ -21,6 +21,6 @@ test('Claude panel delegates one native Codex creation to the exact live executo
  const commandId=randomUUID();const dispatch=await post('creation_dispatch',{ticketId:requested.ticket.id,executorId:f.desktop.threadId,commandId});expect(dispatch.status).toBe(200);await until(()=>f.desktop.submissions.length===1);expect(JSON.stringify(f.desktop.submissions)).toContain(commandId);expect((await post('creation_dispatch',{ticketId:requested.ticket.id,executorId:f.desktop.threadId,commandId})).data.reused).toBe(true);expect(f.desktop.submissions).toHaveLength(1);
  const command=await f.call(codex,'apply_panel_action',{commandId});expect(command.error).toBeFalsy();expect(command.data.ticket.id).toBe(requested.ticket.id);const plan=await f.call(codex,'open_new_chat',{ticketId:requested.ticket.id});expect(plan.error).toBeFalsy();expect(plan.data.adapter).toBe('native_tool_relay');expect(plan.data.bootstrapPrompt).toStartWith('CCDX-CORR-');expect(plan.data.forbidden.join('\n')).toContain('127.0.0.1');
  await expect(call('ticket_outcome',{ticketId:requested.ticket.id,epoch:plan.data.epoch,outcome:{state:'created',hostRef:randomUUID()}})).rejects.toThrow('process that began');const uncertain=await f.call(codex,'report_new_chat',{ticketId:requested.ticket.id,epoch:plan.data.epoch,outcome:{state:'uncertain',reason:'Fixture never called a real host creation tool'}});expect(uncertain.data.state).toBe('creation_uncertain');expect((await f.call(codex,'open_new_chat',{ticketId:requested.ticket.id})).error).toBeTruthy();expect(f.desktop.submissions).toHaveLength(1);
- const tools=await client.listTools();expect(tools.tools.map(t=>t.name).sort()).toEqual(Object.values(toolNames).sort());
+ const tools=await client.listTools();expect(tools.tools.map(t=>t.name).sort()).toEqual([questionTestTool,...Object.values(toolNames)].sort());
  }finally{original===undefined?delete process.env.CC_CDX_PANEL_AUTO_OPEN:process.env.CC_CDX_PANEL_AUTO_OPEN=original;await client.close();await server.close();await runtime.close();await codex.close();await f.close()}
 },15000);

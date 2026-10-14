@@ -256,7 +256,7 @@ function Composer({proposal,state,other,api,busy,act,onCancel,onStarted}:{propos
  // The small window fills its height with only what starting needs: the objective, two switches,
  // two limits and a wide start button. Everything else waits behind Options.
  // The fieldset only disables; it renders as contents because a fieldset box does not hand its height on.
- if(compact)return <div className="reveal flex min-h-[calc(100dvh-24px)] min-w-0 flex-col gap-3"><fieldset disabled={busy} className="contents">
+ if(compact)return <div className="reveal flex min-h-[calc(100dvh-24px-var(--bar,0px))] min-w-0 flex-col gap-3"><fieldset disabled={busy} className="contents">
   {proposal&&<div className="flex items-center justify-between gap-3"><p className="flex items-center gap-1.5 text-[13px] text-muted-foreground"><Sparkles className="size-3.5 text-primary"/>{suggested}</p><Button variant="ghost" size="sm" className="-mr-2 h-7 text-primary hover:text-primary" disabled={busy} onClick={()=>void dismiss()}>{l('Dismiss','Descartar')}</Button></div>}
   <textarea id="objective" aria-label={l('What should they work on?','¿En qué tienen que trabajar?')} className="min-h-20 w-full flex-1 resize-none rounded-2xl bg-card px-4 py-3 text-[15px] leading-relaxed shadow-tile outline-none placeholder:text-muted-foreground focus-visible:ring-[3px] focus-visible:ring-ring/40" value={objective} onChange={e=>setObjective(e.target.value)} maxLength={16000} placeholder={l('E.g. Review the panel design together and propose improvements.','Ej.: Revisad juntos el diseño del panel y proponed mejoras.')}/>
   <div className="grid grid-cols-2 gap-3">

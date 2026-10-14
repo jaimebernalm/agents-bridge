@@ -2,9 +2,20 @@
 // They live in the bridge state directory, never in Claude's own session registry.
 import { randomUUID } from 'node:crypto';
 import { closeSync, constants, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, renameSync, unlinkSync, writeSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { privateDirectory, uuid } from './claude';
+import { stateFolder } from './names';
+
+// Where a command hook finds Claude's config and the bridge state. It lives here, in a module without an entry
+// block, so every hook bundle can import it without pulling in another hook's entry code.
+export function hookPaths(env = process.env) {
+  return {
+    configDir: env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude'),
+    stateDir: env.CC_CDX_STATE_DIR ?? join(env.CODEX_HOME ?? join(homedir(), '.codex'), 'plugin-state', stateFolder),
+  };
+}
 
 export const correlationPattern = /\bCCDX-CORR-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/;
 

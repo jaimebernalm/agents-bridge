@@ -35,4 +35,4 @@ A context change resets the barrier. The guarantee covers only the analyses reco
 
 ## Delivery evidence
 
-Each message records its context, whether the other chat's reception allowed it, its native input ID and when it was consumed and answered. A correlated reply proves an answer arrived, not that the reasoning is sound. When a delivery stays uncertain, the bridge cannot tell whether the other chat received it and will not resend; wait for evidence, or cancel and explain the limit to the person.
+Each message records its context, whether the other chat's reception allowed it, its native input ID and when it was consumed and answered. A correlated reply proves an answer arrived, not that the reasoning is sound. A message to a Claude chat stays at `socket-written` with `recipientAdmission: native_claude_not_observed`: Claude keeps no input record the bridge can read, so that is its normal final state, not a fault to report; that chat's reply is the evidence it arrived. When a delivery stays uncertain, the bridge cannot tell whether the other chat received it and will not resend; wait for evidence, or cancel and explain the limit to the person.
