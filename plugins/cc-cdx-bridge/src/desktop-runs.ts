@@ -3,7 +3,7 @@ import { chmodSync, existsSync, lstatSync, mkdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { privateDirectory, uuid } from './claude';
+import { privateDirectory, processStartSync, uuid } from './claude';
 import { reportSchema, taskSchema, normalizeRoutine, type Report, type Task, type RoutineInput, type Closure } from './routines';
 import { revisionFrozen, revisionMove, sameIdentity, type Participant, type RevisionMove } from './participants';
 import type { ImplementationPlan } from './implementation';
@@ -85,7 +85,7 @@ export class DesktopRunStore {
   consentAllows(transportId:string,receiver:Principal,project:string){const m=this.byTransport(transportId);if(!m||m.dst!==key(receiver)||!m.authorized)return false;const r=this.expire(m.run_id);return r.initiator===m.src&&r.initiator.startsWith('claude:')&&(JSON.parse(r.participants) as Participant[]).every(p=>p.project.directory===project)&&this.consentStatus(r.id).valid;}
   registerExecutor(holder:string,pid:number,procStart:string){this.db.run('INSERT INTO desktop_executors VALUES(?,?,?)',[holder,pid,procStart]);}
   heartbeat(holder:string){this.db.run("UPDATE desktop_runs SET lease_until=? WHERE lease_holder=? AND lease_until>? AND state IN('active','paused','blocked')",[this.now()+300000,holder,this.now()]);}
-  private executorAlive(holder:string|null){if(!holder)return false;const e=this.db.query<{pid:number;proc_start:string},[string]>('SELECT * FROM desktop_executors WHERE holder=?').get(holder);if(!e)return false;const ps=Bun.spawnSync(['ps','-o','lstart=','-p',String(e.pid)],{env:{...process.env,LC_ALL:'C',TZ:'UTC'},stdout:'pipe',stderr:'ignore'});return ps.exitCode===0&&ps.stdout.toString().trim()===e.proc_start;}
+  private executorAlive(holder:string|null){if(!holder)return false;const e=this.db.query<{pid:number;proc_start:string},[string]>('SELECT * FROM desktop_executors WHERE holder=?').get(holder);if(!e)return false;try{return processStartSync(e.pid)===e.proc_start;}catch{return false;}}
   // Re-pin folder revisions moved outside the run; identity changes are refused, never swapped.
   repin(id:string,fresh:Participant[],plan:ImplementationPlan|null){return this.db.transaction(()=>{const r=this.row(id),moves:RevisionMove[]=[];const next=(JSON.parse(r.participants) as Participant[]).map(p=>{const f=fresh.find(x=>x.provider===p.provider&&x.sessionId===p.sessionId);if(!f||!sameIdentity(p,f))throw new Error('Participant identity changed; prepare a new collaboration');const move=revisionFrozen(p,plan)?null:revisionMove(p,f);if(!move)return p;moves.push(move);return {...p,project:f.project};});if(moves.length){this.db.run('UPDATE desktop_runs SET participants=? WHERE id=?',[JSON.stringify(next),id]);this.event(id,'project_revision_moved','bridge',{moves});}return moves;}).immediate();}
   incomingParticipants(transportId:string){const m=this.byTransport(transportId);return m?{runId:m.run_id,participants:JSON.parse(this.row(m.run_id).participants) as Participant[]}:null;}

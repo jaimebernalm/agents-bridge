@@ -108,12 +108,32 @@ export function findPeerProcess(configDir: string, address: string, procStart: s
   return matches[0]!;
 }
 
+// Claude Code on Linux records the kernel start time (field 22 of /proc/<pid>/stat), not `ps lstart`.
+function linuxProcessStart(pid: number) {
+  let start: string | undefined;
+  try { start = readFileSync(`/proc/${pid}/stat`, 'utf8').split(') ').pop()?.split(' ')[19]; } catch {}
+  if (!start) throw new Error('Cannot verify receiver process');
+  return start;
+}
+
+const psStart = (pid: number) => ({ cmd: ['ps', '-o', 'lstart=', '-p', String(pid)], env: { ...process.env, LC_ALL: 'C', TZ: 'UTC' } });
+
 export async function processStart(pid: number) {
-  const child = Bun.spawn(['ps', '-o', 'lstart=', '-p', String(pid)],
-    { env: { ...process.env, LC_ALL: 'C', TZ: 'UTC' }, stdout: 'pipe', stderr: 'ignore' });
+  if (process.platform === 'linux') return linuxProcessStart(pid);
+  const { cmd, env } = psStart(pid);
+  const child = Bun.spawn(cmd, { env, stdout: 'pipe', stderr: 'ignore' });
   const [code, output] = await Promise.all([child.exited, new Response(child.stdout).text()]);
   if (code !== 0 || !output.trim()) throw new Error('Cannot verify receiver process');
   return output.trim();
+}
+
+export function processStartSync(pid: number) {
+  if (process.platform === 'linux') return linuxProcessStart(pid);
+  const { cmd, env } = psStart(pid);
+  const child = Bun.spawnSync(cmd, { env, stdout: 'pipe', stderr: 'ignore' });
+  const output = child.stdout.toString().trim();
+  if (child.exitCode !== 0 || !output) throw new Error('Cannot verify receiver process');
+  return output;
 }
 
 // Claude's ListAgents gives the model only the name, so mirror its own <directory>-<suffix>
