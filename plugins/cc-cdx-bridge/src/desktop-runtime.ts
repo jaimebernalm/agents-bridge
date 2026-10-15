@@ -11,7 +11,9 @@ import { compareProjects } from './project';
 import { codexThreadTitle } from './codex-rollout';
 import { findPeer, ownedJson, peerAddress, sendFrames, userFrame, uuid, type Peer, processStart } from './claude';
 import { receptionPreflight } from './preflight';
-import { PanelOpening, panelLink } from './panel-opening';
+import { bringAppForward, launchLocalBrowser, PanelOpening, panelLink } from './panel-opening';
+import { privateSubdirectory } from './claude-sidecar';
+import { readPanelPlace } from './panel-preferences';
 import { startPanel } from './panel';
 import {CreationTickets,ticketInputSchema} from './creation-tickets';
 import {version} from './version';
@@ -31,7 +33,10 @@ import {displayName,tools,type Operation} from './names';
 import {registerQuestionTest} from './question-test';
 
 export type RuntimeCaller=Principal&{pid:number;procStart:string;project:string;binding:{method:string;generation:string;surface:string;evidence:string[]}};
-export type DesktopRuntimeOptions=ParticipantOptions&{pluginRoot:string;codexHome:string;authenticate:(meta?:Record<string,unknown>)=>Promise<RuntimeCaller>;openPrivatePanel?:(url:string)=>Promise<void>;openApp?:AppLauncher;registerAtStartup?:boolean};
+// The chat's app comes forward the moment the click arrives, which cuts short the browser that carried it; the window waits
+// for the tab to close, since closing it, or Claude taking focus back from its side browser, would cover a window opened sooner.
+const panelAfterChatMs=250;
+export type DesktopRuntimeOptions=ParticipantOptions&{pluginRoot:string;codexHome:string;authenticate:(meta?:Record<string,unknown>)=>Promise<RuntimeCaller>;openPrivatePanel?:(url:string)=>Promise<void>;showChatApp?:(provider:'codex'|'claude')=>Promise<void>;openApp?:AppLauncher;registerAtStartup?:boolean};
 const result=(value:unknown)=>({content:[{type:'text' as const,text:JSON.stringify(value)}]});
 
 /** One tool surface for both providers. Host adapters supply verified callers;
@@ -41,7 +46,7 @@ export function registerDesktopTools(server:McpServer,options:DesktopRuntimeOpti
   let proposalsValue:DesktopProposals|undefined,storeValue:DesktopRunStore|undefined,ticketsValue:CreationTickets|undefined,implementationValue:DesktopImplementation|undefined,creationValue:DesktopCreation|undefined;
   const store=lazy(()=>storeValue??=initializeStore()),tickets=lazy(()=>ticketsValue??=new CreationTickets(options.stateDir));
   const proposals=lazy(()=>proposalsValue??=new DesktopProposals(store.db)),implementation=lazy(()=>implementationValue??=new DesktopImplementation(store.db)),creation=lazy(()=>creationValue??=new DesktopCreation(tickets));
-  const operations=new Map<string,{schema:z.ZodType;run:(args:any,c:RuntimeCaller,panelActor?:string)=>Promise<unknown>|unknown}>(),holder=randomUUID(),opening=new PanelOpening(options.openPrivatePanel);
+  const operations=new Map<string,{schema:z.ZodType;run:(args:any,c:RuntimeCaller,panelActor?:string)=>Promise<unknown>|unknown}>(),holder=randomUUID(),opening=new PanelOpening(options.openPrivatePanel??(url=>launchLocalBrowser(url,undefined,undefined,undefined,privateSubdirectory(options.stateDir,'panel-browser'),readPanelPlace(options.stateDir)))),showChatApp=options.showChatApp??(options.openPrivatePanel?async()=>{}:bringAppForward);
   const principal=(c:RuntimeCaller)=>({provider:c.provider,sessionId:c.sessionId});
   const executor=(c:RuntimeCaller)=>({...principal(c),pid:c.pid,procStart:c.procStart,project:c.project});
   const status=(id:string,c:RuntimeCaller)=>({...store.status(id,c),implementation:implementation.status(id)});
@@ -101,7 +106,7 @@ export function registerDesktopTools(server:McpServer,options:DesktopRuntimeOpti
   // The panel and a verified answer in the person's chat run operations the same way, for this exact live caller.
   const personInvoke=(c:RuntimeCaller)=>async(name:string,args:Record<string,unknown>,actor:string)=>{await ensureRuntime();const live=await inspectParticipant(options,c.sessionId,c.provider);if(live.pid!==c.pid||live.procStart!==c.procStart||live.project.directory!==realpathSync(c.project))throw new Error('Panel caller changed; reopen the panel');const operation=operations.get(name);if(!operation)throw new Error('Operation unavailable');return operation.run(operation.schema.parse(args),c,actor);};
   // Starts this chat's panel service without opening a window, so a link in the chat can open it later.
-  const ensurePanel=async(c:RuntimeCaller)=>{const identity=c.provider+':'+c.sessionId+':'+c.binding.generation;let replaced=false;if(panelCaller&&panelCaller!==identity){await panel?.close();panel=undefined;replaced=true;}panelCaller=identity;panel??=startPanel({...options,ownerThread:c.sessionId,ownerProvider:c.provider,desktop:{principal:{provider:c.provider,sessionId:c.sessionId},project:c.project,invoke:personInvoke(c)},onOpenRequest:async()=>((await privatePanel(c,true)).browser as {requested?:boolean}).requested===true});return {panel,replaced};};
+  const ensurePanel=async(c:RuntimeCaller)=>{const identity=c.provider+':'+c.sessionId+':'+c.binding.generation;let replaced=false;if(panelCaller&&panelCaller!==identity){await panel?.close();panel=undefined;replaced=true;}panelCaller=identity;panel??=startPanel({...options,ownerThread:c.sessionId,ownerProvider:c.provider,desktop:{principal:{provider:c.provider,sessionId:c.sessionId},project:c.project,invoke:personInvoke(c)},onOpenRequest:async()=>{await showChatApp(c.provider);await Bun.sleep(panelAfterChatMs);return ((await privatePanel(c,true)).browser as {requested?:boolean}).requested===true}});return {panel,replaced};};
   // The panel as a card the agent shows in the chat: a page with the link that opens this chat's panel window.
   const panelCard=async(c:RuntimeCaller)=>writePanelCard(options.stateDir,c,(await ensurePanel(c)).panel.openUrl,questionLanguage(options.stateDir));
   const privatePanel=async(c:RuntimeCaller,force=false,target:{runId?:string;authorization?:boolean}={}):Promise<{url:string;browser:unknown;actor:string;tokenReturned:false}>=>{const {panel:current,replaced}=await ensurePanel(c);force=force||replaced;const browser=await opening.open('desktop:'+c.provider+':'+c.sessionId,panelLink(force?current.reopenUrl():current.url,target),true,force);return {url:panelLink(current.origin+'/',target),browser,actor:'panel_session',tokenReturned:false};};
