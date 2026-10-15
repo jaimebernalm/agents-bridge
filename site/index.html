@@ -8,222 +8,273 @@
   <meta property="og:title" content="Claude ⇄ Codex Bridge">
   <meta property="og:description" content="Let the Claude and Codex chats you already have open message each other directly.">
   <meta property="og:type" content="website">
-  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0c0c0d">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="styles.css">
+  <script src="ascii.js" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
-  <header class="topbar">
-    <div class="topbar-inner">
+  <header class="nav">
+    <div class="nav-inner">
       <a class="brand" href="#top">
-        <img src="assets/logo.svg" alt="" width="28" height="28">
-        <span>Claude ⇄ Codex Bridge</span>
+        <img src="assets/logo.svg" alt="" width="24" height="24">
+        <span>cc-cdx-bridge</span>
       </a>
       <nav aria-label="Sections">
         <a href="#how">How it works</a>
         <a href="#control">Control</a>
-        <a href="#install">Install</a>
-        <a class="gh" href="https://github.com/jaimebernalm/cc-cdx-bridge">GitHub</a>
+        <a href="#compare">Compare</a>
+        <a href="https://github.com/jaimebernalm/cc-cdx-bridge/blob/main/docs/REFERENCE.md">Docs</a>
       </nav>
+      <div class="nav-end">
+        <a href="https://github.com/jaimebernalm/cc-cdx-bridge" class="nav-gh">GitHub</a>
+        <a href="#install" class="nav-cta">Install <span aria-hidden="true">›</span></a>
+      </div>
     </div>
   </header>
 
   <main id="main">
-    <section class="hero" id="top">
-      <img class="hero-icon" src="assets/logo.svg" alt="" width="96" height="96">
-      <h1>Claude and Codex, <span class="line">in the same conversation.</span></h1>
-      <p class="lede">The bridge lets the Claude and Codex chats you already have open message each other directly. You approve it, set the limits, and watch them work.</p>
-      <div class="actions">
-        <a class="button primary pressable" href="#install">Install</a>
-        <a class="link-more" href="https://github.com/jaimebernalm/cc-cdx-bridge">View on GitHub <span aria-hidden="true">›</span></a>
+    <section class="hero dark" id="top">
+      <canvas class="ascii-bg ascii-left" data-logo="claude" aria-hidden="true"></canvas>
+      <canvas class="ascii-bg ascii-right" data-logo="openai" aria-hidden="true"></canvas>
+      <div class="rails">
+        <div class="hero-copy">
+          <a class="pill" href="https://github.com/jaimebernalm/cc-cdx-bridge">
+            <span>Open source · macOS · Desktop apps</span>
+            <span class="pill-cta">View on GitHub</span>
+          </a>
+          <h1><span>Two agents.</span> <span class="tone">One conversation.</span></h1>
+          <p class="lede">Claude ⇄ Codex Bridge lets the Claude and Codex chats you already have open message each other directly. You approve it, set the limits, and watch them work.</p>
+          <div class="actions">
+            <a class="btn btn-accent" href="#install">Install the bridge</a>
+            <a class="btn btn-dark" href="#how">See how it works</a>
+          </div>
+        </div>
       </div>
-      <p class="meta">Free and open source · macOS · Claude Desktop and Codex Desktop</p>
     </section>
 
     <section class="showcase" aria-labelledby="panel-caption">
-      <div class="window">
-        <div class="window-bar">
-          <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span class="window-title">Claude ⇄ Codex · Collaborations</span>
-        </div>
-        <div class="window-body">
-          <div class="row-head">
-            <span class="prepared"><img src="assets/logo.svg" alt="" width="14" height="14"> Prepared by Claude · just now</span>
-            <span class="waiting">Waiting for your approval</span>
+      <div class="rails">
+        <div class="window">
+          <div class="window-bar">
+            <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="window-title">Claude ⇄ Codex · Collaborations</span>
           </div>
-          <div class="tile objective">Review the error handling in <code>src/api</code> and propose fixes.</div>
-          <div class="tile-grid">
-            <div class="tile">
-              <div class="tile-title">Codex chat</div>
-              <div class="tile-sub mono">codex-my-app-3f</div>
+          <div class="window-body">
+            <div class="row-head">
+              <span class="prepared">Prepared by Claude · just now</span>
+              <span class="waiting">Waiting for your approval</span>
             </div>
-            <div class="tile">
-              <div class="tile-row">
-                <div class="tile-title">Codex can edit and commit</div>
-                <button type="button" class="switch" role="switch" aria-checked="true" aria-label="Codex can edit and commit"><span></span></button>
+            <div class="tile objective">Review the error handling in <code>src/api</code> and propose fixes.</div>
+            <div class="tile-grid">
+              <div class="tile">
+                <div class="tile-title">Codex chat</div>
+                <div class="tile-sub mono">codex-my-app-3f</div>
               </div>
-              <div class="tile-sub">Local edits and commits only; no push, pull requests or merges.</div>
-            </div>
-            <div class="tile">
-              <div class="tile-row">
-                <div class="tile-title">Messages</div>
-                <div class="stepper" data-step="4" data-min="4" data-max="200" data-suffix="">
-                  <button type="button" class="pressable" aria-label="Fewer messages">−</button>
-                  <output>24</output>
-                  <button type="button" class="pressable" aria-label="More messages">+</button>
+              <div class="tile">
+                <div class="tile-row">
+                  <div class="tile-title">Codex can edit and commit</div>
+                  <button type="button" class="switch" role="switch" aria-checked="true" aria-label="Codex can edit and commit"><span></span></button>
+                </div>
+                <div class="tile-sub">Local edits and commits only; no push, pull requests or merges.</div>
+              </div>
+              <div class="tile">
+                <div class="tile-row">
+                  <div class="tile-title">Messages</div>
+                  <div class="stepper" data-step="4" data-min="4" data-max="200" data-suffix="">
+                    <button type="button" aria-label="Fewer messages">−</button>
+                    <output>24</output>
+                    <button type="button" aria-label="More messages">+</button>
+                  </div>
+                </div>
+              </div>
+              <div class="tile">
+                <div class="tile-row">
+                  <div class="tile-title">Time</div>
+                  <div class="stepper" data-step="5" data-min="5" data-max="240" data-suffix=" min">
+                    <button type="button" aria-label="Less time">−</button>
+                    <output>30 min</output>
+                    <button type="button" aria-label="More time">+</button>
+                  </div>
                 </div>
               </div>
             </div>
-            <div class="tile">
-              <div class="tile-row">
-                <div class="tile-title">Time</div>
-                <div class="stepper" data-step="5" data-min="5" data-max="240" data-suffix=" min">
-                  <button type="button" class="pressable" aria-label="Less time">−</button>
-                  <output>30 min</output>
-                  <button type="button" class="pressable" aria-label="More time">+</button>
-                </div>
-              </div>
+            <div class="approve-row">
+              <button type="button" class="approve" id="approve">Approve and start</button>
+              <span class="quiet">Change</span>
             </div>
+            <ul class="list" aria-label="Earlier collaborations">
+              <li>
+                <div><div class="li-title">Plan the caching layer, then implement it phase by phase.</div><div class="li-sub">Claude ⇄ Codex · 31/60 messages · 1 h ago</div></div>
+                <span class="badge">Completed</span>
+              </li>
+              <li>
+                <div><div class="li-title">Investigate why the sync test is flaky.</div><div class="li-sub">Claude ⇄ Codex · 12/24 messages · yesterday</div></div>
+                <span class="badge paused">Paused</span>
+              </li>
+            </ul>
           </div>
-          <div class="approve-row">
-            <button type="button" class="button primary wide pressable" id="approve">Approve and start</button>
-            <span class="quiet">Change</span>
-          </div>
-          <ul class="list" aria-label="Earlier collaborations">
-            <li>
-              <div><div class="li-title">Plan the caching layer, then implement it phase by phase.</div><div class="li-sub">Claude ⇄ Codex · 31/60 messages · 1 h ago</div></div>
-              <span class="badge done">Completed</span>
-            </li>
-            <li>
-              <div><div class="li-title">Investigate why the sync test is flaky.</div><div class="li-sub">Claude ⇄ Codex · 12/24 messages · yesterday</div></div>
-              <span class="badge paused">Paused</span>
-            </li>
-          </ul>
         </div>
+        <p class="caption" id="panel-caption">The bridge panel, as it opens on your Mac. Try the switch and the steppers.</p>
       </div>
-      <p class="caption" id="panel-caption">The panel, on your Mac. Every collaboration starts here, or with three questions in your chat.</p>
     </section>
 
-    <section class="section" id="how" aria-labelledby="how-title">
-      <h2 id="how-title">How it works</h2>
-      <p class="section-lede">No sessions to manage and no settings to edit. Ask in plain words.</p>
-      <ol class="group steps">
-        <li>
-          <span class="n">1</span>
-          <div>
-            <h3>Ask either chat</h3>
-            <p>“Collaborate with Codex on this: review the error handling in <code>src/api</code> and propose fixes. 20 messages, 20 minutes.”</p>
-          </div>
-        </li>
-        <li>
-          <span class="n">2</span>
-          <div>
-            <h3>Answer three questions</h3>
-            <p>May the other agent edit files? How many messages and how much time? Start now, or adjust it in the panel? Nothing is sent until you say yes.</p>
-          </div>
-        </li>
-        <li>
-          <span class="n">3</span>
-          <div>
-            <h3>Watch them work</h3>
-            <p>The two chats message each other directly. Pause, finish or export from the panel at any time.</p>
-          </div>
-        </li>
-        <li>
-          <span class="n">4</span>
-          <div>
-            <h3>Read the result</h3>
-            <p>Every result and review says who wrote it and which version it refers to, and the disagreements stay on the record.</p>
-          </div>
-        </li>
-      </ol>
-    </section>
-
-    <section class="section" aria-labelledby="why-title">
-      <h2 id="why-title">Why two chats instead of one</h2>
-      <div class="split">
-        <p class="big">Two different models make different mistakes. When one reviews the other's plan or code, problems a single agent would miss tend to surface.</p>
-        <ul class="group plain">
-          <li><strong>They keep what they know.</strong> These are your real chats, with their history and the files they've already read.</li>
-          <li><strong>Either one can start.</strong> Ask from Claude or from Codex; the other side is asked the same way.</li>
-          <li><strong>Disagreements stay visible.</strong> You see where they still disagree, so you know what to check yourself.</li>
-          <li><strong>One approval for a whole plan.</strong> Plan, then build phase by phase, without approving each step again.</li>
+    <section class="strip">
+      <div class="rails strip-inner">
+        <p>Connects the apps you already use</p>
+        <ul>
+          <li>Claude Desktop <span>Code tab</span></li>
+          <li>Codex Desktop</li>
+          <li>macOS</li>
         </ul>
       </div>
     </section>
 
-    <section class="section" id="control" aria-labelledby="control-title">
-      <h2 id="control-title">You stay in control</h2>
-      <p class="section-lede">The bridge reads your answers from the app itself, never from what an agent says.</p>
-      <ul class="group settings">
-        <li><span>Nothing starts without you</span><span class="value">Yes, or Start in the panel</span></li>
-        <li><span>Editing by the other agent</span><span class="value">Off until you allow it</span></li>
-        <li><span>Push, pull requests, merges, deploys</span><span class="value">Only if your scope names them</span></li>
-        <li><span>Authority of the other agent's messages</span><span class="value">None</span></li>
-        <li><span>Message and time limits</span><span class="value">Enforced both ways</span></li>
-        <li><span>Uncertain deliveries</span><span class="value">Shown, never resent</span></li>
-        <li><span>Where your history lives</span><span class="value">A private file on your Mac</span></li>
-        <li><span>Model calls made by the bridge</span><span class="value">None</span></li>
-      </ul>
-    </section>
+    <section class="how dark" id="how" aria-labelledby="how-title">
+      <div class="rails">
+        <p class="kicker">How it works</p>
+        <h2 id="how-title">No sessions to manage.<br><span class="tone">Just ask in plain words.</span></h2>
 
-    <section class="section" aria-labelledby="compare-title">
-      <h2 id="compare-title">Not a delegated job</h2>
-      <p class="section-lede"><a href="https://github.com/openai/codex-plugin-cc">codex-plugin-cc</a> lets Claude Code hand reviews and tasks to Codex, resume those jobs, or transfer the session into a Codex thread. It's a good fit for delegating. The bridge connects two chats that are already open, for an exchange that runs over many steps.</p>
-      <div class="group table-wrap">
-        <table>
-          <thead>
-            <tr><th scope="col"><span class="sr">Aspect</span></th><th scope="col">Delegation plugins</th><th scope="col">The bridge</th></tr>
-          </thead>
-          <tbody>
-            <tr><th scope="row">The idea</th><td>Delegate reviews and tasks from Claude Code; resume jobs or transfer context</td><td>Two live Desktop chats in an ongoing exchange</td></tr>
-            <tr><th scope="row">Who starts</th><td>Claude Code, with slash commands</td><td>Either chat, in plain words</td></tr>
-            <tr><th scope="row">Shape</th><td>A job and its result</td><td>A back-and-forth with message and time limits</td></tr>
-            <tr><th scope="row">Your controls</th><td>Slash commands and job status</td><td>Three questions, then the panel: pause, finish, export</td></tr>
-            <tr><th scope="row">The record</th><td>Job results</td><td>Authored, versioned results and reviews, disagreements kept</td></tr>
-          </tbody>
-        </table>
+        <div class="tabs" role="tablist" aria-label="Steps">
+          <button type="button" role="tab" id="tab-ask" aria-controls="pane-ask" aria-selected="true">Ask</button>
+          <button type="button" role="tab" id="tab-approve" aria-controls="pane-approve" aria-selected="false" tabindex="-1">Approve</button>
+          <button type="button" role="tab" id="tab-watch" aria-controls="pane-watch" aria-selected="false" tabindex="-1">Watch</button>
+          <button type="button" role="tab" id="tab-read" aria-controls="pane-read" aria-selected="false" tabindex="-1">Result</button>
+        </div>
+
+        <div class="pane" role="tabpanel" id="pane-ask" aria-labelledby="tab-ask">
+          <p class="pane-lead"><strong>Ask either chat.</strong> From Claude or from Codex, describe what you want them to do together and the limits you have in mind.</p>
+          <div class="term"><span class="who">you → claude</span>Collaborate with Codex on this: review the error handling in src/api and propose fixes. 20 messages, 20 minutes.</div>
+        </div>
+        <div class="pane" role="tabpanel" id="pane-approve" aria-labelledby="tab-approve" hidden>
+          <p class="pane-lead"><strong>Answer three questions.</strong> Nothing is sent until you say yes, and the bridge reads your answers from the app itself.</p>
+          <div class="term">
+            <span class="who">claude asks</span>May Codex edit files and make local commits?<span class="ans">› Yes</span>
+            How many messages and how much time at most?<span class="ans">› 20 messages · 20 min</span>
+            Start with a new Codex chat?<span class="ans">› Yes</span>
+          </div>
+        </div>
+        <div class="pane" role="tabpanel" id="pane-watch" aria-labelledby="tab-watch" hidden>
+          <p class="pane-lead"><strong>Watch them work.</strong> The two chats message each other directly. Pause, finish or export from the panel at any time.</p>
+          <div class="term">
+            <span class="who">claude → codex</span>Review task: the retry path in src/api/client.ts. Draft v1 attached.
+            <span class="who">codex → claude</span>Two defects: the timeout is swallowed in fetchUser, and retries ignore 429.
+            <span class="dim">6 of 20 messages · 14 min left</span>
+          </div>
+        </div>
+        <div class="pane" role="tabpanel" id="pane-read" aria-labelledby="tab-read" hidden>
+          <p class="pane-lead"><strong>Read the result.</strong> Every result and review says who wrote it and which version it refers to. Where they still disagree stays on the record.</p>
+          <div class="term">
+            <span class="who">result v2 · by claude</span>Fix the 429 retry; surface the fetchUser timeout.
+            <span class="who">review of v2 · by codex</span>Agree on the retry. Disagree on the timeout: it is handled upstream.
+            <span class="dim">Disposition: proposal, with disagreements</span>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="section" id="install" aria-labelledby="install-title">
-      <h2 id="install-title">Install</h2>
-      <p class="section-lede">About five minutes. Desktop apps on macOS only, for now: the Claude Code CLI and Codex CLI aren't supported yet.</p>
-
-      <div class="group reqs">
-        <div><span>macOS</span></div>
-        <div><a href="https://claude.ai/download">Claude Desktop</a><span>Code tab, Claude Code 2.1.224 or later</span></div>
-        <div><a href="https://openai.com/codex/">Codex Desktop</a><span>Running</span></div>
-        <div><a href="https://bun.sh">Bun</a><span>1.4 or later</span></div>
-        <div><span>Git</span></div>
+    <section class="why light" aria-labelledby="why-title">
+      <div class="rails">
+        <h2 id="why-title">Two models catch more.<br><span class="tone">One chat can't review itself.</span></h2>
+        <div class="cards">
+          <article class="card">
+            <h3>Different models, different mistakes</h3>
+            <p>When one reviews the other's plan or code, problems a single agent would miss tend to surface.</p>
+          </article>
+          <article class="card">
+            <h3>They keep what they know</h3>
+            <p>These are your real chats, with their history and the files they've already read. No fresh run starting from zero.</p>
+          </article>
+          <article class="card">
+            <h3>Disagreements stay visible</h3>
+            <p>You see where they still disagree instead of one confident answer, so you know what to check yourself.</p>
+          </article>
+          <article class="card">
+            <h3>One approval for a whole plan</h3>
+            <p>Plan, then build phase by phase. Either chat can start, and you approve once.</p>
+          </article>
+        </div>
       </div>
+    </section>
 
-      <ol class="install">
-        <li>
-          <h3>Install the Codex side</h3>
-          <div class="code"><code>codex plugin marketplace add jaimebernalm/cc-cdx-bridge</code><button type="button" class="copy pressable">Copy</button></div>
-          <div class="code"><code>codex plugin add cc-cdx-bridge@jaimebernalm</code><button type="button" class="copy pressable">Copy</button></div>
-          <p>In Codex, open <strong>Claude ⇄ Codex Bridge</strong> in the plugins and trust both hooks. Then open a new Codex chat.</p>
-        </li>
-        <li>
-          <h3>Install the Claude side</h3>
-          <div class="code"><code>claude plugin marketplace add jaimebernalm/cc-cdx-bridge</code><button type="button" class="copy pressable">Copy</button></div>
-          <div class="code"><code>claude plugin install cc-cdx-bridge@jaimebernalm</code><button type="button" class="copy pressable">Copy</button></div>
-          <p>Then open a new Code chat in Claude Desktop.</p>
-        </li>
-        <li>
-          <h3>Check that they see each other</h3>
-          <p>Open the same project folder in both apps and ask either chat: “Use the Claude ⇄ Codex Bridge to list the chats in this folder.” Not listed? See <a href="https://github.com/jaimebernalm/cc-cdx-bridge#troubleshooting">Troubleshooting</a>.</p>
-        </li>
-      </ol>
+    <section class="control light alt" id="control" aria-labelledby="control-title">
+      <div class="rails split">
+        <div>
+          <h2 id="control-title">You stay in control.<br><span class="tone">The agents don't.</span></h2>
+          <p class="body-lede">The bridge reads your answers from the app itself, never from what an agent says. Text from the other agent carries no authority, whatever it says.</p>
+        </div>
+        <dl class="facts">
+          <div><dt>Starting</dt><dd>Only when you answer Yes or press Start</dd></div>
+          <div><dt>Editing</dt><dd>Off until you allow it, within the scope you write</dd></div>
+          <div><dt>Push, PRs, merges</dt><dd>Excluded unless your scope names them</dd></div>
+          <div><dt>Limits</dt><dd>Messages and time, enforced both ways</dd></div>
+          <div><dt>Delivery</dt><dd>Uncertain messages are shown, never resent</dd></div>
+          <div><dt>Data</dt><dd>Local sockets and a private file on your Mac. No model calls.</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="compare light" id="compare" aria-labelledby="compare-title">
+      <div class="rails">
+        <h2 id="compare-title">Not a delegated job.<br><span class="tone">A conversation.</span></h2>
+        <p class="body-lede"><a href="https://github.com/openai/codex-plugin-cc">codex-plugin-cc</a> lets Claude Code hand reviews and tasks to Codex, resume those jobs, or transfer the session into a Codex thread. It's a good fit for delegating. The bridge connects two chats that are already open, for an exchange over many steps.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th scope="col"><span class="sr">Aspect</span></th><th scope="col">Delegation plugins</th><th scope="col">The bridge</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">The idea</th><td>Delegate reviews and tasks from Claude Code; resume jobs or transfer context</td><td>Two live Desktop chats in an ongoing exchange</td></tr>
+              <tr><th scope="row">Who starts</th><td>Claude Code, with slash commands</td><td>Either chat, in plain words</td></tr>
+              <tr><th scope="row">Shape</th><td>A job and its result</td><td>A back-and-forth with message and time limits</td></tr>
+              <tr><th scope="row">Your controls</th><td>Slash commands and job status</td><td>Three questions, then the panel: pause, finish, export</td></tr>
+              <tr><th scope="row">The record</th><td>Job results</td><td>Authored, versioned results and reviews, disagreements kept</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="install dark" id="install" aria-labelledby="install-title">
+      <div class="rails">
+        <p class="kicker">Install</p>
+        <h2 id="install-title">Five minutes.<br><span class="tone">Two plugins, one per app.</span></h2>
+        <p class="body-lede">Desktop apps on macOS only, for now: the Claude Code CLI and Codex CLI aren't supported yet. You need <a href="https://claude.ai/download">Claude Desktop</a> (Code tab, Claude Code 2.1.224 or later), <a href="https://openai.com/codex/">Codex Desktop</a> running, <a href="https://bun.sh">Bun</a> 1.4 or later, and Git.</p>
+
+        <ol class="steps">
+          <li>
+            <h3><span class="num">01</span> Install the Codex side</h3>
+            <div class="code"><code>codex plugin marketplace add jaimebernalm/cc-cdx-bridge</code><button type="button" class="copy">Copy</button></div>
+            <div class="code"><code>codex plugin add cc-cdx-bridge@jaimebernalm</code><button type="button" class="copy">Copy</button></div>
+            <p>In Codex, open <strong>Claude ⇄ Codex Bridge</strong> in the plugins and trust both hooks. Then open a new Codex chat.</p>
+          </li>
+          <li>
+            <h3><span class="num">02</span> Install the Claude side</h3>
+            <div class="code"><code>claude plugin marketplace add jaimebernalm/cc-cdx-bridge</code><button type="button" class="copy">Copy</button></div>
+            <div class="code"><code>claude plugin install cc-cdx-bridge@jaimebernalm</code><button type="button" class="copy">Copy</button></div>
+            <p>Then open a new Code chat in Claude Desktop.</p>
+          </li>
+          <li>
+            <h3><span class="num">03</span> Check that they see each other</h3>
+            <p>Open the same project folder in both apps and ask either chat: “Use the Claude ⇄ Codex Bridge to list the chats in this folder.” Not listed? See <a href="https://github.com/jaimebernalm/cc-cdx-bridge#troubleshooting">Troubleshooting</a>.</p>
+          </li>
+        </ol>
+      </div>
     </section>
   </main>
 
-  <footer class="footer">
-    <div class="footer-inner">
-      <p>MIT licensed. Based on <a href="https://github.com/LeonKohli/claude-uds-bridge">Leon Kohli's Claude UDS Bridge</a>. Not affiliated with Anthropic or OpenAI.</p>
+  <footer class="footer dark">
+    <div class="rails footer-inner">
+      <div class="brand">
+        <img src="assets/logo.svg" alt="" width="20" height="20">
+        <span>cc-cdx-bridge</span>
+      </div>
+      <p>MIT licensed. Based on <a href="https://github.com/LeonKohli/claude-uds-bridge">Leon Kohli's Claude UDS Bridge</a>. An independent project, not affiliated with Anthropic or OpenAI.</p>
       <p><a href="https://github.com/jaimebernalm/cc-cdx-bridge/blob/main/docs/REFERENCE.md">Reference</a> · <a href="https://github.com/jaimebernalm/cc-cdx-bridge/issues">Report an issue</a></p>
     </div>
   </footer>
@@ -251,6 +302,27 @@
         } else {
           fallback();
         }
+      });
+    });
+
+    // Tabs: click or arrow keys, as in a native tab list.
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+    function select(tab) {
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.setAttribute('aria-selected', on);
+        t.tabIndex = on ? 0 : -1;
+        document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+      });
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { select(t); });
+      t.addEventListener('keydown', function (e) {
+        var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        var next = tabs[(i + d + tabs.length) % tabs.length];
+        select(next);
+        next.focus();
       });
     });
 

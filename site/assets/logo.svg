@@ -1,25 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Claude ⇄ Codex Bridge">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#3a3a3c"/>
-      <stop offset="1" stop-color="#1c1c1e"/>
-    </linearGradient>
-    <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#3b9bff"/>
-      <stop offset="1" stop-color="#0071e3"/>
-    </linearGradient>
-  </defs>
-  <rect width="120" height="120" rx="27" fill="url(#bg)"/>
-  <rect x=".5" y=".5" width="119" height="119" rx="26.5" fill="none" stroke="#fff" stroke-opacity=".08"/>
-  <!-- The first chat speaks from the left. -->
-  <path d="M38 22h26c8.8 0 16 7.2 16 16v10c0 8.8-7.2 16-16 16H44l-14 10 2.6-11.4C26.4 60.4 22 54.7 22 48V38c0-8.8 7.2-16 16-16Z" fill="#f5f5f7"/>
-  <rect x="34" y="35" width="32" height="6" rx="3" fill="#aeaeb2"/>
-  <rect x="34" y="46" width="20" height="6" rx="3" fill="#c7c7cc"/>
-  <!-- The second answers from the right, cut out of the first, carrying the bridge. -->
-  <path d="M56 48h26c8.8 0 16 7.2 16 16v10c0 8.8-7.2 16-16 16h-.6L84 101.4 72 90H56c-8.8 0-16-7.2-16-16V64c0-8.8 7.2-16 16-16Z" fill="none" stroke="#1f1f21" stroke-width="7" stroke-linejoin="round"/>
-  <path d="M56 48h26c8.8 0 16 7.2 16 16v10c0 8.8-7.2 16-16 16h-.6L84 101.4 72 90H56c-8.8 0-16-7.2-16-16V64c0-8.8 7.2-16 16-16Z" fill="url(#blue)"/>
-  <g fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M55 63.5h27m-6-6 6 6-6 6"/>
-    <path d="M83 76.5H56m6-6-6 6 6 6"/>
+  <rect width="120" height="120" rx="26" fill="#0c0c0d"/>
+  <rect x=".5" y=".5" width="119" height="119" rx="25.5" fill="none" stroke="#fff" stroke-opacity=".1"/>
+  <!-- Two arrows set on a pixel grid, passing each other: one agent in orange, the other in white. -->
+  <g fill="#ff7a3d">
+    <rect x="22" y="38" width="62" height="10" rx="2"/>
+    <rect x="74" y="28" width="10" height="10" rx="2"/>
+    <rect x="84" y="38" width="10" height="10" rx="2"/>
+    <rect x="74" y="48" width="10" height="10" rx="2"/>
+  </g>
+  <g fill="#f4f4f5">
+    <rect x="36" y="72" width="62" height="10" rx="2"/>
+    <rect x="36" y="62" width="10" height="10" rx="2"/>
+    <rect x="26" y="72" width="10" height="10" rx="2"/>
+    <rect x="36" y="82" width="10" height="10" rx="2"/>
   </g>
 </svg>
