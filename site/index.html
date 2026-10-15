@@ -147,11 +147,11 @@
           <button type="button" role="tab" id="tab-read" aria-controls="pane-read" aria-selected="false" tabindex="-1">Result</button>
         </div>
 
-        <div class="pane" role="tabpanel" id="pane-ask" aria-labelledby="tab-ask">
+        <div class="pane" role="tabpanel" id="pane-ask" aria-labelledby="tab-ask" tabindex="0">
           <p class="pane-lead"><strong>Ask either chat.</strong> From Claude or from Codex, describe what you want them to do together and the limits you have in mind.</p>
           <div class="term"><span class="who">you → claude</span>Collaborate with Codex on this: review the error handling in src/api and propose fixes. 20 messages, 20 minutes.</div>
         </div>
-        <div class="pane" role="tabpanel" id="pane-approve" aria-labelledby="tab-approve" hidden>
+        <div class="pane" role="tabpanel" id="pane-approve" aria-labelledby="tab-approve" tabindex="0" hidden>
           <p class="pane-lead"><strong>Answer three questions.</strong> Nothing is sent until you say yes, and the bridge reads your answers from the app itself.</p>
           <div class="term">
             <span class="who">claude asks</span>May Codex edit files and make local commits?<span class="ans">› Yes</span>
@@ -159,7 +159,7 @@
             Start with a new Codex chat?<span class="ans">› Yes</span>
           </div>
         </div>
-        <div class="pane" role="tabpanel" id="pane-watch" aria-labelledby="tab-watch" hidden>
+        <div class="pane" role="tabpanel" id="pane-watch" aria-labelledby="tab-watch" tabindex="0" hidden>
           <p class="pane-lead"><strong>Watch them work.</strong> The two chats message each other directly. Pause, finish or export from the panel at any time.</p>
           <div class="term">
             <span class="who">claude → codex</span>Review task: the retry path in src/api/client.ts. Draft v1 attached.
@@ -167,7 +167,7 @@
             <span class="dim">6 of 20 messages · 14 min left</span>
           </div>
         </div>
-        <div class="pane" role="tabpanel" id="pane-read" aria-labelledby="tab-read" hidden>
+        <div class="pane" role="tabpanel" id="pane-read" aria-labelledby="tab-read" tabindex="0" hidden>
           <p class="pane-lead"><strong>Read the result.</strong> Every result and review says who wrote it and which version it refers to. Where they still disagree stays on the record.</p>
           <div class="term">
             <span class="who">result v2 · by claude</span>Fix the 429 retry; surface the fetchUser timeout.
@@ -319,8 +319,10 @@
       t.addEventListener('click', function () { select(t); });
       t.addEventListener('keydown', function (e) {
         var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-        if (!d) return;
-        var next = tabs[(i + d + tabs.length) % tabs.length];
+        var index = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : d ? (i + d + tabs.length) % tabs.length : -1;
+        if (index < 0) return;
+        e.preventDefault();
+        var next = tabs[index];
         select(next);
         next.focus();
       });

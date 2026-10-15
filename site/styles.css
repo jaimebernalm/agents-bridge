@@ -90,8 +90,9 @@ h3 { font-family: var(--display); font-weight: 500; font-size: 17px; line-height
   background: radial-gradient(60% 80% at 50% 100%, rgb(255 122 61 / .22), transparent 70%);
 }
 .ascii-bg { position: absolute; top: 0; height: 100%; width: 46%; z-index: -1; pointer-events: none; }
-.ascii-left { left: 0; }
-.ascii-right { right: 0; }
+.ascii-left { left: 0; mask-image: linear-gradient(to right, #000 35%, transparent 96%); }
+.ascii-right { right: 0; mask-image: linear-gradient(to left, #000 35%, transparent 96%); }
+@media (max-width: 720px) { .ascii-bg { height: 220px; opacity: .3; } }
 .hero-copy { padding: 120px 0 200px; text-align: center; }
 .pill {
   white-space: nowrap;
