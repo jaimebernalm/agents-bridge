@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claude ⇄ Codex Bridge</title>
+  <meta name="description" content="Get your Claude Code chat and your Codex chat working together as equals, inside the Desktop apps you already use.">
+  <meta property="og:title" content="Claude ⇄ Codex Bridge">
+  <meta property="og:description" content="Two real conversations, working together. You approve, they collaborate, you get a traceable result.">
+  <meta property="og:type" content="website">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="Claude ⇄ Codex Bridge, home">
+        <span class="brand-mark" aria-hidden="true">⇄</span>
+        <span>Claude ⇄ Codex Bridge</span>
+      </a>
+      <nav aria-label="Sections">
+        <a href="#how">How it works</a>
+        <a href="#compare">Compare</a>
+        <a href="#control">Control</a>
+        <a href="#install" class="nav-cta">Install</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Open source plugin · macOS · Desktop apps</p>
+          <h1>Your Claude chat and your Codex chat, <em>working together</em>.</h1>
+          <p class="lede">Ask either chat to work with the other one. Answer three short questions, and the two agents message each other directly while you watch. At the end you get a result that shows who said what, and where they still disagree.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="#install">Install in 5 minutes</a>
+            <a class="btn btn-ghost" href="https://github.com/jaimebernalm/cc-cdx-bridge">View on GitHub</a>
+          </div>
+          <p class="fineprint">Free and MIT licensed. Uses your existing subscriptions. Makes no model calls and sends nothing off your machine.</p>
+        </div>
+
+        <figure class="duo" aria-label="Illustration: a Claude chat and a Codex chat exchanging messages through the bridge">
+          <div class="chat chat-claude">
+            <div class="chat-head"><span class="dot"></span>Claude · Code tab</div>
+            <p class="bubble you">Collaborate with Codex: review the error handling in <code>src/api</code> and propose fixes.</p>
+            <p class="bubble agent">Sent the review task to Codex. I'm tracing the retry path meanwhile.</p>
+            <p class="bubble peer"><span class="from">From Codex</span>Two defects: the timeout is swallowed in <code>fetchUser</code>, and retries ignore 429.</p>
+          </div>
+          <div class="link" aria-hidden="true"><span>⇄</span></div>
+          <div class="chat chat-codex">
+            <div class="chat-head"><span class="dot"></span>Codex Desktop</div>
+            <p class="bubble peer"><span class="from">From Claude</span>Review task · v1 of the draft attached.</p>
+            <p class="bubble agent">Checked against the code. Agree on retries; disagree on moving the timeout, it's covered upstream.</p>
+            <p class="tag">Disagreement kept · 6 of 20 messages</p>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <section class="band" aria-labelledby="why-title">
+      <div class="wrap">
+        <h2 id="why-title">Why have them collaborate?</h2>
+        <div class="cards three">
+          <article class="card">
+            <h3>They catch each other's mistakes</h3>
+            <p>Two different models make different errors. When one reviews the other's plan or code, problems a single agent would miss tend to surface.</p>
+          </article>
+          <article class="card">
+            <h3>Disagreements stay visible</h3>
+            <p>You see where they disagree instead of getting one confident answer, so you know exactly what to double-check.</p>
+          </article>
+          <article class="card">
+            <h3>Everything is traceable</h3>
+            <p>Every message, result and review is recorded with its author and the exact version it refers to. Export the whole exchange as Markdown or JSON.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <h2 id="how-title">How it works</h2>
+        <ol class="steps">
+          <li>
+            <span class="step-n">1</span>
+            <div>
+              <h3>Ask in either chat</h3>
+              <p>Describe what you want in plain words, from Claude or from Codex. For example: <q>Plan this feature with Codex, then implement it phase by phase. 40 messages, 45 minutes.</q></p>
+            </div>
+          </li>
+          <li>
+            <span class="step-n">2</span>
+            <div>
+              <h3>Answer three questions</h3>
+              <p><strong>Editing:</strong> may the other agent edit files and make local commits? <strong>Limits:</strong> how many messages and how much time? <strong>Start:</strong> go, or adjust it first in the panel. Nothing is sent until you say yes.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-n">3</span>
+            <div>
+              <h3>Watch them work</h3>
+              <p>The two chats message each other directly. A small local panel lets you <strong>pause</strong>, <strong>finish</strong> or <strong>export</strong> at any time.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-n">4</span>
+            <div>
+              <h3>Get a result with authorship</h3>
+              <p>Versioned results, reviews of exact versions, and the disagreements that remain. "Agree" is a declaration by an agent, never a fake consensus.</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="ideas">
+          <h3>Ideas to try</h3>
+          <ul>
+            <li><strong>Review</strong> — “Have Claude review the change Codex just made and list concrete defects.”</li>
+            <li><strong>Plan, then build</strong> — “Plan this feature with Codex, then implement it phase by phase.”</li>
+            <li><strong>Debug</strong> — “Each of you investigate why this test is flaky, then compare your findings.”</li>
+            <li><strong>Design</strong> — “Compare two approaches to the caching layer and keep the disagreements.”</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="compare" aria-labelledby="compare-title">
+      <div class="wrap">
+        <h2 id="compare-title">Two real conversations, not a tool call</h2>
+        <p class="section-lede">Plugins like OpenAI's <a href="https://github.com/openai/codex-plugin-cc">codex-plugin-cc</a> make one agent call the other as a background tool: a fresh headless run with none of your chat history that hands back one answer. Great for a quick second opinion. The bridge connects the chats you already have.</p>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th scope="col"></th><th scope="col">Agent-as-a-tool plugins</th><th scope="col">This bridge</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">The other agent</th><td>A fresh CLI run with no history</td><td>Your actual Codex and Claude chats, with everything they already know</td></tr>
+              <tr><th scope="row">Who starts</th><td>One direction per plugin</td><td>Either chat</td></tr>
+              <tr><th scope="row">Shape</th><td>One job in, one answer out</td><td>A real back-and-forth, with message and time limits</td></tr>
+              <tr><th scope="row">You stay in control</th><td>A slash command</td><td>A local panel: approve, pause, finish, export</td></tr>
+              <tr><th scope="row">Editing</th><td>The called agent edits your files</td><td>Off until you allow it, with a written scope; local edits and commits only</td></tr>
+              <tr><th scope="row">Memory</th><td>Job output only</td><td>Context, results, reviews and disagreements are saved and survive restarts</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">Use codex-plugin-cc for a one-shot review. Use this bridge when you want the two agents to plan, investigate or build something together over several steps.</p>
+      </div>
+    </section>
+
+    <section id="control" aria-labelledby="control-title">
+      <div class="wrap">
+        <h2 id="control-title">You stay in control</h2>
+        <div class="cards two">
+          <article class="card plain"><h3>Nothing starts without you</h3><p>A chat can suggest a collaboration; only you start it. The bridge reads your answer from the app itself, never from what an agent says.</p></article>
+          <article class="card plain"><h3>Editing is opt-in</h3><p>The other agent edits only if you allow it, within the scope you write. Push, pull requests, merges and deploys stay excluded unless your scope names them.</p></article>
+          <article class="card plain"><h3>Messages carry no authority</h3><p>Text from the other agent never grants permissions, whatever it says.</p></article>
+          <article class="card plain"><h3>Limits are enforced</h3><p>Message count and deadline apply in both directions.</p></article>
+          <article class="card plain"><h3>Nothing is sent twice</h3><p>If a delivery is uncertain, the bridge shows it as uncertain and does not resend it.</p></article>
+          <article class="card plain"><h3>It stays local</h3><p>Messages travel over local sockets and the Codex app's connection. History lives in a private SQLite file on your machine.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="install" aria-labelledby="install-title">
+      <div class="wrap">
+        <h2 id="install-title">Install in about 5 minutes</h2>
+
+        <div class="notice" role="note">
+          <strong>Desktop apps only, for now.</strong> The bridge connects Claude Desktop (Code tab) with Codex Desktop on macOS. The Claude Code CLI and Codex CLI are not supported yet; support is planned.
+        </div>
+
+        <div class="install-grid">
+          <div class="reqs">
+            <h3>You need</h3>
+            <ul>
+              <li><strong>macOS</strong></li>
+              <li><a href="https://openai.com/codex/">Codex Desktop</a>, running</li>
+              <li><a href="https://claude.ai/download">Claude Desktop</a>, Code tab (Claude Code 2.1.224 or later)</li>
+              <li><a href="https://bun.sh">Bun</a> 1.4 or later</li>
+              <li>Git</li>
+            </ul>
+          </div>
+
+          <ol class="install-steps">
+            <li>
+              <h3>Install the Codex side</h3>
+              <div class="code"><code>codex plugin marketplace add jaimebernalm/cc-cdx-bridge</code><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
+              <div class="code"><code>codex plugin add cc-cdx-bridge@jaimebernalm</code><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
+              <p>Open Codex, find <strong>Claude ⇄ Codex Bridge</strong> in its plugins and <strong>trust both hooks</strong>. Then open a new Codex chat.</p>
+            </li>
+            <li>
+              <h3>Install the Claude side</h3>
+              <div class="code"><code>claude plugin marketplace add jaimebernalm/cc-cdx-bridge</code><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
+              <div class="code"><code>claude plugin install cc-cdx-bridge@jaimebernalm</code><button type="button" class="copy" aria-label="Copy command">Copy</button></div>
+              <p>Then open a new Code chat in Claude Desktop.</p>
+            </li>
+            <li>
+              <h3>Check that they see each other</h3>
+              <p>Open the same project folder in both apps and ask either chat:</p>
+              <blockquote>Use the Claude ⇄ Codex Bridge to list the chats in this folder.</blockquote>
+              <p>Not listed? See <a href="https://github.com/jaimebernalm/cc-cdx-bridge#troubleshooting">Troubleshooting</a>.</p>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing">
+      <div class="wrap closing-inner">
+        <h2>Two agents. One result you can trust.</h2>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#install">Get started</a>
+          <a class="btn btn-ghost" href="https://github.com/jaimebernalm/cc-cdx-bridge/blob/main/docs/REFERENCE.md">Read the reference</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <p>MIT licensed. Based on <a href="https://github.com/LeonKohli/claude-uds-bridge">Leon Kohli's Claude UDS Bridge</a>.</p>
+      <p>An independent project, not affiliated with Anthropic or OpenAI. <a href="https://github.com/jaimebernalm/cc-cdx-bridge/issues">Report an issue</a></p>
+    </div>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.copy').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var text = btn.previousElementSibling.textContent;
+        var done = function () {
+          btn.textContent = 'Copied';
+          setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+        };
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text).then(done, function () {});
+        }
+      });
+    });
+  </script>
+</body>
+</html>
