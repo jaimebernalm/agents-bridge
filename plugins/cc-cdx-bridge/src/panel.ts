@@ -16,9 +16,10 @@ const openingPages={
   en:{opened:'The bridge panel opens in its own window. This tab closes by itself.',failed:'The panel window did not open. Ask in your chat to open the bridge panel.',stale:'This link is from an earlier session of the bridge. Ask in your chat to open the bridge panel.'},
   es:{opened:'El panel del bridge se abre en su propia ventana. Esta pestaña se cierra sola.',failed:'No se ha podido abrir la ventana del panel. Pide en tu chat que abra el panel del bridge.',stale:'Este enlace es de una sesión anterior del bridge. Pide en tu chat que abra el panel del bridge.'},
 };
-// Once the window is asked for, the tab that carried the link closes itself: a tab the link opened has nothing else in
-// its history, which is what lets a page close it.
-const openingPage=(language:'en'|'es',state:keyof typeof openingPages.en,nonce:string)=>`<!doctype html><html lang="${language}"><meta charset="utf-8"><meta name="color-scheme" content="light dark"><title>Claude ⇄ Codex Bridge</title><body style="font:16px/1.5 system-ui,sans-serif;margin:48px auto;max-width:36em;padding:0 16px"><p>${openingPages[language][state]}</p>${state==='opened'?`<script nonce="${nonce}">setTimeout(()=>window.close(),700)</script>`:''}</body></html>`;
+// The tab that carried the link closes itself at once: a tab the link opened has nothing else in its history, which is
+// what lets a page close it. The window is asked for only afterwards (see /open), so it opens over whatever that leaves.
+const openingPage=(language:'en'|'es',state:keyof typeof openingPages.en,nonce:string)=>`<!doctype html><html lang="${language}"><meta charset="utf-8"><meta name="color-scheme" content="light dark"><title>Claude ⇄ Codex Bridge</title><body style="font:16px/1.5 system-ui,sans-serif;margin:48px auto;max-width:36em;padding:0 16px"><p>${openingPages[language][state]}</p>${state==='opened'?`<script nonce="${nonce}">window.close()</script>`:''}</body></html>`;
+const openDelayMs=400;
 export function startPanel(options:Options){
   const authorizations=new ProjectAuthorizations(options.stateDir);
   let token=randomBytes(32).toString('hex');const session=randomBytes(32).toString('hex'),csrf=randomBytes(32).toString('hex');
@@ -53,8 +54,10 @@ export function startPanel(options:Options){
         const nonce=randomBytes(16).toString('base64'),page=(state:keyof typeof openingPages.en,status:number)=>new Response(openingPage(readPanelPreferences(options.stateDir).language,state,nonce),{status,headers:{...headers,'Content-Security-Policy':`default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; frame-ancestors 'none'`,'Content-Type':'text/html;charset=utf-8'}});
         if(!equal(url.searchParams.get('k')??'',openKey))return page('stale',404);
         if(!options.onOpenRequest)return page('failed',503);
-        if(!lastOpen||Date.now()-lastOpen.at>2000)lastOpen={at:Date.now(),opened:options.onOpenRequest().catch(()=>false)};
-        return await lastOpen.opened?page('opened',200):page('failed',503);
+        // Asked a moment after answering, so the tab has closed and the chat's app is back in front before the window
+        // opens: closing a tab, or Claude taking back focus from its side browser, would otherwise cover the window.
+        if(!lastOpen||Date.now()-lastOpen.at>2000){const request=options.onOpenRequest;lastOpen={at:Date.now(),opened:Bun.sleep(openDelayMs).then(request).catch(()=>false)};}
+        return page('opened',200);
       }
       const requestOrigin=req.headers.get('origin');if(requestOrigin&&requestOrigin!==origin)return json({error:'Invalid Origin'},403);
       // A top-level navigation to the page itself (e.g. from a browser extension or another app) is harmless:

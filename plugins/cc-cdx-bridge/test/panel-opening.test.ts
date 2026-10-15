@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { launchLocalBrowser, type Run } from '../src/panel-opening';
+import { bringAppForward, launchLocalBrowser, type Run } from '../src/panel-opening';
 
 const url = 'http://127.0.0.1:4100/#token=abc';
 function recorder(defaultBrowser: string | Error, failing: string[] = []) {
@@ -50,5 +50,21 @@ describe('opening the panel window', () => {
     await expect(launchLocalBrowser('https://example.com/', r.exec, 'darwin', {})).rejects.toThrow('Only the private local panel');
     await expect(launchLocalBrowser('http://localhost:4100/', r.exec, 'darwin', {})).rejects.toThrow('Only the private local panel');
     expect(r.calls).toEqual([]);
+  });
+});
+
+describe('bringing the chat back before the panel opens', () => {
+  test('macOS brings each chat app forward by its bundle, and nothing happens elsewhere', async () => {
+    const r = recorder('');
+    await bringAppForward('claude', r.exec, 'darwin', {});
+    await bringAppForward('codex', r.exec, 'darwin', {});
+    await bringAppForward('claude', r.exec, 'linux', {});
+    await bringAppForward('claude', r.exec, 'darwin', {CC_CDX_PANEL_AUTO_OPEN: '0'});
+    expect(r.calls).toEqual([['open', '-b', 'com.anthropic.claudefordesktop'], ['open', '-b', 'com.openai.codex']]);
+  });
+
+  test('an app that cannot be brought forward does not stop the panel from opening', async () => {
+    const r = recorder('', ['-b']);
+    await expect(bringAppForward('claude', r.exec, 'darwin', {})).resolves.toBeUndefined();
   });
 });

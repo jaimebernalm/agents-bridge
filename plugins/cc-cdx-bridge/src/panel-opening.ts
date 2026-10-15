@@ -47,6 +47,15 @@ export async function launchLocalBrowser(url: string, exec: Run = run, platform:
   throw new Error('No desktop browser launcher available');
 }
 
+// A card's button reaches the bridge through the default browser when the app shows the card as a still page (Claude
+// does), and that browser brings its own window over the chat. Bringing the chat's app back first, by its bundle so no
+// Apple event or permission is involved, leaves the panel window on top of the chat rather than behind the browser.
+const chatApps = {claude: 'com.anthropic.claudefordesktop', codex: 'com.openai.codex'} as const;
+export async function bringAppForward(provider: 'claude' | 'codex', exec: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env) {
+  if (platform !== 'darwin' || env.CC_CDX_PANEL_AUTO_OPEN === '0') return;
+  if (await exec('open', ['-b', chatApps[provider]], 2000).then(() => true, () => false)) await Bun.sleep(150);
+}
+
 export function panelLink(url: string, target: {runId?: string; authorization?: boolean} = {}) {
   const link = new URL(url), hash = new URLSearchParams(link.hash.slice(1));
   if (target.runId) hash.set('run', target.runId);
