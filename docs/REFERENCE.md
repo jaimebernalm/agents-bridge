@@ -19,7 +19,7 @@ A few internal names keep the upstream name `claude-uds-bridge` because they are
 ## Requirements
 
 - Codex Desktop, running. Delivery into a Codex chat goes through the app's connection, so the Codex CLI alone has no inbox.
-- macOS or Linux. The transport uses POSIX sockets; Windows named pipes are not implemented.
+- macOS, where Codex Desktop runs. The transport itself uses POSIX sockets and is tested on Linux too; Windows named pipes are not implemented.
 - Claude Code 2.1.224 or later, the first release with [cross-session messaging](https://code.claude.com/docs/en/cross-session-messaging), used from the Code tab of Claude Desktop or as an interactive `claude` chat in a terminal (registry entrypoint `claude-desktop`, or `cli` with kind `interactive`). Print mode (`-p`), IDE extensions and SDK sessions are not accepted. A new Claude chat requested through the bridge always opens in Claude Desktop; a terminal chat takes part once it is already open in the project.
 - Bun 1.4 or later. The launcher checks the app's `PATH`, `~/.bun/bin`, `/opt/homebrew/bin`, `/usr/local/bin` and `/usr/bin`.
 

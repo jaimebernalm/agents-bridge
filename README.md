@@ -4,6 +4,8 @@
 
 Both apps install it as `cc-cdx-bridge` (Claude Code + Codex) and show it as **Claude ⇄ Codex Bridge**.
 
+> **Codex Desktop on macOS, for now.** The bridge connects a Claude Code chat, in the Code tab of Claude Desktop or as `claude` in a terminal, with a Codex Desktop chat on macOS. The Codex CLI is not supported yet; support for it is planned.
+
 Ask either chat to work with the other one. The chat asks you three short questions: whether the other agent may edit code, the limits, and whether to start. You answer **Yes**, or open a small panel to change anything first. The two chats message each other directly while you watch. At the end you get a result that shows who said what and where they still disagree.
 
 It's an easier, collaboration-focused take on [Claude UDS Bridge](https://github.com/LeonKohli/claude-uds-bridge): the same local Claude ↔ Codex bridge, plus a guided panel so you never have to manage sessions or settings by hand.
@@ -35,7 +37,7 @@ Use codex-plugin-cc for a one-shot review. Use this bridge when you want the two
 
 ## Requirements
 
-- **macOS or Linux.** Windows is not supported.
+- **macOS.** Codex Desktop, which the bridge needs, isn't available on Linux, and Windows is not supported.
 - **[Codex Desktop](https://openai.com/codex/)**, running. Messages are delivered into a Codex chat through the app, so the Codex CLI alone is not enough.
 - **Claude Code 2.1.224 or later**, either in the **Code** tab of [Claude Desktop](https://claude.ai/download) or as `claude` in a terminal. Terminal chats must be interactive: `claude -p`, the VS Code extension and the SDK are not supported.
 - **[Bun](https://bun.sh)** 1.4 or later: `curl -fsSL https://bun.sh/install | bash`
@@ -161,7 +163,7 @@ Then open new chats in both apps. If Codex asks again, re-trust the hooks. Your 
 ## Known limits
 
 - Delivery into Codex relies on Codex Desktop's internal app connection. A Codex update can break it. The bridge then refuses to deliver rather than guessing, and the panel tells you.
-- macOS and Linux only.
+- macOS only, because Codex Desktop is required. Claude can be the Code tab of Claude Desktop or `claude` in a terminal; the Codex CLI is not supported yet.
 - A new Claude chat requested through the bridge always opens in Claude Desktop. Claude terminal chats take part only once you have started them yourself.
 - Without a screen (over SSH, for example) the panel can't open by itself; the chat gives you its link instead.
 - Last tested with Codex Desktop 26.930 and Claude Code 2.1.286 on macOS. Please [open an issue](https://github.com/jaimebernalm/cc-cdx-bridge/issues) with your versions if something breaks.
