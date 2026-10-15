@@ -1,6 +1,6 @@
 # Claude ⇄ Codex Bridge: reference
 
-> New here? Start with the [README](../README.md). This page is the technical reference for the current version. The history of each phase lives in the `FASE_*.md` documents next to it.
+> New here? Start with the [README](../README.md). This page is the technical reference for the current version.
 
 Fork maintained at [jaimebernalm/cc-cdx-bridge](https://github.com/jaimebernalm/cc-cdx-bridge), based on [Leon Kohli's Claude UDS Bridge](https://github.com/LeonKohli/claude-uds-bridge). It connects a Codex Desktop chat and a Claude Code chat on the same computer so they can collaborate, with a local panel where the person approves and follows each collaboration. Messages travel over local Unix sockets and Codex Desktop's app connection; the models still run through their own providers. Text from either chat grants no permission to edit, run or publish, and reviews and test receipts are declarations, never certified consensus.
 

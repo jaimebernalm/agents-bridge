@@ -1,6 +1,6 @@
 # Bidirectional Desktop implementation (0.9.0)
 
-The approved design is [INICIO_BIDIRECCIONAL.md](INICIO_BIDIRECCIONAL.md). This document describes the implemented behavior and distinguishes automated evidence from native model checks. It is a continuation checkpoint, not a claim that every Desktop lifecycle has been verified.
+This document describes the implemented behavior and distinguishes automated evidence from native model checks. It is a continuation checkpoint, not a claim that every Desktop lifecycle has been verified.
 
 Since 0.12.0 the tools described here as `desktop_collaboration_*` carry plain names, the same in both apps (`list_chats`, `prepare_collaboration`, `send_message`, `get_status`, …), and they are the only collaboration tools; the [reference](REFERENCE.md#tools) lists them. The rest of this document keeps the 0.9.0 names.
 
@@ -48,7 +48,7 @@ Closure records a proposal, disagreements or incomplete work, snapshots the exac
 
 ## Acceptance evidence and remaining gates
 
-Measured in real Claude Desktop before the runtime update: two fresh chats had distinct engines and plugin MCP children, caller binding by ancestry plus hook, no native session ID in MCP metadata, and the first-prompt hook preceding caller inspection. The first-prompt turn count was observed as null when the host had not yet written its transcript; the hook was corrected to count zero only for the expected missing transcript in a verified project directory, with regression coverage. Automatic receipt binding has not been tested in real chats with the integrated runtime. See [CLAUDE_SPIKE.md](CLAUDE_SPIKE.md) for exact IDs and observations.
+Measured in real Claude Desktop before the runtime update: two fresh chats had distinct engines and plugin MCP children, caller binding by ancestry plus hook, no native session ID in MCP metadata, and the first-prompt hook preceding caller inspection. The first-prompt turn count was observed as null when the host had not yet written its transcript; the hook was corrected to count zero only for the expected missing transcript in a verified project directory, with regression coverage. Automatic receipt binding has not been tested in real chats with the integrated runtime.
 
 A fresh native Codex test chat verified the 0.9.0 receiver, discovery, persistent status and private panel opening. Automated tests exercise both initiation directions through MCP and isolated native IPC/UDS fixtures, exact receipt and replay checks, authorization scope, lease recovery, creation delegation, candidates, registered-report barriers and closure. Visual testing of an isolated panel verified default English, Spanish switching, live report refresh without reload, run consent and pause/resume.
 

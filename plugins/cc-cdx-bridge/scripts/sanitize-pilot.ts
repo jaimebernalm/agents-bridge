@@ -8,4 +8,4 @@ try{
  const safe=publicPilotEvidence(JSON.parse(readFileSync(values.input,'utf8')));
  writeFileSync(values.output,JSON.stringify(safe,null,2)+'\n',{mode:0o600});
  console.log('Allowlisted summary written; full transcripts remain private.');
-}catch{console.error('Invalid evidence. No summary written. Supply the allowlisted schema documented in docs/PILOTO.md.');process.exitCode=1;}
+}catch{console.error('Invalid evidence. No summary written. Supply evidence matching the allowlisted schema in src/pilot-evidence.ts.');process.exitCode=1;}
