@@ -26,8 +26,8 @@
         <span>cc-cdx-bridge</span>
       </a>
       <nav aria-label="Sections">
+        <a href="#why">Why two models</a>
         <a href="#how">How it works</a>
-        <a href="#control">Control</a>
         <a href="#compare">Compare</a>
         <a href="https://github.com/jaimebernalm/cc-cdx-bridge/blob/main/docs/REFERENCE.md">Docs</a>
       </nav>
@@ -40,16 +40,15 @@
 
   <main id="main">
     <section class="hero dark" id="top">
-      <canvas class="ascii-bg ascii-left" data-logo="claude" aria-hidden="true"></canvas>
-      <canvas class="ascii-bg ascii-right" data-logo="openai" aria-hidden="true"></canvas>
+      <canvas class="ascii-field" aria-hidden="true"></canvas>
       <div class="rails">
         <div class="hero-copy">
           <a class="pill" href="https://github.com/jaimebernalm/cc-cdx-bridge">
             <span>Open source · macOS · Desktop apps</span>
             <span class="pill-cta">View on GitHub</span>
           </a>
-          <h1><span>Two agents.</span> <span class="tone">One conversation.</span></h1>
-          <p class="lede">Claude ⇄ Codex Bridge lets the Claude and Codex chats you already have open message each other directly. You approve it, set the limits, and watch them work.</p>
+          <h1><span>Two models catch</span> <span class="tone">what one misses.</span></h1>
+          <p class="lede">Claude and Codex were trained differently, so they make different mistakes. The bridge puts the two chats you already have open in one conversation: one does the work, the other checks it.</p>
           <div class="actions">
             <a class="btn btn-accent" href="#install">Install the bridge</a>
             <a class="btn btn-dark" href="#how">See how it works</a>
@@ -135,6 +134,32 @@
       </div>
     </section>
 
+    <section class="why light" id="why" aria-labelledby="why-title">
+      <div class="rails">
+        <p class="kicker">Why two models</p>
+        <h2 id="why-title">Every model has blind spots.<br><span class="tone">Different models have different ones.</span></h2>
+        <p class="body-lede">One model reviewing its own work tends to agree with itself. A second model, trained differently, questions the assumptions the first one never thought to check.</p>
+        <div class="cards">
+          <article class="card">
+            <h3>One finds what the other misses</h3>
+            <p>Each model has its own habits and biases. When Codex reviews Claude's plan, or Claude reviews Codex's code, mistakes that slipped past the author tend to surface.</p>
+          </article>
+          <article class="card">
+            <h3>One fixes what the other breaks</h3>
+            <p>Findings go straight back to the chat that wrote the code, with the context to fix them. No copying output between windows.</p>
+          </article>
+          <article class="card">
+            <h3>Disagreement is the signal</h3>
+            <p>Where they still disagree is exactly where you should look. The bridge keeps it on the record instead of forcing a consensus.</p>
+          </article>
+          <article class="card">
+            <h3>Reviews with real context</h3>
+            <p>The reviewer isn't a fresh run starting from zero. It's your chat, with its history and the files it has already read.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <section class="how dark" id="how" aria-labelledby="how-title">
       <div class="rails">
         <p class="kicker">How it works</p>
@@ -174,30 +199,6 @@
             <span class="who">review of v2 · by codex</span>Agree on the retry. Disagree on the timeout: it is handled upstream.
             <span class="dim">Disposition: proposal, with disagreements</span>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="why light" aria-labelledby="why-title">
-      <div class="rails">
-        <h2 id="why-title">Two models catch more.<br><span class="tone">One chat can't review itself.</span></h2>
-        <div class="cards">
-          <article class="card">
-            <h3>Different models, different mistakes</h3>
-            <p>When one reviews the other's plan or code, problems a single agent would miss tend to surface.</p>
-          </article>
-          <article class="card">
-            <h3>They keep what they know</h3>
-            <p>These are your real chats, with their history and the files they've already read. No fresh run starting from zero.</p>
-          </article>
-          <article class="card">
-            <h3>Disagreements stay visible</h3>
-            <p>You see where they still disagree instead of one confident answer, so you know what to check yourself.</p>
-          </article>
-          <article class="card">
-            <h3>One approval for a whole plan</h3>
-            <p>Plan, then build phase by phase. Either chat can start, and you approve once.</p>
-          </article>
         </div>
       </div>
     </section>

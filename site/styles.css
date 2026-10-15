@@ -15,8 +15,8 @@
   --accent-hover: #ff8b55;
   --accent-soft: #ffb38a;
   /* Read by ascii.js. */
-  --ascii-ink: rgb(255 255 255 / .16);
-  --ascii-hot: #ff7a3d;
+  --ascii-claude: #ff7a3d;
+  --ascii-openai: #f4f4f5;
   --display: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -85,14 +85,14 @@ h3 { font-family: var(--display); font-weight: 500; font-size: 17px; line-height
 
 /* Hero */
 .hero { position: relative; overflow: hidden; isolation: isolate; }
+.hero { min-height: min(100svh, 980px); display: flex; flex-direction: column; justify-content: center; }
+.hero > .rails { width: 100%; }
 .hero::after {
-  content: ""; position: absolute; inset: auto 0 0; height: 60%; z-index: -1;
-  background: radial-gradient(60% 80% at 50% 100%, rgb(255 122 61 / .22), transparent 70%);
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(42% 46% at 50% 42%, rgb(12 12 13 / .82), rgb(12 12 13 / .35) 60%, transparent 85%);
 }
-.ascii-bg { position: absolute; top: 0; height: 100%; width: 46%; z-index: -1; pointer-events: none; }
-.ascii-left { left: 0; mask-image: linear-gradient(to right, #000 35%, transparent 96%); }
-.ascii-right { right: 0; mask-image: linear-gradient(to left, #000 35%, transparent 96%); }
-@media (max-width: 720px) { .ascii-bg { height: 220px; opacity: .3; } }
+/* Full-bleed ASCII field drawn by ascii.js; the copy sits on a soft dark pool in the middle. */
+.ascii-field { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
 .hero-copy { padding: 120px 0 200px; text-align: center; }
 .pill {
   white-space: nowrap;
