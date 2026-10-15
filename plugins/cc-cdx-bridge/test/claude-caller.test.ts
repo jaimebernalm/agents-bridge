@@ -80,11 +80,17 @@ test('metadata can only confirm the session, never choose it', async () => {
   expect(metaSessionHints({ progressToken: 3, nested: { session_id: sessionId } })).toEqual([sessionId]);
 });
 
-test('only Claude Code Desktop sessions qualify; bridge receivers and other surfaces are rejected', async () => {
-  for (const entrypoint of ['codex-claude-uds-bridge', 'cli', 'claude-vscode', undefined]) {
-    record(process.pid, { entrypoint });
+test('only the Desktop Code tab and interactive terminal chats qualify; bridge receivers and other surfaces are rejected', async () => {
+  for (const fields of [{ entrypoint: 'codex-claude-uds-bridge' }, { entrypoint: 'cli' }, { entrypoint: 'cli', kind: 'print' },
+    { entrypoint: 'sdk-cli', kind: 'interactive' }, { entrypoint: 'claude-vscode', kind: 'interactive' }, { entrypoint: undefined }]) {
+    record(process.pid, fields);
     expect(await rejection(authenticate())).toBe('caller_mismatch');
   }
+});
+
+test('an interactive Claude Code terminal chat is a caller like a Desktop one, with its own surface', async () => {
+  record(process.pid, { entrypoint: 'cli', kind: 'interactive' });
+  expect(await authenticate()).toMatchObject({ provider: 'claude', sessionId, binding: { surface: 'cli' } });
 });
 
 test('two live processes claiming one session are ambiguous', async () => {

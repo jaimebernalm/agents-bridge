@@ -1,4 +1,4 @@
-// Bundles the Claude Code Desktop entrypoints into the self-contained Claude plugin root. That
+// Bundles the Claude Code entrypoints (Desktop Code tab and terminal) into the self-contained Claude plugin root. That
 // root is kept apart from this Codex plugin because Claude merges a plugin's default
 // hooks/hooks.json and .mcp.json with whatever its manifest declares.
 import { copyFileSync, cpSync, rmSync } from 'node:fs';

@@ -6,6 +6,7 @@ import { readDesktopInfo } from './desktop';
 import { claudeVersionSupported } from './doctor';
 import { inspectProject, type ProjectIdentity } from './project';
 import { codexEntrypoint } from './names';
+import { claudeSurfaceSupported, surfaceLabel } from './surfaces';
 
 export type Participant = {
   sessionId: string; name: string; provider: 'codex' | 'claude'; surface: string; pid: number;
@@ -37,12 +38,12 @@ export async function discoverParticipants(configDir: string, stateDir?: string)
       try { version = (ownedJson(join(configDir, 'sessions', `${peer.pid}.json`), 262144) as Record<string, unknown>).version; } catch { /* Unknown engine. */ }
       result.push({ sessionId: peer.sessionId, name: peer.name, cwd: realpathSync(peer.cwd), status: peer.status,
         pid: peer.pid, procStart: peer.procStart, startedAt: peer.startedAt ?? null,
-        provider: peer.entrypoint === codexEntrypoint ? 'codex' : 'claude', surface: peer.entrypoint ?? 'unknown',
+        provider: peer.entrypoint === codexEntrypoint ? 'codex' : 'claude', surface: peer.entrypoint ?? 'unknown', surfaceLabel: surfaceLabel(peer.entrypoint),
         version: typeof version === 'string' ? version : null,
         managedReceiver:peer.entrypoint===codexEntrypoint?managedReceiver(stateDir,peer):null,
         projectAuthorizationReceiver:peer.entrypoint===codexEntrypoint?managedReceiver(stateDir,peer,'project_authorization_v1'):null,
         implementationReceiver:peer.entrypoint===codexEntrypoint?managedReceiver(stateDir,peer,'implementation_v1'):null,
-        eligibleSurface: peer.entrypoint === codexEntrypoint || peer.entrypoint === 'claude-desktop' && claudeVersionSupported(version) });
+        eligibleSurface: peer.entrypoint === codexEntrypoint || claudeSurfaceSupported(peer) && claudeVersionSupported(version) });
     } catch { /* Stale or ambiguous metadata is not selectable. */ }
   }
   return result.sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0));
@@ -52,10 +53,10 @@ export async function inspectParticipant(options: ParticipantOptions, id: string
   const peer = await verifiedPeer(options.configDir, id);
   let version: string | null = null;
   if (provider === 'claude') {
-    if (peer.entrypoint !== 'claude-desktop') throw new Error('Select a Claude Desktop Code conversation; terminal and VS Code are not substituted');
+    if (!claudeSurfaceSupported(peer)) throw new Error('Select a Claude Desktop Code conversation or an interactive Claude Code terminal; VS Code, print mode and SDK sessions are not substituted');
     const record = ownedJson(join(options.configDir, 'sessions', `${peer.pid}.json`), 262144) as Record<string, unknown>;
     version = typeof record.version === 'string' ? record.version : null;
-    if (!claudeVersionSupported(version)) throw new Error('Selected Claude Desktop engine is unsupported or unknown');
+    if (!claudeVersionSupported(version)) throw new Error(`Selected ${surfaceLabel(peer.entrypoint)} engine is unsupported or unknown`);
   } else {
     if (peer.entrypoint !== codexEntrypoint) throw new Error('Selected Codex conversation has no bridge receiver');
     if (!managedReceiver(options.stateDir,peer)) throw new Error('Codex receiver predates managed collaborations; reload the plugin receiver before preparing a run');

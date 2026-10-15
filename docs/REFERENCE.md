@@ -20,7 +20,7 @@ A few internal names keep the upstream name `claude-uds-bridge` because they are
 
 - Codex Desktop, running. Delivery into a Codex chat goes through the app's connection, so the Codex CLI alone has no inbox.
 - macOS or Linux. The transport uses POSIX sockets; Windows named pipes are not implemented.
-- Claude Code 2.1.224 or later, the first release with [cross-session messaging](https://code.claude.com/docs/en/cross-session-messaging), used from the Code tab of Claude Desktop.
+- Claude Code 2.1.224 or later, the first release with [cross-session messaging](https://code.claude.com/docs/en/cross-session-messaging), used from the Code tab of Claude Desktop or as an interactive `claude` chat in a terminal (registry entrypoint `claude-desktop`, or `cli` with kind `interactive`). Print mode (`-p`), IDE extensions and SDK sessions are not accepted. A new Claude chat requested through the bridge always opens in Claude Desktop; a terminal chat takes part once it is already open in the project.
 - Bun 1.4 or later. The launcher checks the app's `PATH`, `~/.bun/bin`, `/opt/homebrew/bin`, `/usr/local/bin` and `/usr/bin`.
 
 ## Install
@@ -77,7 +77,7 @@ A message steers the receiving chat's active turn, or starts a turn when it is i
 
 ## Reception in Codex
 
-Each Codex chat has a receive setting. New chats use `default`: answers from the Claude chat of a collaboration that chat started are accepted once the person remembers the project on the panel's **Authorization** page, and a collaboration started by Claude needs the person's approval of that collaboration in the panel. A message held because the two chats run different permission modes opens a native dialog; held text reaches the model only if the person releases it, and it expires after five minutes by default. Chats from earlier versions may keep an explicit `accept`, `hold` or `refuse` setting; `check_ready` reports it, and opening a new Codex chat clears it.
+Each Codex chat has a receive setting. New chats use `default`: answers from the Claude chat of a collaboration that chat started are accepted once the person remembers the project on the panel's **Authorization** page, and a collaboration started by Claude needs the person's approval of that collaboration in the panel. A message held because the two chats run different permission modes opens a native dialog in Codex (in a Claude terminal chat, Claude Code's own approval prompt plays that part; the Claude Desktop Code tab keeps the message waiting); held text reaches the model only if the person releases it, and it expires after five minutes by default. Chats from earlier versions may keep an explicit `accept`, `hold` or `refuse` setting; `check_ready` reports it, and opening a new Codex chat clears it.
 
 Claude's own reception is configured in Claude: by default it holds messages from a session in a different permission mode (`crossSessionInbound` in `~/.claude/settings.json`).
 

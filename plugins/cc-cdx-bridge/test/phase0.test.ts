@@ -84,6 +84,18 @@ test('doctor distinguishes Desktop engines, missing receivers and policy uncerta
     expect((await doctor(f.options)).state).toBe('needs_selection');
     f.write({version:'2.1.223'});
     expect((await doctor(f.options)).state).toBe('unsupported_version');
+    // An interactive terminal chat is selected like a Desktop one; print mode is listed but not substituted.
+    f.write({entrypoint:'cli',kind:'interactive'});
+    const terminal = await doctor(f.options);
+    expect(terminal.state).toBe('needs_receiver');
+    expect(terminal.checks.find(check=>check.code==='claude_engine')?.message).toContain('Claude CLI engine 2.1.286');
+    expect(terminal.surfaces).toEqual([expect.objectContaining({surface:'cli',surfaceLabel:'Claude CLI',supportedSurface:true})]);
+    f.write({entrypoint:'cli',kind:'print'});
+    const print = await doctor(f.options);
+    expect(print.state).toBe('needs_selection');
+    expect(print.surfaces).toEqual([expect.objectContaining({surface:'cli',supportedSurface:false})]);
+    f.write({entrypoint:'cli',kind:'interactive',version:'2.1.223'});
+    expect((await doctor(f.options)).checks.find(check=>check.code==='unsupported_version')?.remedy).toContain('claude update');
     expect(claudeVersionSupported('2.1.288')).toBe(true);
     expect(claudeVersionSupported('2.1.224')).toBe(true);
     expect(claudeVersionSupported('unknown')).toBe(false);

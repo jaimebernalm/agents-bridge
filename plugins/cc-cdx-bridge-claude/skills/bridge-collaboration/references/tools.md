@@ -4,7 +4,7 @@ Every tool works from either app. The bridge derives who is calling from the cha
 
 ## Find and check
 
-- `list_chats {}`: the live chats that can join, with exact `sessionId`, provider, folder, status and bridge capabilities. Read-only.
+- `list_chats {}`: the live chats that can join, with exact `sessionId`, provider, `surfaceLabel` (Claude Desktop, Claude CLI or Codex Desktop), folder, status and bridge capabilities. Read-only.
 - `check_ready {peerId}`: whether this chat can start a collaboration with that chat now. Returns `readyForCheck`, a `code` and a `message`, including when the person must approve in the panel first. Sends nothing and grants nothing. It cannot observe whether the other chat will actually answer: verify that with a short message after starting.
 - `diagnose`: why the bridge does or does not work here. In Claude it takes no input; in Codex it takes `{cwd, peerId?}`. Read-only.
 

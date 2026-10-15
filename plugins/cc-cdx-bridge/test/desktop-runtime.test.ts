@@ -223,3 +223,21 @@ test('a collaboration whose Claude chat closed can still be finished, while othe
   expect(f.bridge).toBeTruthy();const {Database}=await import('bun:sqlite'),db=new Database(join(f.state,'collaborations.sqlite'),{readonly:true});try{expect(db.query('SELECT 1 FROM desktop_claims WHERE run_id=?').get(run.id)).toBeNull();}finally{db.close();}
  }finally{await client.close();await server.close();await runtime.close();await codex.close();await f.close();}
 },15000);
+
+test('an interactive Claude terminal chat collaborates like a Desktop one, and every view names where each chat runs',async()=>{
+ const f=await nativeFixture(false,{reception:'accept',claudeRecord:{entrypoint:'cli',kind:'interactive'}}),codex=await f.connect(),server=new McpServer({name:'claude-cli-fixture',version:'1'}),client=new Client({name:'fixture',version:'1'});
+ const p=await inspectParticipant({configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path},f.peerId,'claude');expect(p.surface).toBe('cli');
+ let surface='cli';
+ const runtime=registerDesktopTools(server,{configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path,codexHome:f.root,pluginRoot:root,authenticate:async()=>({provider:'claude',sessionId:p.sessionId,pid:p.pid,procStart:p.procStart,project:f.root,binding:{method:'fixture_only',generation:'fixture',surface,evidence:['fixture_only']}})});
+ const [a,b]=InMemoryTransport.createLinkedPair();await Promise.all([server.connect(a),client.connect(b)]);
+ const call=async(name:Operation,args:Record<string,unknown>)=>{const r=await client.callTool({name:toolNames[name],arguments:args});if(r.isError)throw new Error(JSON.stringify(r.content));return JSON.parse((r.content as {text:string}[])[0]!.text);};
+ try{
+  const chats=await call('discover',{});expect(chats.find((c:{sessionId:string})=>c.sessionId===f.desktop.threadId)).toMatchObject({provider:'codex',surfaceLabel:'Codex Desktop'});
+  const listed=(await f.call(codex,'list_chats',{})).data;expect(listed.find((c:{sessionId:string})=>c.sessionId===f.peerId)).toMatchObject({provider:'claude',surface:'cli',surfaceLabel:'Claude CLI',eligibleSurface:true});
+  const run=await call('prepare',{requestId:randomUUID(),peerId:f.desktop.threadId,context:{objective:'terminal smoke'},limits:{maxMessages:8,maxSeconds:300},openPanel:false});
+  expect(run.participants.map((x:{provider:string;surfaceLabel:string})=>[x.provider,x.surfaceLabel]).sort()).toEqual([['claude','Claude CLI'],['codex','Codex Desktop']]);
+  const exported=await call('export',{runId:run.id,format:'markdown'});expect(exported.content).toContain('- Claude: Claude test (Claude CLI)');expect(exported.content).toMatch(/- Codex: .+ \(Codex Desktop\)/);
+  // Other Claude surfaces stay out even when a host adapter hands them over.
+  surface='claude-vscode';const refused=await client.callTool({name:toolNames.status,arguments:{runId:run.id}});expect(refused.isError).toBe(true);expect(JSON.stringify(refused.content)).toContain('interactive Claude Code terminal is required');
+ }finally{await client.close();await server.close();await runtime.close();await codex.close();await f.close();}
+},15000);

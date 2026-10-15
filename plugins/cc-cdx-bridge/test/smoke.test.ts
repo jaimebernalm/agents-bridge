@@ -16,6 +16,11 @@ test('a desktop test cannot select VS Code, another project, or an ambiguous nam
   expect(selectDesktopPeer([desktop, second], '/project', 'second')).toEqual(second);
   expect(() => selectDesktopPeer([desktop, ...others], '/project', 'vscode')).toThrow('Open a local');
 });
+test('an interactive terminal chat can be selected; print-mode and kindless terminal sessions cannot', () => {
+  const terminal = { ...peer('terminal', 'cli'), kind: 'interactive' };
+  expect(selectDesktopPeer([terminal, { ...peer('print', 'cli'), kind: 'print' }, peer('bare', 'cli')], '/project')).toEqual(terminal);
+  expect(() => selectDesktopPeer([{ ...peer('print', 'cli'), kind: 'print' }, peer('bare', 'cli')], '/project')).toThrow('Open a local');
+});
 test('only the exact challenge answer counts, with or without a peer envelope', () => {
   expect(replyMatches('BRIDGE_PONG nonce 42', 'nonce', 42)).toBe(true);
   expect(replyMatches('<cross-session-message from-mode="prompting">\nBRIDGE_PONG nonce 42\n</cross-session-message>', 'nonce', 42)).toBe(true);
