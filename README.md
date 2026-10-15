@@ -1,5 +1,7 @@
 # Claude ⇄ Codex Bridge
 
+[Visit the website](https://jaimebernalm.github.io/cc-cdx-bridge/) · [Install](#install-about-5-minutes)
+
 **Get your Claude Code chat and your Codex chat working together as equals, inside the Desktop apps you already use.**
 
 Both apps install it as `cc-cdx-bridge` (Claude Code + Codex) and show it as **Claude ⇄ Codex Bridge**.
