@@ -93,6 +93,9 @@ h3 { font-family: var(--display); font-weight: 500; font-size: 17px; line-height
 }
 /* Full-bleed ASCII field drawn by ascii.js; the copy sits on a soft dark pool in the middle. */
 .ascii-field { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+@media (max-width: 720px) {
+  .hero::after { background: radial-gradient(90% 34% at 50% 50%, rgb(12 12 13 / .94), rgb(12 12 13 / .75) 55%, rgb(12 12 13 / .25) 85%, transparent 100%); }
+}
 .hero-copy { padding: 120px 0 200px; text-align: center; }
 .pill {
   white-space: nowrap;
