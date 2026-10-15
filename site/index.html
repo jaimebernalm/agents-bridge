@@ -58,6 +58,7 @@
             <p class="bubble agent">Checked against the code. Agree on retries; disagree on moving the timeout, it's covered upstream.</p>
             <p class="tag">Disagreement kept · 6 of 20 messages</p>
           </div>
+          <figcaption>Illustrative exchange</figcaption>
         </figure>
       </div>
     </section>
@@ -130,24 +131,23 @@
 
     <section class="band" id="compare" aria-labelledby="compare-title">
       <div class="wrap">
-        <h2 id="compare-title">Two real conversations, not a tool call</h2>
-        <p class="section-lede">Plugins like OpenAI's <a href="https://github.com/openai/codex-plugin-cc">codex-plugin-cc</a> make one agent call the other as a background tool: a fresh headless run with none of your chat history that hands back one answer. Great for a quick second opinion. The bridge connects the chats you already have.</p>
+        <h2 id="compare-title">Two live chats, not a delegated job</h2>
+        <p class="section-lede">Plugins like OpenAI's <a href="https://github.com/openai/codex-plugin-cc">codex-plugin-cc</a> let Claude Code hand reviews and tasks to Codex, resume those jobs, or transfer the session into a Codex thread. That's a great fit for delegating work. The bridge does something different: it connects the Claude and Codex Desktop chats you already have open, so they can talk to each other.</p>
         <div class="table-scroll">
           <table>
             <thead>
-              <tr><th scope="col"></th><th scope="col">Agent-as-a-tool plugins</th><th scope="col">This bridge</th></tr>
+              <tr><th scope="col"></th><th scope="col">Delegation plugins</th><th scope="col">This bridge</th></tr>
             </thead>
             <tbody>
-              <tr><th scope="row">The other agent</th><td>A fresh CLI run with no history</td><td>Your actual Codex and Claude chats, with everything they already know</td></tr>
-              <tr><th scope="row">Who starts</th><td>One direction per plugin</td><td>Either chat</td></tr>
-              <tr><th scope="row">Shape</th><td>One job in, one answer out</td><td>A real back-and-forth, with message and time limits</td></tr>
-              <tr><th scope="row">You stay in control</th><td>A slash command</td><td>A local panel: approve, pause, finish, export</td></tr>
-              <tr><th scope="row">Editing</th><td>The called agent edits your files</td><td>Off until you allow it, with a written scope; local edits and commits only</td></tr>
-              <tr><th scope="row">Memory</th><td>Job output only</td><td>Context, results, reviews and disagreements are saved and survive restarts</td></tr>
+              <tr><th scope="row">The idea</th><td>Delegate reviews and tasks from Claude Code; resume jobs or transfer context</td><td>Connect two live Desktop chats for an ongoing exchange</td></tr>
+              <tr><th scope="row">Who starts</th><td>Claude Code, through slash commands</td><td>Either chat, in plain words</td></tr>
+              <tr><th scope="row">Shape</th><td>A job and its result</td><td>A back-and-forth with message and time limits</td></tr>
+              <tr><th scope="row">You stay in control</th><td>Slash commands and job status</td><td>Three questions in chat, then a local panel: pause, finish, export</td></tr>
+              <tr><th scope="row">The record</th><td>Job results</td><td>Authored, versioned results and reviews, with the disagreements kept</td></tr>
             </tbody>
           </table>
         </div>
-        <p class="note">Use codex-plugin-cc for a one-shot review. Use this bridge when you want the two agents to plan, investigate or build something together over several steps.</p>
+        <p class="note">Delegating a review or a task to Codex? codex-plugin-cc does that well. Want the two agents to plan, investigate or build something together over several steps? That's what the bridge is for.</p>
       </div>
     </section>
 
@@ -235,8 +235,19 @@
           btn.textContent = 'Copied';
           setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
         };
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(text).then(done, function () {});
+        var fallback = function () {
+          var range = document.createRange();
+          range.selectNodeContents(btn.previousElementSibling);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          btn.textContent = 'Press ⌘C';
+          setTimeout(function () { btn.textContent = 'Copy'; }, 2500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, fallback);
+        } else {
+          fallback();
         }
       });
     });

@@ -135,6 +135,7 @@ p { margin: 0 0 1em; }
 .from { display: block; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 2px; }
 .tag { margin: 0; font-size: .75rem; color: var(--muted); border: 1px dashed var(--border); border-radius: 999px; padding: 3px 10px; align-self: flex-start; }
 .link { display: grid; place-items: center; }
+.duo figcaption { grid-column: 1 / -1; text-align: center; font-size: .78rem; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
 .link span {
   display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
   background: linear-gradient(135deg, var(--claude), var(--codex)); color: #fff; font-size: 18px; box-shadow: var(--shadow);
