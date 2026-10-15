@@ -8,7 +8,7 @@ import { discoverParticipants, inspectParticipant, type ParticipantOptions } fro
 import { doctor } from './doctor';
 import { version } from './version';
 import { ProjectAuthorizations, authorizationIdentitySchema, authorizationChangeSchema } from './project-authorization';
-import { readPanelPreferences, savePanelPreferences, withPanelPreferences } from './panel-preferences';
+import { panelPlaceFromCookie, readPanelPreferences, savePanelPlace, savePanelPreferences, withPanelPreferences } from './panel-preferences';
 
 const equal=(a:string,b:string)=>Buffer.byteLength(a)===Buffer.byteLength(b)&&timingSafeEqual(Buffer.from(a),Buffer.from(b));
 type Options=ParticipantOptions&{codexHome:string;pluginRoot:string;ownerThread?:string;ownerProvider?:'codex'|'claude';desktop?:DesktopPanelAdapter;port?:number;onOpenRequest?:()=>Promise<boolean>};
@@ -22,7 +22,7 @@ const openingPage=(language:'en'|'es',state:keyof typeof openingPages.en,nonce:s
 export function startPanel(options:Options){
   const authorizations=new ProjectAuthorizations(options.stateDir);
   let token=randomBytes(32).toString('hex');const session=randomBytes(32).toString('hex'),csrf=randomBytes(32).toString('hex');
-  const desktop=options.desktop?desktopPanelRoutes(options,options.desktop,randomBytes(16).toString('hex')):undefined;let exchanged=false,sessionEstablished=false,closed=false,lastOpen:{at:number;opened:Promise<boolean>}|undefined;
+  const desktop=options.desktop?desktopPanelRoutes(options,options.desktop,randomBytes(16).toString('hex')):undefined;let lastPlace:string|undefined,exchanged=false,sessionEstablished=false,closed=false,lastOpen:{at:number;opened:Promise<boolean>}|undefined;
   // The key in the link that opens the panel window. It opens only that window, never acts in the panel, so it may
   // sit in the chat and in a page the person opens from a file; it only keeps other pages from opening it.
   const openKey=randomBytes(16).toString('hex');
@@ -46,6 +46,8 @@ export function startPanel(options:Options){
   const server=Bun.serve({hostname:'127.0.0.1',port:options.port??0,idleTimeout:0,
     async fetch(req):Promise<Response>{const url=new URL(req.url),origin=`http://127.0.0.1:${server.port}`,cookieName=`cc_cdx_panel_${server.port}`;
       if(req.headers.get('host')!==`127.0.0.1:${server.port}`||url.origin!==origin)return json({error:'Invalid Host'},403);
+      const place=panelPlaceFromCookie(req.headers.get('cookie')),placeKey=place&&[place.x,place.y,place.w,place.h].join('_');
+      if(place&&placeKey!==lastPlace){lastPlace=placeKey;try{savePanelPlace(options.stateDir,place);}catch{}}
       // The link an agent leaves in the chat, and the card page that calls it on its own: it carries no panel credential and
       // only asks this bridge to show its own panel window to the person, so following it, even by the agent, can open the
       // panel but never act in it. Its key is what lets a page opened from a file, which has no origin, call it.

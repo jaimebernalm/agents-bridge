@@ -2,6 +2,7 @@ import {test,expect} from 'bun:test';
 import {join,resolve} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {startPanel} from '../src/panel';
+import {panelPlaceFromCookie,readPanelPlace} from '../src/panel-preferences';
 import {nativeFixture} from './collaboration-fixture';
 import {Database} from 'bun:sqlite';
 import {statSync,writeFileSync} from 'node:fs';
@@ -53,6 +54,16 @@ test('language and theme are saved for this computer, so every panel opens with 
  expect(await page(x.p.origin)).toBe('<html lang="es" class="dark">');expect(await page(other.origin)).toBe('<html lang="es" class="dark">');
  writeFileSync(file,'{broken');expect(await page(other.origin)).toBe('<html lang="en">');
  }finally{await other.close();await x.close();}});
+
+test('the panel window\'s place is remembered from the page\'s cookie, so the next window opens there',async()=>{const x=await fixture();try{
+ expect(readPanelPlace(x.f.state)).toBeUndefined();
+ await fetch(x.p.origin+'/',{headers:{Cookie:'other=1; cc_cdx_panel_window=2690_-218_845_651'}});
+ expect(readPanelPlace(x.f.state)).toEqual({x:2690,y:-218,w:845,h:651});expect(statSync(join(x.f.state,'panel-window.json')).mode&0o077).toBe(0);
+ // Malformed or implausible values never replace a good place.
+ for(const bad of ['cc_cdx_panel_window=1_2_3','cc_cdx_panel_window=1_2_50_50','cc_cdx_panel_window=a_b_c_d','xcc_cdx_panel_window=1_2_900_900'])await fetch(x.p.origin+'/',{headers:{Cookie:bad}});
+ expect(readPanelPlace(x.f.state)).toEqual({x:2690,y:-218,w:845,h:651});
+ expect(panelPlaceFromCookie('cc_cdx_panel_window=10_20_900_700')).toEqual({x:10,y:20,w:900,h:700});
+ }finally{await x.close();}});
 
 test('human project authorization API is scoped, authenticated, confirmed, versioned and revocable without rewriting chat policy',async()=>{
  const x=await fixture(false,'default');try {

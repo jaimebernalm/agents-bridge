@@ -24,6 +24,11 @@ describe('opening the panel window', () => {
     expect(await launchLocalBrowser(url, r.exec, 'darwin', {}, '/state/panel-browser')).toBe('app');
     expect(r.launches()).toEqual([['open', '-n', '-b', 'com.google.Chrome', '--args', '--user-data-dir=/state/panel-browser', '--no-first-run', '--no-default-browser-check', `--app=${url}`]]);
   });
+  test('a remembered place opens the app window there at its size', async () => {
+    const r = recorder('com.google.Chrome');
+    expect(await launchLocalBrowser(url, r.exec, 'darwin', {}, '/state/panel-browser', {x: 2690, y: -218, w: 845, h: 651})).toBe('app');
+    expect(r.launches()).toEqual([['open', '-n', '-b', 'com.google.Chrome', '--args', '--user-data-dir=/state/panel-browser', '--no-first-run', '--no-default-browser-check', '--window-position=2690,-218', '--window-size=845,651', `--app=${url}`]]);
+  });
   test('other default browsers keep a normal tab', async () => {
     const r = recorder('com.apple.Safari');
     expect(await launchLocalBrowser(url, r.exec, 'darwin', {})).toBe('tab');

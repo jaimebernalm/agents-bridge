@@ -13,6 +13,7 @@ import { findPeer, ownedJson, peerAddress, sendFrames, userFrame, uuid, type Pee
 import { receptionPreflight } from './preflight';
 import { bringAppForward, launchLocalBrowser, PanelOpening, panelLink } from './panel-opening';
 import { privateSubdirectory } from './claude-sidecar';
+import { readPanelPlace } from './panel-preferences';
 import { startPanel } from './panel';
 import {CreationTickets,ticketInputSchema} from './creation-tickets';
 import {version} from './version';
@@ -45,7 +46,7 @@ export function registerDesktopTools(server:McpServer,options:DesktopRuntimeOpti
   let proposalsValue:DesktopProposals|undefined,storeValue:DesktopRunStore|undefined,ticketsValue:CreationTickets|undefined,implementationValue:DesktopImplementation|undefined,creationValue:DesktopCreation|undefined;
   const store=lazy(()=>storeValue??=initializeStore()),tickets=lazy(()=>ticketsValue??=new CreationTickets(options.stateDir));
   const proposals=lazy(()=>proposalsValue??=new DesktopProposals(store.db)),implementation=lazy(()=>implementationValue??=new DesktopImplementation(store.db)),creation=lazy(()=>creationValue??=new DesktopCreation(tickets));
-  const operations=new Map<string,{schema:z.ZodType;run:(args:any,c:RuntimeCaller,panelActor?:string)=>Promise<unknown>|unknown}>(),holder=randomUUID(),opening=new PanelOpening(options.openPrivatePanel??(url=>launchLocalBrowser(url,undefined,undefined,undefined,privateSubdirectory(options.stateDir,'panel-browser')))),showChatApp=options.showChatApp??(options.openPrivatePanel?async()=>{}:bringAppForward);
+  const operations=new Map<string,{schema:z.ZodType;run:(args:any,c:RuntimeCaller,panelActor?:string)=>Promise<unknown>|unknown}>(),holder=randomUUID(),opening=new PanelOpening(options.openPrivatePanel??(url=>launchLocalBrowser(url,undefined,undefined,undefined,privateSubdirectory(options.stateDir,'panel-browser'),readPanelPlace(options.stateDir)))),showChatApp=options.showChatApp??(options.openPrivatePanel?async()=>{}:bringAppForward);
   const principal=(c:RuntimeCaller)=>({provider:c.provider,sessionId:c.sessionId});
   const executor=(c:RuntimeCaller)=>({...principal(c),pid:c.pid,procStart:c.procStart,project:c.project});
   const status=(id:string,c:RuntimeCaller)=>({...store.status(id,c),implementation:implementation.status(id)});
