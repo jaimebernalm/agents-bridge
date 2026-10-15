@@ -32,14 +32,18 @@ const appWindowBrowsers = new Set(['com.google.chrome', 'com.google.chrome.beta'
 // Launch Services answers which app opens the panel's own kind of link; no extra permission needed.
 const defaultBrowserScript = "ObjC.import('AppKit');const app=$.NSWorkspace.sharedWorkspace.URLForApplicationToOpenURL($.NSURL.URLWithString('http://127.0.0.1/'));app?$.NSBundle.bundleWithURL(app).bundleIdentifier.js:''";
 
-export async function launchLocalBrowser(url: string, exec: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env): Promise<'app' | 'tab'> {
+// With a profile of its own the panel runs in a browser instance that holds only panel windows: opening one brings
+// nothing else forward, and closing the last one leaves the person's own browser windows where they were.
+const appWindowArgs = (url: string, profile?: string) => profile ? [`--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', `--app=${url}`] : [`--app=${url}`];
+
+export async function launchLocalBrowser(url: string, exec: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env, profile?: string): Promise<'app' | 'tab'> {
   const parsed = new URL(url);
   if (parsed.protocol !== 'http:' || parsed.hostname !== '127.0.0.1') throw new Error('Only the private local panel can be opened');
   if (platform === 'darwin') {
     if (env.CC_CDX_PANEL_APP_WINDOW !== '0') {
       const browser = await exec('osascript', ['-l', 'JavaScript', '-e', defaultBrowserScript], 2000).catch(() => '');
       // -n hands the flag to a browser that is already running. Its single-use token is spent on first load.
-      if (appWindowBrowsers.has(browser.toLowerCase()) && await exec('open', ['-n', '-b', browser, '--args', `--app=${url}`], 3000).then(() => true, () => false)) return 'app';
+      if (appWindowBrowsers.has(browser.toLowerCase()) && await exec('open', ['-n', '-b', browser, '--args', ...appWindowArgs(url, profile)], 3000).then(() => true, () => false)) return 'app';
     }
     await exec('open', [url], 3000); return 'tab';
   }
