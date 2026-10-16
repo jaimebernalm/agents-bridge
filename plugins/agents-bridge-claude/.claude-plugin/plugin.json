@@ -1,0 +1,16 @@
+{
+  "name": "agents-bridge",
+  "displayName": "Agents Bridge",
+  "version": "0.15.1",
+  "description": "Let a Claude Code chat and a Codex chat work together on the same project, with a panel where you approve and follow each collaboration.",
+  "author": {
+    "name": "Jaime Bernal (fork of Leon Kohli)"
+  },
+  "homepage": "https://github.com/jaimebernalm/agents-bridge",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "collaboration",
+    "desktop"
+  ]
+}

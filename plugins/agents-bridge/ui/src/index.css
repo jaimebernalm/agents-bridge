@@ -1,0 +1,83 @@
+@import "tailwindcss";
+/* The theme toggle sets .dark on <html>; dark: utilities must follow it, not the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+/* The panel's own window opens small, in a corner of the screen; compact: utilities tighten it there. */
+@custom-variant compact (@media (max-width:899px),(max-height:639px));
+@theme inline {
+ --color-background:var(--background); --color-foreground:var(--foreground); --color-card:var(--card); --color-card-foreground:var(--foreground); --color-popover:var(--card); --color-popover-foreground:var(--foreground);
+ --color-primary:var(--primary); --color-primary-foreground:var(--primary-foreground); --color-secondary:var(--secondary); --color-secondary-foreground:var(--foreground); --color-muted:var(--muted); --color-muted-foreground:var(--muted-foreground); --color-accent:var(--secondary); --color-accent-foreground:var(--foreground); --color-destructive:var(--danger); --color-border:var(--border); --color-input:var(--border); --color-ring:var(--primary);
+ --color-success:var(--success); --color-warning:var(--warning); --color-danger:var(--danger); --color-warning-foreground:var(--warning-foreground);
+ --radius-sm:calc(var(--radius) - 4px); --radius-md:calc(var(--radius) - 2px); --radius-lg:var(--radius); --radius-xl:calc(var(--radius) + 4px);
+ --ease-spring:cubic-bezier(.32,.72,0,1);
+ /* A grouped tile, as in macOS settings: a raised plane with a hairline edge instead of a border. */
+ --shadow-tile:0 0 0 .5px color-mix(in srgb,var(--foreground) 11%,transparent),0 1px 2px rgb(0 0 0 / .05);
+}
+/* The landing page's palette: zinc neutrals, its exact orange accent (with dark text on it), semantic state colors tuned per theme. */
+:root {--background:#f7f7f8;--foreground:#18181b;--card:#fff;--primary:#ff7a3d;--primary-foreground:#1a0d06;--secondary:#efeff1;--muted:#f4f4f5;--muted-foreground:#63636b;--border:#e4e4e7;--success:#1e7d36;--warning:#8a6100;--warning-foreground:#fff;--danger:#d70015;--material:rgb(255 255 255 / .72);--shadow:0 1px 2px rgb(0 0 0 / .04),0 8px 28px rgb(0 0 0 / .08);--radius:.75rem; color-scheme:light;}
+:root.dark {--background:#0c0c0d;--foreground:#fafafa;--card:#18181b;--primary:#ff7a3d;--primary-foreground:#1a0d06;--secondary:#27272a;--muted:#1f1f23;--muted-foreground:#a1a1aa;--border:#2e2e33;--success:#30d158;--warning:#f5b800;--warning-foreground:#18181b;--danger:#ff453a;--material:rgb(24 24 27 / .72);--shadow:0 1px 2px rgb(0 0 0 / .3),0 10px 32px rgb(0 0 0 / .45);color-scheme:dark;}
+/* Orange text on white falls short of AA, so in light mode accent-colored text uses a deeper shade of the same orange. */
+:root:not(.dark) .text-primary{color:#c2410c}
+/* Layered so border-* utilities (state badges, accents) can override it; unlayered rules always win over utilities. */
+@layer base{*{border-color:var(--border)}}
+body {margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--background);color:var(--foreground);font-size:14px;line-height:1.55;font-optical-sizing:auto;-webkit-font-smoothing:antialiased}
+h1,h2{letter-spacing:-.02em;line-height:1.2}
+input[type=checkbox],input[type=radio]{accent-color:var(--primary);width:1rem;height:1rem;margin-top:.15rem;flex-shrink:0}
+button,a,input,select,textarea,summary{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button:not(:disabled),a,summary{cursor:pointer}
+:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+pre,.prose-text{white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit}
+::-webkit-scrollbar{width:7px;height:7px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+.app{min-height:100vh}
+/* Floating chrome: a translucent material the content scrolls under, with a hairline only once something is beneath it. */
+/* The small window's slim tab bar: the form that fills the window leaves room for it. */
+.app:has(.compact-bar){--bar:44px}
+.topbar{position:sticky;top:0;z-index:40;background:var(--material);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:0 1px 0 color-mix(in srgb,var(--border) 70%,transparent)}
+.topbar-inner{max-width:1100px;margin:auto;height:56px;padding:0 24px;display:flex;align-items:center;gap:20px}
+.workspace{max-width:1100px;padding:32px 24px 64px;width:100%;margin:auto}
+.eyebrow{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.13em;color:var(--muted-foreground)}
+/* Press feedback lands on pointer-down; release eases back. */
+.pressable{transition:transform 160ms var(--ease-spring),background-color 150ms ease,color 150ms ease,box-shadow 150ms ease}
+.pressable:active:not(:disabled){transform:scale(.985);transition-duration:80ms}
+/* Toasts materialize from the edge they sit on instead of popping in. */
+.toast{background:var(--material)!important;backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);box-shadow:var(--shadow);animation:materialize 380ms var(--ease-spring) both}
+@keyframes materialize{from{opacity:0;transform:translateX(16px) scale(.96);filter:blur(6px)}}
+/* Views enter along the path the user travelled: deeper slides in from the right, back from the left. */
+.view-forward{animation:enter-forward 420ms var(--ease-spring) both}
+.view-back{animation:enter-back 420ms var(--ease-spring) both}
+@keyframes enter-forward{from{opacity:0;transform:translateX(24px)}}
+@keyframes enter-back{from{opacity:0;transform:translateX(-24px)}}
+.reveal{animation:reveal 320ms var(--ease-spring) both}
+@keyframes reveal{from{opacity:0;transform:translateY(-6px)}}
+/* Disclosures grow open instead of jumping, where the browser can animate to auto height. */
+:root{interpolate-size:allow-keywords}
+details::details-content{height:0;overflow:clip;transition:height 320ms var(--ease-spring),content-visibility 320ms allow-discrete}
+details[open]::details-content{height:auto}
+/* A theme switch eases the brightness change instead of flashing. */
+.theme-transition,.theme-transition *{transition:background-color 240ms ease,border-color 240ms ease,color 240ms ease!important}
+@media(max-width:1100px){.detail-grid{display:block!important}.detail-grid>aside{margin-top:24px}}
+/* In the small window every rem-based size and gap steps down (the top bar is not rendered there). */
+@media(max-width:899px),(max-height:639px){
+ html{font-size:15px}
+ /* Except the smallest captions, which stay at 12px, and field text, which matches the body. */
+ :root{--text-xs:.8rem;--text-base:.9333rem}
+ body{font-size:14px;line-height:1.5}
+ .workspace{padding:12px 16px}
+}
+@media(max-width:640px){.topbar-inner{height:auto;flex-wrap:wrap;padding:10px 16px;gap:10px}.workspace{padding:20px 16px 48px}}
+@media(prefers-reduced-motion:reduce){
+ .view-forward,.view-back,.reveal{animation:fade 200ms ease both}
+ .toast{animation:fade 200ms ease both}
+ .pressable:active:not(:disabled){transform:none}
+ details::details-content{transition:none}
+ *,*::before,*::after{scroll-behavior:auto!important}
+}
+@keyframes fade{from{opacity:0}}
+@media(prefers-reduced-transparency:reduce){
+ :root{--material:#fff}:root.dark{--material:#18181b}
+ .topbar,.toast{backdrop-filter:none;-webkit-backdrop-filter:none}
+}
+@media(prefers-contrast:more){
+ :root{--border:#86868b;--muted-foreground:#424245}:root.dark{--border:#8e8e93;--muted-foreground:#c7c7cc}
+ :root{--shadow-tile:0 0 0 1px var(--border)}
+ .topbar{box-shadow:0 1px 0 var(--border)}
+}

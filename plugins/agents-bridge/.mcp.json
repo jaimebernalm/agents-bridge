@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "agents_bridge": {
+      "command": "/bin/sh",
+      "args": ["./scripts/run-bun.sh", "./dist/server.js"],
+      "cwd": ".",
+      "required": false,
+      "env_vars": ["CODEX_HOME", "CLAUDE_CONFIG_DIR", "PATH", "HOME"]
+    }
+  }
+}
