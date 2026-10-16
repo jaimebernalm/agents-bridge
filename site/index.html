@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Claude ⇄ Codex Bridge</title>
-  <meta name="description" content="Let the Claude and Codex chats you already have open message each other directly. You approve it, set the limits, and watch.">
-  <meta property="og:title" content="Claude ⇄ Codex Bridge">
-  <meta property="og:description" content="Let the Claude and Codex chats you already have open message each other directly.">
+  <title>Agents Bridge — Claude &amp; Codex, in conversation</title>
+  <meta name="description" content="Agents Bridge connects your real Claude and Codex chats. Two models check each other, in either direction. No sessions to manage.">
+  <meta property="og:title" content="Agents Bridge">
+  <meta property="og:description" content="Two models catch what one misses. Connect Claude and Codex in a real conversation, in either direction.">
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#0c0c0d">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -23,12 +23,12 @@
     <div class="nav-inner">
       <a class="brand" href="#top">
         <img src="assets/logo.svg" alt="" width="24" height="24">
-        <span>cc-cdx-bridge</span>
+        <span>Agents Bridge</span>
       </a>
       <nav aria-label="Sections">
         <a href="#why">Why two models</a>
         <a href="#how">How it works</a>
-        <a href="#compare">Compare</a>
+        <a href="#conversation">Conversation</a>
         <a href="https://github.com/jaimebernalm/cc-cdx-bridge/blob/main/docs/REFERENCE.md">Docs</a>
       </nav>
       <div class="nav-end">
@@ -44,11 +44,11 @@
       <div class="rails">
         <div class="hero-copy">
           <a class="pill" href="https://github.com/jaimebernalm/cc-cdx-bridge">
-            <span>Open source · macOS · Desktop apps</span>
-            <span class="pill-cta">View on GitHub</span>
+            <span>Works both ways · Claude ⇄ Codex</span>
+            <span class="pill-cta">Open source</span>
           </a>
           <h1><span>Two models catch</span> <span class="tone">what one misses.</span></h1>
-          <p class="lede">Claude and Codex were trained differently, so they make different mistakes. The bridge puts the two chats you already have open in one conversation: one does the work, the other checks it.</p>
+          <p class="lede">Claude and Codex were trained differently, so they make different mistakes. Agents Bridge puts the two chats you already have open in one conversation: one does the work, the other checks it.</p>
           <div class="actions">
             <a class="btn btn-accent" href="#install">Install the bridge</a>
             <a class="btn btn-dark" href="#how">See how it works</a>
@@ -110,7 +110,7 @@
             <ul class="list" aria-label="Earlier collaborations">
               <li>
                 <div><div class="li-title">Plan the caching layer, then implement it phase by phase.</div><div class="li-sub">Claude ⇄ Codex · 31/60 messages · 1 h ago</div></div>
-                <span class="badge">Completed</span>
+                <span class="badge completed">Completed</span>
               </li>
               <li>
                 <div><div class="li-title">Investigate why the sync test is flaky.</div><div class="li-sub">Claude ⇄ Codex · 12/24 messages · yesterday</div></div>
@@ -119,7 +119,30 @@
             </ul>
           </div>
         </div>
-        <p class="caption" id="panel-caption">The bridge panel, as it opens on your Mac. Try the switch and the steppers.</p>
+        <p class="caption" id="panel-caption">The collaboration panel, as it opens on your Mac. Try the switch and the steppers.</p>
+      </div>
+    </section>
+
+    <section class="conversation light" id="conversation" aria-labelledby="conversation-title">
+      <div class="rails">
+        <p class="kicker">Two real chats. One shared conversation.</p>
+        <h2 id="conversation-title">Not a delegated job.<br><span>A conversation.</span></h2>
+        <p class="conversation-lede">Your Claude chat. Your Codex chat. Each keeps its context, questions the other, and answers back. No sessions to manage. No copying between windows.</p>
+        <div class="directions" aria-label="Start a collaboration from either app">
+          <article class="direction">
+            <h3><span class="agent-dot" aria-hidden="true"></span>Start in Claude</h3>
+            <p class="prompt-who">you → claude</p>
+            <p class="prompt-text">Collaborate with Codex. Review this plan and challenge its assumptions.</p>
+            <p class="prompt-return">Claude ⇄ Codex<span>Both chats stay in the conversation.</span></p>
+          </article>
+          <article class="direction">
+            <h3><span class="agent-dot codex-dot" aria-hidden="true"></span>Start in Codex</h3>
+            <p class="prompt-who">you → codex</p>
+            <p class="prompt-text">Collaborate with Claude. Review this plan and challenge its assumptions.</p>
+            <p class="prompt-return">Codex ⇄ Claude<span>Both chats stay in the conversation.</span></p>
+          </article>
+        </div>
+        <a class="compare-link" href="#compare">Compare the approaches <span aria-hidden="true">↓</span></a>
       </div>
     </section>
 
@@ -222,12 +245,13 @@
 
     <section class="compare light" id="compare" aria-labelledby="compare-title">
       <div class="rails">
-        <h2 id="compare-title">Not a delegated job.<br><span class="tone">A conversation.</span></h2>
-        <p class="body-lede"><a href="https://github.com/openai/codex-plugin-cc">codex-plugin-cc</a> lets Claude Code hand reviews and tasks to Codex, resume those jobs, or transfer the session into a Codex thread. It's a good fit for delegating. The bridge connects two chats that are already open, for an exchange over many steps.</p>
+        <p class="kicker">Compare</p>
+        <h2 id="compare-title">Different ways to work together.</h2>
+        <p class="body-lede"><a href="https://github.com/openai/codex-plugin-cc">codex-plugin-cc</a> lets Claude Code hand reviews and tasks to Codex, resume those jobs, or transfer the session into a Codex thread. It's a good fit for delegating. Agents Bridge connects two chats that are already open, for an exchange over many steps.</p>
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th scope="col"><span class="sr">Aspect</span></th><th scope="col">Delegation plugins</th><th scope="col">The bridge</th></tr>
+              <tr><th scope="col"><span class="sr">Aspect</span></th><th scope="col">Delegation plugins</th><th scope="col">Agents Bridge</th></tr>
             </thead>
             <tbody>
               <tr><th scope="row">The idea</th><td>Delegate reviews and tasks from Claude Code; resume jobs or transfer context</td><td>Two live Desktop chats in an ongoing exchange</td></tr>
@@ -245,6 +269,7 @@
       <div class="rails">
         <p class="kicker">Install</p>
         <h2 id="install-title">Two commands per app.<br><span class="tone">Then just ask.</span></h2>
+        <p class="package-note">Installs as <code>cc-cdx-bridge</code>.</p>
         <p class="body-lede">Desktop apps on macOS only, for now: the Claude Code CLI and Codex CLI aren't supported yet. You need <a href="https://claude.ai/download">Claude Desktop</a> (Code tab, Claude Code 2.1.224 or later), <a href="https://openai.com/codex/">Codex Desktop</a> running, <a href="https://bun.sh">Bun</a> 1.4 or later, and Git.</p>
 
         <ol class="steps">
@@ -273,9 +298,9 @@
     <div class="rails footer-inner">
       <div class="brand">
         <img src="assets/logo.svg" alt="" width="20" height="20">
-        <span>cc-cdx-bridge</span>
+        <span>Agents Bridge</span>
       </div>
-      <p>MIT licensed. Based on <a href="https://github.com/LeonKohli/claude-uds-bridge">Leon Kohli's Claude UDS Bridge</a>. An independent project, not affiliated with Anthropic or OpenAI.</p>
+      <p>MIT licensed. An independent project, not affiliated with Anthropic or OpenAI.</p>
       <p><a href="https://github.com/jaimebernalm/cc-cdx-bridge/blob/main/docs/REFERENCE.md">Reference</a> · <a href="https://github.com/jaimebernalm/cc-cdx-bridge/issues">Report an issue</a></p>
     </div>
   </footer>

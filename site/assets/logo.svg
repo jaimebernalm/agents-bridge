@@ -1,17 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Claude ⇄ Codex Bridge">
-  <rect width="120" height="120" rx="26" fill="#0c0c0d"/>
-  <rect x=".5" y=".5" width="119" height="119" rx="25.5" fill="none" stroke="#fff" stroke-opacity=".1"/>
-  <!-- Two arrows set on a pixel grid, passing each other: one agent in orange, the other in white. -->
-  <g fill="#ff7a3d">
-    <rect x="22" y="38" width="62" height="10" rx="2"/>
-    <rect x="74" y="28" width="10" height="10" rx="2"/>
-    <rect x="84" y="38" width="10" height="10" rx="2"/>
-    <rect x="74" y="48" width="10" height="10" rx="2"/>
-  </g>
-  <g fill="#f4f4f5">
-    <rect x="36" y="72" width="62" height="10" rx="2"/>
-    <rect x="36" y="62" width="10" height="10" rx="2"/>
-    <rect x="26" y="72" width="10" height="10" rx="2"/>
-    <rect x="36" y="82" width="10" height="10" rx="2"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Agents Bridge">
+  <rect width="32" height="32" rx="8" fill="#0c0c0d"/>
+  <!-- Two interlocking conversations, with an open path between the agents. -->
+  <path d="M18 7H9a3 3 0 0 0-3 3v10l4-4h8a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3Z" fill="#0c0c0d" stroke="#ff7a3d" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="#0c0c0d" stroke="#0c0c0d" stroke-width="5.5" stroke-linejoin="round"/>
+  <path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="#0c0c0d" stroke="#f4f4f5" stroke-width="2.5" stroke-linejoin="round"/>
 </svg>
