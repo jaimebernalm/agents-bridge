@@ -321,13 +321,12 @@ tbody tr { border-top: 1px solid var(--line-light); }
 thead th { font: 500 12px/20px var(--mono); color: var(--text-muted); letter-spacing: 0; vertical-align: bottom; }
 tbody th { font-weight: 500; white-space: nowrap; }
 tbody td { color: var(--text-muted); }
-/* The Agents Bridge column reads as the answer: a faint orange wash, an orange rule on top, heavier type. */
-thead th:last-child, .bridge-cell { background: rgb(255 122 61 / .06); }
-thead th:last-child {
-  padding-top: 20px; font: 600 17px/24px var(--display); letter-spacing: -.01em; color: var(--text);
-  box-shadow: inset 0 3px 0 var(--accent);
-}
-.bridge-cell { color: var(--text); font-weight: 500; }
+/* The Agents Bridge column is a dark band, like the page's dark chapters: white type, only the mark in orange. */
+thead th:last-child, .bridge-cell { background: var(--ink); color: var(--on-dark); }
+thead th:last-child { padding-top: 22px; font: 600 16px/24px var(--display); letter-spacing: -.01em; }
+.th-brand { display: inline-flex; align-items: center; gap: 8px; }
+.th-brand img { width: 20px; height: 20px; }
+.bridge-cell { font-weight: 500; box-shadow: inset 0 1px 0 var(--line-dark); }
 
 /* The same table becomes labeled answer pairs on a narrow screen. */
 @media (max-width: 640px) {
@@ -338,8 +337,8 @@ thead th:last-child {
   .compare tbody th, .compare tbody td { display: block; white-space: normal; padding: 12px 18px; }
   .compare tbody th { padding-top: 18px; padding-bottom: 4px; font-size: 17px; }
   .compare-cell-label { display: block; margin-bottom: 6px; font: 500 12px/20px var(--mono); color: var(--text-muted); }
-  .compare tbody .bridge-cell { background: rgb(255 122 61 / .07); box-shadow: inset 3px 0 0 var(--accent); border-top: 1px solid var(--line-light); padding-bottom: 18px; }
-  .bridge-cell .compare-cell-label { color: var(--accent-ink); font-weight: 600; }
+  .compare tbody .bridge-cell { box-shadow: none; padding-top: 14px; padding-bottom: 18px; }
+  .bridge-cell .compare-cell-label { color: var(--accent); }
 }
 
 /* Install */
