@@ -1,4 +1,5 @@
-import { afterAll, afterEach, beforeAll, beforeEach, expect, test } from 'bun:test';
+import { afterAll, afterEach, beforeAll, beforeEach, expect, spyOn, test } from 'bun:test';
+import * as fs from 'node:fs';
 import net from 'node:net';
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -100,14 +101,17 @@ test('a different project is rejected when the caller must work in a given folde
 });
 
 test('a project folder the Claude process may not read is rejected as project_not_readable', async () => {
-  const locked = join(root, 'locked'), inside = join(locked, 'project');
-  mkdirSync(inside, { recursive: true }); record(process.pid, { cwd: inside });
-  chmodSync(locked, 0o000);
+  record(process.pid);
+  // Injected like macOS privacy protection refuses it; chmod does not stop root or a runner with read capabilities.
+  const original = fs.realpathSync;
+  const refusal = spyOn(fs, 'realpathSync').mockImplementation(((path: fs.PathLike, ...rest: []) => {
+    if (String(path) === project) throw Object.assign(new Error('EPERM: operation not permitted'), { code: 'EPERM' });
+    return original(path, ...rest);
+  }) as never);
   try {
-    if (process.getuid?.() === 0) return;
     expect(await rejection(authenticate())).toBe('project_not_readable');
-    await expect(authenticate()).rejects.toThrow('macOS does not let this app read the project folder');
-  } finally { chmodSync(locked, 0o700); }
+    await expect(authenticate()).rejects.toThrow('macOS does not let this app read the project folder ' + project);
+  } finally { refusal.mockRestore(); }
 });
 
 test('hook generations bind, detect clear/resume transitions and end the session', async () => {

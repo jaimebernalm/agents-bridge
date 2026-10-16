@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, expect, test } from 'bun:test';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { afterEach, beforeEach, expect, spyOn, test } from 'bun:test';
+import * as fs from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { receiver } from './desktop-fixture';
@@ -9,17 +10,27 @@ import { ownCodexParticipant } from '../src/participants';
 import { inspectProject, ProjectNotReadable, projectDirectory, projectReadError } from '../src/project';
 
 // macOS privacy protection refuses a folder to an app the person has not allowed with EPERM (as Codex got
-// for a OneDrive folder) or EACCES; plain permissions give EACCES and sandbox-exec gives the same EPERM.
-let root: string, locked: string, project: string;
+// for a OneDrive folder) or EACCES. The refusal is injected, since chmod does not stop root or a runner with
+// read capabilities; on macOS sandbox-exec also gives the real EPERM.
+let root: string, locked: string, project: string, refusals: { mockRestore(): void }[] = [];
 const options = () => ({ project, configDir: join(root, 'config'), codexHome: join(root, 'codex'), pluginRoot: join(root, 'plugin') });
 const failure = (code: string) => Object.assign(new Error(`${code}: operation refused`), { code });
+// Refuses resolving or listing anything under the locked folder with this code; other paths behave normally.
+function refuse(code: 'EPERM' | 'EACCES', call: 'realpathSync' | 'opendirSync') {
+  const original = fs[call] as (path: fs.PathLike, ...rest: unknown[]) => unknown;
+  refusals.push(spyOn(fs, call).mockImplementation(((path: fs.PathLike, ...rest: unknown[]) => {
+    if (String(path).startsWith(locked)) throw failure(code);
+    return original(path, ...rest);
+  }) as never));
+}
+const allow = () => { for (const refusal of refusals.splice(0)) refusal.mockRestore(); };
 
 beforeEach(() => {
   root = realpathSync(mkdtempSync(join(tmpdir(), 'ccdx-access-')));
   locked = join(root, 'locked'); project = join(locked, 'project');
   mkdirSync(project, { recursive: true });
 });
-afterEach(() => { chmodSync(locked, 0o700); rmSync(root, { recursive: true, force: true }); });
+afterEach(() => { allow(); rmSync(root, { recursive: true, force: true }); });
 
 test('EPERM and EACCES name the app and the fix; ENOENT and other errors pass through', () => {
   for (const code of ['EPERM', 'EACCES']) {
@@ -34,18 +45,18 @@ test('EPERM and EACCES name the app and the fix; ENOENT and other errors pass th
 });
 
 test('a folder the process cannot read is reported as not readable, not as missing', async () => {
-  if (process.getuid?.() === 0) return; // root reads any folder.
   expect(projectDirectory(project)).toBe(project);
-  chmodSync(project, 0o000);
+  refuse('EACCES', 'opendirSync');
   expect(() => projectDirectory(project, 'Claude')).toThrow('macOS does not let Claude read the project folder');
   await expect(inspectProject(project)).rejects.toBeInstanceOf(ProjectNotReadable);
-  chmodSync(project, 0o700); chmodSync(locked, 0o000);
+  allow(); refuse('EPERM', 'realpathSync');
   expect(() => projectDirectory(project)).toThrow(ProjectNotReadable);
+  await expect(inspectProject(project)).rejects.toBeInstanceOf(ProjectNotReadable);
   const report = await doctor(options());
   expect(report.state).toBe('project_not_readable');
   expect(report.checks).toEqual([{ code: 'project_not_readable', level: 'blocked', message: `macOS does not let this app read the project folder ${project}.`,
     remedy: expect.stringContaining('Files and Folders (or Full Disk Access)') }]);
-  chmodSync(locked, 0o700); rmSync(project, { recursive: true });
+  allow(); rmSync(project, { recursive: true });
   expect((await doctor(options())).checks).toEqual([expect.objectContaining({ code: 'project_missing', message: 'Project directory is unavailable.' })]);
 });
 
@@ -71,7 +82,6 @@ test('an EPERM refusal like Codex got in a cloud-storage folder blocks diagnose 
 });
 
 test('a Codex chat whose folder Codex cannot read says so instead of a missing session', async () => {
-  if (process.getuid?.() === 0) return;
   const home = join(root, 'desktop'); mkdirSync(home);
   const desktop = await receiver('idle', false, false, home);
   try {
@@ -79,9 +89,9 @@ test('a Codex chat whose folder Codex cannot read says so instead of a missing s
     mkdirSync(join(participants.configDir, 'sessions'), { recursive: true, mode: 0o700 });
     desktop.setProject(project);
     await expect(ownCodexParticipant(participants, desktop.threadId)).rejects.toThrow('Claude session is unavailable or ambiguous');
-    chmodSync(locked, 0o000);
+    refuse('EPERM', 'realpathSync');
     await expect(ownCodexParticipant(participants, desktop.threadId)).rejects.toThrow('macOS does not let this app read the project folder ' + project);
     await expect(activateReceiver({ threadId: desktop.threadId, project, configDir: participants.configDir, codexHome: home, hookPath: '/nonexistent' }))
       .rejects.toBeInstanceOf(ProjectNotReadable);
-  } finally { chmodSync(locked, 0o700); await desktop.close(); }
+  } finally { allow(); await desktop.close(); }
 });
