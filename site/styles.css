@@ -3,18 +3,20 @@
   --ink: #0c0c0d;
   --ink-2: #18181b;
   --ink-3: #27272a;
-  --paper: #f7f7f8;
-  --paper-2: #efeff1;
-  --text: #18181b;
-  --text-muted: #63636b;
+  /* The sections below the hero stay dark too, a step lighter than the hero, so scrolling never flips to white. */
+  --paper: #111113;
+  --paper-2: #161618;
+  --card: #18181b;
+  --text: #fafafa;
+  --text-muted: #a1a1aa;
   --on-dark: #fafafa;
   --on-dark-muted: #a1a1aa;
   --line-dark: rgb(255 255 255 / .08);
-  --line-light: rgb(24 24 27 / .09);
+  --line-light: rgb(255 255 255 / .08);
   --accent: #ff7a3d;
   --accent-hover: #ff8b55;
   --accent-soft: #ffb38a;
-  --accent-ink: #c2410c;
+  --accent-ink: #ff7a3d;
   /* Read by ascii.js. */
   --ascii-claude: #ff7a3d;
   --ascii-openai: #f4f4f5;
@@ -33,28 +35,21 @@
   --rail: 1120px;
   --ease: cubic-bezier(.32, .72, 0, 1);
   --ease-out: cubic-bezier(.22, 1, .36, 1);
+  color-scheme: dark;
+}
+
+/* The earlier look, kept for side-by-side review (?theme=split): white sections under a black hero. */
+:root[data-theme="split"] {
+  --paper: #f7f7f8;
+  --paper-2: #efeff1;
+  --card: #fff;
+  --text: #18181b;
+  --text-muted: #63636b;
+  --line-light: rgb(24 24 27 / .09);
+  --accent-ink: #c2410c;
   color-scheme: light;
 }
 
-/* Light theme: the dark sections turn white, the Codex side of the field turns black. */
-:root[data-theme="light"] {
-  --ink: #ffffff;
-  --ink-2: #f4f4f5;
-  --ink-3: #ececef;
-  --on-dark: #18181b;
-  --on-dark-muted: #63636b;
-  --line-dark: rgb(24 24 27 / .09);
-  --accent-soft: #c2410c;
-  --ascii-openai: #0c0c0d;
-  --pool: 255 255 255;
-  --glass: rgb(24 24 27 / .04);
-  --glass-line: rgb(24 24 27 / .1);
-  --glass-strong: rgb(24 24 27 / .06);
-  --term-text: #27272a;
-  --term-dim: #8a8a93;
-  --raise: #e2e2e6;
-  --bar-shadow: 0 0 0 1px rgb(24 24 27 / .08), 0 12px 32px -10px rgb(0 0 0 / .18);
-}
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 72px; }
@@ -70,7 +65,7 @@ code { font-family: var(--mono); font-size: .9em; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 button { font: inherit; letter-spacing: inherit; cursor: pointer; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-.skip { position: absolute; left: -999px; top: 8px; z-index: 60; background: #fff; color: var(--text); padding: 8px 12px; border-radius: 6px; }
+.skip { position: absolute; left: -999px; top: 8px; z-index: 60; background: var(--card); color: var(--text); padding: 8px 12px; border-radius: 6px; }
 .skip:focus { left: 8px; }
 
 /* Content sits between two hairline rails that run the length of each section. */
@@ -300,7 +295,7 @@ h3 { font-family: var(--display); font-weight: 500; font-size: 17px; line-height
 .cards { margin-top: 56px; display: grid; gap: 16px; }
 @media (min-width: 760px) { .cards { grid-template-columns: 1fr 1fr; } }
 .card {
-  background: #fff; border-radius: 16px; padding: 28px;
+  background: var(--card); border-radius: 16px; padding: 28px;
   box-shadow: 0 0 0 1px var(--line-light), 0 1px 2px rgb(0 0 0 / .04);
   transition: box-shadow 200ms ease, transform 200ms var(--ease);
 }
@@ -318,7 +313,7 @@ h3 { font-family: var(--display); font-weight: 500; font-size: 17px; line-height
 @media (max-width: 520px) { .facts div { grid-template-columns: 1fr; gap: 2px; } }
 
 /* Table */
-.table-wrap { margin-top: 48px; overflow-x: auto; background: #fff; border-radius: 16px; box-shadow: 0 0 0 1px var(--line-light); }
+.table-wrap { margin-top: 48px; overflow-x: auto; background: var(--card); border-radius: 16px; box-shadow: 0 0 0 1px var(--line-light); }
 table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 15px; }
 th, td { text-align: left; vertical-align: top; padding: 16px 22px; }
 tbody tr { border-top: 1px solid var(--line-light); }

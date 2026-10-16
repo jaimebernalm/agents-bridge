@@ -10,12 +10,8 @@
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#0c0c0d">
   <script>
-    // Theme for side-by-side review: ?theme=light or ?theme=dark (dark by default).
-    (function () {
-      var theme = new URLSearchParams(location.search).get('theme') === 'light' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = theme;
-      document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#ffffff' : '#0c0c0d';
-    })();
+    // ?theme=split shows the earlier look (white sections) for side-by-side review; the page is all dark otherwise.
+    if (new URLSearchParams(location.search).get('theme') === 'split') document.documentElement.dataset.theme = 'split';
   </script>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
