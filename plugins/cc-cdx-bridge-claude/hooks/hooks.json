@@ -13,6 +13,9 @@
     "PostToolUse": [{
       "matcher": "^AskUserQuestion$",
       "hooks": [{ "type": "command", "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run-bun.sh\" \"${CLAUDE_PLUGIN_ROOT}/dist/answer-hook.js\"", "timeout": 5 }]
+    }, {
+      "matcher": "__(confirm_collaboration|apply_panel_action|send_message)$",
+      "hooks": [{ "type": "command", "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run-bun.sh\" \"${CLAUDE_PLUGIN_ROOT}/dist/panel-hook.js\"", "timeout": 5 }]
     }]
   }
 }

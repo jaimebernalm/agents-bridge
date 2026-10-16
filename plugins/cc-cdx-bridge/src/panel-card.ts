@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { privateSubdirectory } from './claude-sidecar';
 import { displayName } from './names';
 
-const texts = {
+export const panelTexts = {
   en: { file: 'Bridge panel.html', title: 'Bridge panel', ask: 'Open the panel in its own window to watch this collaboration, pause it or export it.',
     opening: 'Opening the panel in its own window…', opened: 'The panel opens in its own window. You can close this page.', button: 'Open the panel', stale: 'This chat’s bridge is no longer running, so the panel cannot open from here. Ask in your chat to open the bridge panel.',
     link: 'Open the bridge panel', blurb: 'Watch this collaboration in its own window, and pause or export it from there.' },
@@ -18,7 +18,7 @@ const texts = {
 
 const escape = (text: string) => text.replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 const page = (language: 'en' | 'es', url: string) => {
-  const t = texts[language];
+  const t = panelTexts[language];
   return `<!doctype html>
 <html lang="${language}">
 <head>
@@ -62,14 +62,14 @@ openPanel();
 // One file per chat, rewritten whenever its bridge starts a new panel service, since the link changes with it.
 export function writePanelCard(stateDir: string, owner: { provider: string; sessionId: string }, url: string, language: 'en' | 'es') {
   const directory = privateSubdirectory(join(stateDir, 'panel-cards'), `${owner.provider}-${owner.sessionId}`);
-  const path = join(directory, texts[language].file), temporary = join(directory, `.${randomUUID()}.tmp`);
+  const path = join(directory, panelTexts[language].file), temporary = join(directory, `.${randomUUID()}.tmp`);
   const fd = openSync(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
   try { writeSync(fd, page(language, url)); } finally { closeSync(fd); }
   renameSync(temporary, path);
   // What the chat shows. A link in the chat opens in the app's own side browser, never in the default browser, so pressing
   // it brings no other window forward. Claude gets a quoted block with a heading-sized link, so it reads as the thing to
   // press; Codex already adds a preview card of its own under any link, so a plain link keeps it from showing twice.
-  const t = texts[language];
+  const t = panelTexts[language];
   const markdown = owner.provider === 'codex' ? `**[${t.link}](${url})**` : `> ### ▶️ [${t.link}](${url})\n> ${t.blurb}`;
   return { file: path, link: url, markdown };
 }
