@@ -1,7 +1,8 @@
 import { test, expect } from 'bun:test';
 import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { panelContext, panelIn, panelReminder } from '../src/panel-hook';
+import { inTerminal, panelContext, panelIn, panelReminder } from '../src/panel-hook';
+import { savePanelPreferences } from '../src/panel-preferences';
 
 const link = 'http://127.0.0.1:49595/open?k=' + 'a'.repeat(32);
 // What Claude Code hands a PostToolUse hook for an MCP tool: content blocks whose text is the tool's JSON.
@@ -22,12 +23,12 @@ test('the agent is handed each link once per chat', () => {
   const state = mkdtempSync('/tmp/panel-hook-');
   try {
     const event = { session_id: 'chat-1', tool_response: response({ link, markdown }) };
-    const context = panelContext(state, event)!;
+    const context = panelContext(state, event)!.context;
     expect(context).toStartWith('From the Agents Bridge plugin: The person sees neither tool results nor this note');
     expect(context).toEndWith('\n\n' + markdown);
     expect(panelContext(state, event)).toBeUndefined();
     expect(statSync(join(state, 'panel-notices')).mode & 0o077).toBe(0);
-    expect(panelContext(state, { ...event, session_id: 'chat-2' })).toBe(context);
+    expect(panelContext(state, { ...event, session_id: 'chat-2' })).toEqual({ context });
     expect(panelContext(state, { session_id: 'chat-3', tool_response: [{ type: 'text', text: '{}' }] })).toBeUndefined();
   } finally { rmSync(state, { recursive: true, force: true }); }
 });
@@ -59,5 +60,22 @@ test('a turn that ends without the link is kept going once to write it', () => {
     said('Something else.');
     expect(panelReminder(state, { ...stop, session_id: 'chat-4' }, 3 * 60 * 60 * 1000)).toBeUndefined();
     expect(panelReminder(state, { ...stop, session_id: 'chat-4' })).toBeUndefined();
+  } finally { rmSync(state, { recursive: true, force: true }); }
+});
+
+test('in a terminal the plugin shows the link itself, and nothing is left to enforce at the end of the turn', () => {
+  const state = mkdtempSync('/tmp/panel-hook-');
+  try {
+    expect(inTerminal({ CLAUDE_CODE_ENTRYPOINT: 'cli' })).toBe(true);
+    expect(inTerminal({ CLAUDE_CODE_ENTRYPOINT: 'claude-desktop' })).toBe(false);
+    expect(inTerminal({})).toBe(false);
+    const event = { session_id: 'cli-1', tool_response: response({ link, markdown }) };
+    const handOff = panelContext(state, event, Date.now(), true)!;
+    expect(handOff.notice).toBe(`▶️ Open the bridge panel: ${link}`);
+    expect(handOff.context).toContain('already sees this collaboration\'s panel link in the terminal');
+    expect(panelContext(state, event, Date.now(), true)).toBeUndefined();
+    expect(panelReminder(state, { session_id: 'cli-1', last_assistant_message: 'Codex is answering.' })).toBeUndefined();
+    savePanelPreferences(state, { language: 'es' });
+    expect(panelContext(state, { ...event, session_id: 'cli-2' }, Date.now(), true)!.notice).toBe(`▶️ Abrir el panel del bridge: ${link}`);
   } finally { rmSync(state, { recursive: true, force: true }); }
 });

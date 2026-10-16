@@ -1,13 +1,14 @@
 import type { Peer } from './claude';
+import { claudeSurfaceSupported } from './surfaces';
 
-// The caller canonicalizes paths before selecting a peer. Never guess a session
-// from its display name or fall back to a terminal/VS Code session.
+// The caller canonicalizes paths before selecting a peer. Never guess a session from its display
+// name or fall back to a VS Code, print-mode or SDK session.
 export function selectDesktopPeer(candidates: Peer[], project: string, id?: string): Peer {
-  const matches = candidates.filter(peer => peer.entrypoint === 'claude-desktop'
+  const matches = candidates.filter(peer => claudeSurfaceSupported(peer)
     && peer.cwd === project && (!id || peer.sessionId === id));
   if (matches.length !== 1) throw new Error(matches.length
-    ? 'Multiple Claude Desktop sessions use this project; choose one with --peer UUID.'
-    : 'Open a local Claude Desktop Code session in this project and send its first prompt.');
+    ? 'Multiple Claude Code sessions use this project; choose one with --peer UUID.'
+    : 'Open a local Claude Desktop Code session, or run claude in a terminal, in this project and send its first prompt.');
   return matches[0]!;
 }
 

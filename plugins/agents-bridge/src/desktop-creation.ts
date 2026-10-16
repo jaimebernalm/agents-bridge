@@ -26,6 +26,8 @@ function folder(path: string) {
   return { project, device: String(stat.dev), inode: String(stat.ino) };
 }
 
+// New Claude chats open in Claude Desktop, but the person may paste this message into a terminal chat too, which has
+// neither the app's folders nor its change_directory tool; the message therefore names the app only as a condition.
 // After the person trusts the folder of a chat opened from a link, Claude Desktop may start that chat in an empty folder it
 // makes for the session instead. The chat then moves to the project with the app's own tool, which the person approves,
 // and the bridge links it there (CreationTickets.bindVerified accepts that one move).
@@ -35,7 +37,7 @@ export function bootstrapPrompt(ticket: Ticket, correlationId: string, request?:
   return [`AGENTS-BRIDGE-CORR-${correlationId}`,
     `This conversation was opened for a ${displayName} collaboration requested by ${ticket.requester.startsWith('person_answer:') ? 'the person, answering in their other chat' : ticket.requester} in ${ticket.project}.`,
     ticket.targetProvider === 'claude'
-      ? `First check that this chat's working folder is ${ticket.project}. If it is a folder the app made for this session instead (the app shows this chat as having no folder), move this chat to ${ticket.project} with the app's change_directory tool, passing exactly that path; the person approves it in the app. Once it is approved, do nothing else: tell the person in one short sentence that this chat moves to that folder when this reply ends and then links itself, and the collaboration starts on its own. If it is in another folder, that tool is missing or the person declines, ${outside} they can ask for the collaboration again in their other chat.`
+      ? `First check that this chat's working folder is ${ticket.project}. If this chat runs in the Claude Desktop app and its folder is one the app made for this session instead (the app shows this chat as having no folder), move this chat to ${ticket.project} with the app's change_directory tool, passing exactly that path; the person approves it in the app. Once it is approved, do nothing else: tell the person in one short sentence that this chat moves to that folder when this reply ends and then links itself, and the collaboration starts on its own. If it is in another folder (a terminal chat stays in the folder where claude was started), that tool is missing or the person declines, ${outside} they can ask for the collaboration again in their other chat.`
       // A Codex chat is linked by its own record of this message, so the same message in another Codex chat links that one;
       // in Claude this chat's hook already holds the only receipt this message can have.
       : `First check that this chat's working folder is ${ticket.project}. If it is not (the app may open it without a folder), ${outside} within 10 minutes they can open a new chat in that folder and send it this same message, which links that chat instead.`,

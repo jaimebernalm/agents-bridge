@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { bringAppForward, launchLocalBrowser, type Run } from '../src/panel-opening';
+import { bringAppForward, launchLocalBrowser, terminalApp, type Run } from '../src/panel-opening';
 
 const url = 'http://127.0.0.1:4100/#token=abc';
 function recorder(defaultBrowser: string | Error, failing: string[] = []) {
@@ -71,6 +71,15 @@ describe('bringing the chat back before the panel opens', () => {
     await bringAppForward('claude', r.exec, 'linux', {});
     await bringAppForward('claude', r.exec, 'darwin', {AGENTS_BRIDGE_PANEL_AUTO_OPEN: '0'});
     expect(r.calls).toEqual([['open', '-b', 'com.anthropic.claudefordesktop'], ['open', '-b', 'com.openai.codex']]);
+  });
+
+  test('a Claude chat in a terminal brings back the terminal\'s app, which macOS names in the environment', async () => {
+    expect(terminalApp({ __CFBundleIdentifier: 'dev.warp.Warp-Stable' })).toBe('dev.warp.Warp-Stable');
+    expect(terminalApp({ __CFBundleIdentifier: 'com.apple.Terminal' })).toBe('com.apple.Terminal');
+    for (const id of [undefined, '', 'not a bundle', 'Warp', '-b; rm']) expect(terminalApp({ __CFBundleIdentifier: id })).toBeUndefined();
+    const r = recorder('');
+    await bringAppForward('claude', r.exec, 'darwin', {}, 'dev.warp.Warp-Stable');
+    expect(r.calls).toEqual([['open', '-b', 'dev.warp.Warp-Stable']]);
   });
 
   test('an app that cannot be brought forward does not stop the panel from opening', async () => {

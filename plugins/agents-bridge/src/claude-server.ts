@@ -1,4 +1,4 @@
-// MCP entrypoint for Claude Code Desktop. It neither registers in Claude's session registry nor
+// MCP entrypoint for Claude Code (Desktop Code tab or terminal). It neither registers in Claude's session registry nor
 // opens an inbox socket: Claude keeps receiving through its native transport. Each tool call
 // resolves its caller afresh from process evidence (a /clear keeps the PID but changes the session).
 import { homedir } from 'node:os';

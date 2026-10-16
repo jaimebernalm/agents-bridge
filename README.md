@@ -2,11 +2,11 @@
 
 [Visit the website](https://jaimebernalm.github.io/agents-bridge/) · [Install](#install-about-5-minutes)
 
-**Get your Claude Code chat and your Codex chat working together as equals, inside the Desktop apps you already use.**
+**Get your Claude Code chat and your Codex chat working together as equals, inside the apps you already use.**
 
 Both apps install it as `agents-bridge` (Claude Code + Codex) and show it as **Agents Bridge**.
 
-> **Desktop apps only, for now.** The bridge connects Claude Desktop (Code tab) with Codex Desktop on macOS. The terminal versions (Claude Code CLI and Codex CLI) are not supported yet; support for them is planned.
+> **Codex Desktop on macOS, for now.** The bridge connects a Claude Code chat, in the Code tab of Claude Desktop or as `claude` in a terminal, with a Codex Desktop chat on macOS. The Codex CLI is not supported yet; support for it is planned.
 
 Ask either chat to work with the other one. The chat asks you three short questions: whether the other agent may edit code, the limits, and whether to start. You answer **Yes**, or open a small panel to change anything first. The two chats message each other directly while you watch. At the end you get a result that shows who said what and where they still disagree.
 
@@ -39,9 +39,9 @@ Use codex-plugin-cc for a one-shot review. Use this bridge when you want the two
 
 ## Requirements
 
-- **macOS.** The Desktop apps the bridge connects aren't available on Linux, and Windows is not supported.
+- **macOS.** Codex Desktop, which the bridge needs, isn't available on Linux, and Windows is not supported.
 - **[Codex Desktop](https://openai.com/codex/)**, running. Messages are delivered into a Codex chat through the app, so the Codex CLI alone is not enough.
-- **[Claude Desktop](https://claude.ai/download)**, using the **Code** tab (Claude Code 2.1.224 or later).
+- **Claude Code 2.1.224 or later**, either in the **Code** tab of [Claude Desktop](https://claude.ai/download) or as `claude` in a terminal. Terminal chats must be interactive: `claude -p`, the VS Code extension and the SDK are not supported.
 - **[Bun](https://bun.sh)** 1.4 or later: `curl -fsSL https://bun.sh/install | bash`
 - Git.
 
@@ -73,7 +73,7 @@ claude plugin marketplace add jaimebernalm/agents-bridge
 claude plugin install agents-bridge@jaimebernalm
 ```
 
-Then open a **new** Code chat in Claude Desktop.
+Then open a **new** Code chat in Claude Desktop, or start `claude` in a terminal. The plugin is shared by both.
 
 **3. Check that they see each other**
 
@@ -92,7 +92,7 @@ You should see the other app's chat listed. If you don't, see [Troubleshooting](
 2. The chat asks you three short questions:
    - **Editing:** may the other agent edit files and make local commits (no push, pull requests or merges)? To allow more, write it in **Other**, for example "add push and pull requests".
    - **Limits:** the proposed messages and time, two larger steps, or unlimited messages · 24 h. You can also write your own, such as "40 messages, 45 min".
-   - **Start:** start with a new chat in the other app (or the one you named)?
+   - **Start:** start with a new chat in the other app (or the one you named)? A new Claude chat always opens in Claude Desktop. To use a Claude terminal chat instead, start `claude` in the project folder first and name it or pick it in the panel.
      - **Yes:** the collaboration starts with what you chose. If it needs a new chat, the other app opens on one with a message ready: send it there and the collaboration starts once that chat is linked. If Claude asks you to trust the folder, it may then start that chat without its folder; the chat asks to move to the project folder, and once you approve it links itself.
      - **Change chat or details in the panel:** the panel opens in its own small window in the top-right corner of your screen, with the form already filled in (**Suggested by …**) and what you chose. Choose one of your open chats instead of a new one, or change the objective, the limits (messages or **No limit**, time up to 24 hours), editing and its scope, then press **Start** there. It always opens there at the same size, even if you moved or enlarged the last one. Its two small buttons switch the language (EN · ES) and the dark theme.
      - **Cancel:** the proposal is discarded.
@@ -133,8 +133,11 @@ Check that both plugin hooks are trusted in Codex, then open a new Codex chat. F
 
 It changes nothing and tells you what's missing.
 
-**Messages to Claude show as "Held by the other chat".**
-By default, Claude holds messages from a session running in a different permission mode. Use the same permission mode in both chats, or set `"crossSessionInbound": "accept"` in `~/.claude/settings.json`. That setting applies to all your Claude sessions, so choose it knowingly.
+**The Claude terminal chat isn't found.**
+Start `claude` from a normal terminal in the project folder. A `claude` started from inside another Claude chat (for example from a Code tab chat's own terminal) doesn't register as a chat of its own. The panel and `list_chats` show terminal chats as **Claude CLI** and Code tab chats as **Claude Desktop**.
+
+**Messages to Claude show as "Held by the other chat" or "Waiting for approval in the Claude terminal".**
+By default, Claude holds messages from a session running in a different permission mode. In the Code tab the message just waits. In a terminal chat, Claude asks you on screen whether to accept it, and the request expires after about five minutes. Use the same permission mode in both chats, or set `"crossSessionInbound": "accept"` in `~/.claude/settings.json`. That setting applies to all your Claude sessions, so choose it knowingly.
 
 **The panel says "reload plugin".**
 A chat is still running an older version of the bridge. Open a new chat in that app.
@@ -166,7 +169,9 @@ Then open new chats in both apps. If Codex asks again, re-trust the hooks. Your 
 ## Known limits
 
 - Delivery into Codex relies on Codex Desktop's internal app connection. A Codex update can break it. The bridge then refuses to deliver rather than guessing, and the panel tells you.
-- Desktop apps on macOS only. The Claude Code CLI and the Codex CLI are not supported yet.
+- macOS only, because Codex Desktop is required. Claude can be the Code tab of Claude Desktop or `claude` in a terminal; the Codex CLI is not supported yet.
+- A new Claude chat requested through the bridge always opens in Claude Desktop. Claude terminal chats take part only once you have started them yourself.
+- Without a screen (over SSH, for example) the panel can't open by itself; the chat gives you its link instead.
 - Last tested with Codex Desktop 26.930 and Claude Code 2.1.286 on macOS. Please [open an issue](https://github.com/jaimebernalm/agents-bridge/issues) with your versions if something breaks.
 - The bridge does not lock files. When both agents edit, give them separate files or separate worktrees.
 

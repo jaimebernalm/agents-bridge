@@ -2,11 +2,15 @@
 // also assumed the person could see the link in the tool result, so it kept skipping the lines it was asked to show.
 // PostToolUse (on the bridge tools that hand back the link) repeats those lines as hook context, once per link and chat;
 // Stop keeps the turn going once if the agent's messages still lack the link. A hook's systemMessage is not shown in
-// Claude Desktop's chat, so the agent has to write it. Codex needs no hook: its chat shows the lines it is given.
+// Claude Desktop's chat, so the agent has to write it there. A terminal chat does show it, so in the Claude CLI the hook
+// shows the link itself and the agent is told not to repeat it; there is nothing to enforce at Stop. Codex needs no hook:
+// its chat shows the lines it is given.
 import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { hookPaths, privateSubdirectory, writeAtomic } from './claude-sidecar';
+import { panelTexts } from './panel-card';
+import { readPanelPreferences } from './panel-preferences';
 
 const openLink = /^http:\/\/127\.0\.0\.1:\d+\/open\?k=[0-9a-f]{32}$/;
 
@@ -49,14 +53,26 @@ const showLines = (markdown: string) => 'The person sees neither tool results no
   + 'your own message contains it. Begin your next message to the person with these lines, exactly as they are; they open this '
   + 'collaboration\'s panel, the only way to watch it from this chat. Do not paraphrase them, and do not say you opened the panel yourself.\n\n' + markdown;
 
-export function panelContext(stateDir: string, event: {session_id?: unknown; tool_response?: unknown}, now = Date.now()): string | undefined {
+// What the hook hands over for a new link: context for the agent and, in a terminal, a notice the person sees.
+export type PanelHandOff = {context: string; notice?: string};
+
+export function panelContext(stateDir: string, event: {session_id?: unknown; tool_response?: unknown}, now = Date.now(), terminal = false): PanelHandOff | undefined {
   const panel = panelIn(event.tool_response);
   if (!panel || typeof event.session_id !== 'string') return undefined;
   const file = noticesFile(stateDir, event.session_id), notices = readNotices(file);
   if (notices.shown.includes(panel.link)) return undefined;
-  writeAtomic(file, { shown: [...notices.shown.slice(-20), panel.link], pending: { ...panel, at: now } });
-  return 'From the Agents Bridge plugin: ' + showLines(panel.markdown);
+  const shown = [...notices.shown.slice(-20), panel.link];
+  if (terminal) {
+    writeAtomic(file, { shown });
+    return { notice: `▶️ ${panelTexts[readPanelPreferences(stateDir).language].link}: ${panel.link}`,
+      context: 'From the Agents Bridge plugin: the person already sees this collaboration\'s panel link in the terminal, shown by the plugin. Do not repeat it, and do not say you opened the panel.' };
+  }
+  writeAtomic(file, { shown, pending: { ...panel, at: now } });
+  return { context: 'From the Agents Bridge plugin: ' + showLines(panel.markdown) };
 }
+
+// A chat in a terminal (Claude CLI) rather than Claude Desktop: Claude Code tells its hooks where it runs.
+export const inTerminal = (env: Record<string, string | undefined> = process.env) => env.CLAUDE_CODE_ENTRYPOINT === 'cli';
 
 // The agent's own words in this chat, from its transcript: the text blocks of its messages.
 function agentText(transcript: string) {
@@ -94,8 +110,9 @@ if (import.meta.main) {
       const reason = panelReminder(stateDir, event);
       if (reason) process.stdout.write(JSON.stringify({ decision: 'block', reason }));
     } else {
-      const context = panelContext(stateDir, event);
-      if (context) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: context } }));
+      const handOff = panelContext(stateDir, event, Date.now(), inTerminal());
+      if (handOff) process.stdout.write(JSON.stringify({ ...(handOff.notice ? { systemMessage: handOff.notice } : {}),
+        hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: handOff.context } }));
     }
   } catch { /* A broken or unrelated event shows nothing. */ }
   process.exitCode = 0;

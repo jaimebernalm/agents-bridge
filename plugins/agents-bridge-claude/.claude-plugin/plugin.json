@@ -1,7 +1,7 @@
 {
   "name": "agents-bridge",
   "displayName": "Agents Bridge",
-  "version": "0.15.3",
+  "version": "0.15.7",
   "description": "Let a Claude Code chat and a Codex chat work together on the same project, with a panel where you approve and follow each collaboration.",
   "author": {
     "name": "Jaime Bernal"
