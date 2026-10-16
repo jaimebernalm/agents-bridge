@@ -1,14 +1,14 @@
 {
   "name": "jaimebernalm",
   "interface": {
-    "displayName": "Jaime Bernal · Claude ⇄ Codex Bridge"
+    "displayName": "Jaime Bernal · Agents Bridge"
   },
   "plugins": [
     {
-      "name": "cc-cdx-bridge",
+      "name": "agents-bridge",
       "source": {
         "source": "local",
-        "path": "./plugins/cc-cdx-bridge"
+        "path": "./plugins/agents-bridge"
       },
       "policy": {
         "installation": "AVAILABLE",

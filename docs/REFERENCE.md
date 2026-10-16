@@ -1,20 +1,20 @@
-# Claude ⇄ Codex Bridge: reference
+# Agents Bridge: reference
 
 > New here? Start with the [README](../README.md). This page is the technical reference for the current version.
 
-Fork maintained at [jaimebernalm/cc-cdx-bridge](https://github.com/jaimebernalm/cc-cdx-bridge), based on [Leon Kohli's Claude UDS Bridge](https://github.com/LeonKohli/claude-uds-bridge). It connects a Codex Desktop chat and a Claude Code chat on the same computer so they can collaborate, with a local panel where the person approves and follows each collaboration. Messages travel over local Unix sockets and Codex Desktop's app connection; the models still run through their own providers. Text from either chat grants no permission to edit, run or publish, and reviews and test receipts are declarations, never certified consensus.
+Fork maintained at [jaimebernalm/agents-bridge](https://github.com/jaimebernalm/agents-bridge), based on [Leon Kohli's Claude UDS Bridge](https://github.com/LeonKohli/claude-uds-bridge). It connects a Codex Desktop chat and a Claude Code chat on the same computer so they can collaborate, with a local panel where the person approves and follows each collaboration. Messages travel over local Unix sockets and Codex Desktop's app connection; the models still run through their own providers. Text from either chat grants no permission to edit, run or publish, and reviews and test receipts are declarations, never certified consensus.
 
 ## Names
 
 | What | Name |
 | --- | --- |
-| Plugin, in both apps | `cc-cdx-bridge` (Claude Code + Codex) |
-| Name shown in both apps | Claude ⇄ Codex Bridge |
-| MCP server, in both apps | `cc_cdx_bridge` |
+| Plugin, in both apps | `agents-bridge` (Claude Code + Codex) |
+| Name shown in both apps | Agents Bridge |
+| MCP server, in both apps | `agents_bridge` |
 | Skill | `bridge-collaboration` |
 | Marketplace | `jaimebernalm` |
 
-A few internal names keep the upstream name `claude-uds-bridge` because they are stored on disk or travel between chats: the state folder `$CODEX_HOME/plugin-state/claude-uds-bridge/`, the entrypoint a Codex receiver registers with (`codex-claude-uds-bridge`) and the client type sent to Codex Desktop. Renaming them would lose past collaborations and grants, or stop older chats from recognizing a Codex receiver. The message headers (`CC_CDX_DESKTOP_V2`, `CC_CDX_DESKTOP_PANEL_COMMAND`) are part of the protocol. [`names.ts`](../plugins/cc-cdx-bridge/src/names.ts) defines all of them.
+A few internal names keep the upstream name `claude-uds-bridge` because they are stored on disk or travel between chats: the state folder `$CODEX_HOME/plugin-state/claude-uds-bridge/`, the entrypoint a Codex receiver registers with (`codex-claude-uds-bridge`) and the client type sent to Codex Desktop. Renaming them would lose past collaborations and grants, or stop older chats from recognizing a Codex receiver. The message headers `CC_CDX_DESKTOP_V2` and `CC_CDX_WORK_V1` keep their names for the same reason: stored messages carry them. [`names.ts`](../plugins/agents-bridge/src/names.ts) defines all of them.
 
 ## Requirements
 
@@ -28,19 +28,19 @@ A few internal names keep the upstream name `claude-uds-bridge` because they are
 From GitHub:
 
 ```bash
-codex plugin marketplace add jaimebernalm/cc-cdx-bridge
-codex plugin add cc-cdx-bridge@jaimebernalm
-claude plugin marketplace add jaimebernalm/cc-cdx-bridge
-claude plugin install cc-cdx-bridge@jaimebernalm
+codex plugin marketplace add jaimebernalm/agents-bridge
+codex plugin add agents-bridge@jaimebernalm
+claude plugin marketplace add jaimebernalm/agents-bridge
+claude plugin install agents-bridge@jaimebernalm
 ```
 
-From a local checkout, use its path instead of `jaimebernalm/cc-cdx-bridge`. For Claude there is also a marketplace inside the Claude plugin folder, for testing a local build: `claude plugin marketplace add ./plugins/cc-cdx-bridge-claude` and `claude plugin install cc-cdx-bridge@cc-cdx-bridge-local`.
+From a local checkout, use its path instead of `jaimebernalm/agents-bridge`. For Claude there is also a marketplace inside the Claude plugin folder, for testing a local build: `claude plugin marketplace add ./plugins/agents-bridge-claude` and `claude plugin install agents-bridge@agents-bridge-local`.
 
 Codex ignores plugin hooks until you trust them: open the plugin in Codex and confirm both. A Codex chat becomes reachable when its `SessionStart` hook runs, so open a new chat afterwards. In Claude, open a new Code chat; one that was already open may keep its previous server.
 
-Updating from 0.11 or earlier: the Codex plugin was called `claude-uds-bridge`. Remove it with `codex plugin remove claude-uds-bridge@jaimebernalm` before adding `cc-cdx-bridge@jaimebernalm`, then trust the new plugin's hooks. Collaborations and grants are kept.
+Updating from 0.14 or earlier: the plugin was called `cc-cdx-bridge` in both apps, and `claude-uds-bridge` in Codex before 0.12. Remove the old one (`codex plugin remove cc-cdx-bridge@jaimebernalm`, `claude plugin uninstall cc-cdx-bridge@jaimebernalm`) before adding `agents-bridge@jaimebernalm`, then trust the new plugin's hooks. Collaborations and grants are kept.
 
-The repository holds two plugins: `plugins/cc-cdx-bridge` is the source and the Codex plugin, and `plugins/cc-cdx-bridge-claude` is the Claude plugin built from it, kept separate so Claude does not load Codex's hooks.
+The repository holds two plugins: `plugins/agents-bridge` is the source and the Codex plugin, and `plugins/agents-bridge-claude` is the Claude plugin built from it, kept separate so Claude does not load Codex's hooks.
 
 ## Tools
 
@@ -67,7 +67,7 @@ Both apps expose the same collaboration tools under the same names. The bridge d
 | `apply_panel_action` | Applies an action the person submitted in the panel. |
 | `diagnose` | Reports why the bridge does or does not work in this chat. |
 
-Codex also has `connect_this_chat`, which connects a Codex chat opened before the hooks were trusted, keeping the conversation; and a hidden `session_start` that its hook calls. The agents' guide, with arguments and report shapes, is the [`bridge-collaboration` skill](../plugins/cc-cdx-bridge/skills/bridge-collaboration/SKILL.md).
+Codex also has `connect_this_chat`, which connects a Codex chat opened before the hooks were trusted, keeping the conversation; and a hidden `session_start` that its hook calls. The agents' guide, with arguments and report shapes, is the [`bridge-collaboration` skill](../plugins/agents-bridge/skills/bridge-collaboration/SKILL.md).
 
 Version 0.12.0 retired the tools of the earlier Codex-only protocol (`collaboration_*`), the free messaging tools (`send_message` without a collaboration, `list_sessions`, `status`, `inbox`) and the panel's **Classic** page; 0.12.1 removed the code behind them. Earlier collaborations stay in the state folder, and a message in their format (`CC_CDX_RUN_V1`) is dropped.
 
@@ -86,7 +86,7 @@ Claude's own reception is configured in Claude: by default it holds messages fro
 Ask either chat to diagnose the bridge. From a terminal, in a Codex Desktop chat's environment:
 
 ```bash
-cd plugins/cc-cdx-bridge
+cd plugins/agents-bridge
 bun run doctor --project ../..
 ```
 
@@ -101,12 +101,12 @@ The diagnosis is read-only: it sends nothing, creates no receiver and changes no
 - The bridge does not lock files. Agree on who edits which files before both chats edit one repository.
 - Delivery uses Codex Desktop's internal app connection. An incompatible app version makes delivery fail as `unknown` instead of guessing.
 
-[`PROTOCOL-COVERAGE.md`](../plugins/cc-cdx-bridge/PROTOCOL-COVERAGE.md) compares the transport against Claude's documented behavior case by case, including the cases it does not cover.
+[`PROTOCOL-COVERAGE.md`](../plugins/agents-bridge/PROTOCOL-COVERAGE.md) compares the transport against Claude's documented behavior case by case, including the cases it does not cover.
 
 ## Development
 
 ```bash
-cd plugins/cc-cdx-bridge
+cd plugins/agents-bridge
 bun install --frozen-lockfile
 bun run check
 bun test
