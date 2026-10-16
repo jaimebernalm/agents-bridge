@@ -274,7 +274,7 @@ h3 { font-family: var(--display); font-weight: 500; font-size: 18px; line-height
 .tabs button[aria-selected="true"] { color: var(--text); }
 .tabs button[aria-selected="true"]::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent) 30%, var(--accent) 70%, transparent);
+  background: linear-gradient(90deg, transparent, var(--accent-ink) 30%, var(--accent-ink) 70%, transparent);
 }
 .pane[hidden] { display: none; }
 .pane { padding-top: 48px; display: grid; gap: 32px; align-items: start; }
