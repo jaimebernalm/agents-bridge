@@ -59,64 +59,70 @@
 
     <section class="showcase dark" aria-labelledby="panel-caption">
       <div class="rails">
-        <div class="window">
-          <div class="window-bar">
-            <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
-            <span class="window-title">Claude ⇄ Codex · Collaborations</span>
+        <div class="panel-preview">
+          <div class="panel-intro">
+            <p class="panel-label">Interactive panel preview</p>
+            <p class="panel-hint">Set the limits. You approve before the chats begin.</p>
           </div>
-          <div class="window-body">
-            <div class="row-head">
-              <span class="prepared">Prepared by Claude · just now</span>
-              <span class="waiting">Waiting for your approval</span>
+          <div class="window">
+            <div class="window-bar">
+              <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="window-title">Claude ⇄ Codex · Collaborations</span>
             </div>
-            <div class="tile objective">Review the error handling in <code>src/api</code> and propose fixes.</div>
-            <div class="tile-grid">
-              <div class="tile">
-                <div class="tile-title">Codex chat</div>
-                <div class="tile-sub mono">codex-my-app-3f</div>
+            <div class="window-body">
+              <div class="row-head">
+                <span class="prepared">Prepared by Claude · just now</span>
+                <span class="waiting">Waiting for your approval</span>
               </div>
-              <div class="tile">
-                <div class="tile-row">
-                  <div class="tile-title">Codex can edit and commit</div>
-                  <button type="button" class="switch" role="switch" aria-checked="true" aria-label="Codex can edit and commit"><span></span></button>
+              <div class="tile objective">Review the error handling in <code>src/api</code> and propose fixes.</div>
+              <div class="tile-grid">
+                <div class="tile">
+                  <div class="tile-title">Codex chat</div>
+                  <div class="tile-sub mono">codex-my-app-3f</div>
                 </div>
-                <div class="tile-sub">Local edits and commits only; no push, pull requests or merges.</div>
-              </div>
-              <div class="tile">
-                <div class="tile-row">
-                  <div class="tile-title">Messages</div>
-                  <div class="stepper" data-step="4" data-min="4" data-max="200" data-suffix="">
-                    <button type="button" aria-label="Fewer messages">−</button>
-                    <output>24</output>
-                    <button type="button" aria-label="More messages">+</button>
+                <div class="tile">
+                  <div class="tile-row">
+                    <div class="tile-title">Codex can edit and commit</div>
+                    <button type="button" class="switch" role="switch" aria-checked="true" aria-label="Codex can edit and commit"><span></span></button>
+                  </div>
+                  <div class="tile-sub">Local edits and commits only; no push, pull requests or merges.</div>
+                </div>
+                <div class="tile">
+                  <div class="tile-row">
+                    <div class="tile-title">Messages</div>
+                    <div class="stepper" data-step="4" data-min="4" data-max="200" data-suffix="">
+                      <button type="button" aria-label="Fewer messages">−</button>
+                      <output>24</output>
+                      <button type="button" aria-label="More messages">+</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="tile">
+                  <div class="tile-row">
+                    <div class="tile-title">Time</div>
+                    <div class="stepper" data-step="5" data-min="5" data-max="240" data-suffix=" min">
+                      <button type="button" aria-label="Less time">−</button>
+                      <output>30 min</output>
+                      <button type="button" aria-label="More time">+</button>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div class="tile">
-                <div class="tile-row">
-                  <div class="tile-title">Time</div>
-                  <div class="stepper" data-step="5" data-min="5" data-max="240" data-suffix=" min">
-                    <button type="button" aria-label="Less time">−</button>
-                    <output>30 min</output>
-                    <button type="button" aria-label="More time">+</button>
-                  </div>
-                </div>
+              <div class="approve-row">
+                <button type="button" class="approve" id="approve">Approve and start</button>
+                <span class="quiet">Change</span>
               </div>
+              <ul class="list" aria-label="Earlier collaborations">
+                <li>
+                  <div><div class="li-title">Plan the caching layer, then implement it phase by phase.</div><div class="li-sub">Claude ⇄ Codex · 31/60 messages · 1 h ago</div></div>
+                  <span class="badge completed">Completed</span>
+                </li>
+                <li>
+                  <div><div class="li-title">Investigate why the sync test is flaky.</div><div class="li-sub">Claude ⇄ Codex · 12/24 messages · yesterday</div></div>
+                  <span class="badge paused">Paused</span>
+                </li>
+              </ul>
             </div>
-            <div class="approve-row">
-              <button type="button" class="approve" id="approve">Approve and start</button>
-              <span class="quiet">Change</span>
-            </div>
-            <ul class="list" aria-label="Earlier collaborations">
-              <li>
-                <div><div class="li-title">Plan the caching layer, then implement it phase by phase.</div><div class="li-sub">Claude ⇄ Codex · 31/60 messages · 1 h ago</div></div>
-                <span class="badge completed">Completed</span>
-              </li>
-              <li>
-                <div><div class="li-title">Investigate why the sync test is flaky.</div><div class="li-sub">Claude ⇄ Codex · 12/24 messages · yesterday</div></div>
-                <span class="badge paused">Paused</span>
-              </li>
-            </ul>
           </div>
         </div>
         <p class="caption" id="panel-caption">The collaboration panel, as it opens on your Mac. Try the switch and the steppers.</p>
@@ -133,27 +139,17 @@
             <h3><span class="agent-dot" aria-hidden="true"></span>Start in Claude</h3>
             <p class="prompt-who">you → claude</p>
             <p class="prompt-text">Collaborate with Codex. Review this plan and challenge its assumptions.</p>
-            <p class="prompt-return">Claude ⇄ Codex<span>Both chats stay in the conversation.</span></p>
+            <p class="prompt-return">Claude ⇄ Codex</p>
           </article>
           <article class="direction">
             <h3><span class="agent-dot codex-dot" aria-hidden="true"></span>Start in Codex</h3>
             <p class="prompt-who">you → codex</p>
             <p class="prompt-text">Collaborate with Claude. Review this plan and challenge its assumptions.</p>
-            <p class="prompt-return">Codex ⇄ Claude<span>Both chats stay in the conversation.</span></p>
+            <p class="prompt-return">Codex ⇄ Claude</p>
           </article>
         </div>
+        <p class="conversation-note">Both chats stay in the conversation.</p>
         <a class="compare-link" href="#compare">Compare the approaches <span aria-hidden="true">↓</span></a>
-      </div>
-    </section>
-
-    <section class="strip">
-      <div class="rails strip-inner">
-        <p>Connects the apps you already use</p>
-        <ul>
-          <li>Claude Desktop <span>Code tab</span></li>
-          <li>Codex Desktop</li>
-          <li>macOS</li>
-        </ul>
       </div>
     </section>
 
@@ -183,7 +179,7 @@
       </div>
     </section>
 
-    <section class="how dark" id="how" aria-labelledby="how-title">
+    <section class="how light" id="how" aria-labelledby="how-title">
       <div class="rails">
         <p class="kicker">How it works</p>
         <h2 id="how-title">No sessions to manage.<br><span class="tone">Just ask in plain words.</span></h2>
@@ -243,29 +239,29 @@
       </div>
     </section>
 
-    <section class="compare dark" id="compare" aria-labelledby="compare-title">
+    <section class="compare light" id="compare" aria-labelledby="compare-title">
       <div class="rails">
         <p class="kicker">Compare</p>
         <h2 id="compare-title">Different ways to work together.</h2>
         <p class="body-lede"><a href="https://github.com/openai/codex-plugin-cc">codex-plugin-cc</a> lets Claude Code hand reviews and tasks to Codex, resume those jobs, or transfer the session into a Codex thread. It's a good fit for delegating. Agents Bridge connects two chats that are already open, for an exchange over many steps.</p>
         <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th scope="col"><span class="sr">Aspect</span></th><th scope="col">Delegation plugins</th><th scope="col">Agents Bridge</th></tr>
+          <table role="table" aria-label="Delegation plugins and Agents Bridge">
+            <thead role="rowgroup">
+              <tr role="row"><th scope="col" role="columnheader"><span class="sr">Aspect</span></th><th scope="col" role="columnheader">Delegation plugins</th><th scope="col" role="columnheader">Agents Bridge</th></tr>
             </thead>
-            <tbody>
-              <tr><th scope="row">The idea</th><td>Delegate reviews and tasks from Claude Code; resume jobs or transfer context</td><td>Two live Desktop chats in an ongoing exchange</td></tr>
-              <tr><th scope="row">Who starts</th><td>Claude Code, with slash commands</td><td>Either chat, in plain words</td></tr>
-              <tr><th scope="row">Shape</th><td>A job and its result</td><td>A back-and-forth with message and time limits</td></tr>
-              <tr><th scope="row">Your controls</th><td>Slash commands and job status</td><td>Three questions, then the panel: pause, finish, export</td></tr>
-              <tr><th scope="row">The record</th><td>Job results</td><td>Authored, versioned results and reviews, disagreements kept</td></tr>
+            <tbody role="rowgroup">
+              <tr role="row"><th scope="row" role="rowheader">The idea</th><td role="cell"><span class="compare-cell-label">Delegation plugins</span>Delegate reviews and tasks from Claude Code; resume jobs or transfer context</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Two live Desktop chats in an ongoing exchange</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">Who starts</th><td role="cell"><span class="compare-cell-label">Delegation plugins</span>Claude Code, with slash commands</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Either chat, in plain words</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">Shape</th><td role="cell"><span class="compare-cell-label">Delegation plugins</span>A job and its result</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>A back-and-forth with message and time limits</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">Your controls</th><td role="cell"><span class="compare-cell-label">Delegation plugins</span>Slash commands and job status</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Three questions, then the panel: pause, finish, export</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">The record</th><td role="cell"><span class="compare-cell-label">Delegation plugins</span>Job results</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Authored, versioned results and reviews, disagreements kept</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </section>
 
-    <section class="install light" id="install" aria-labelledby="install-title">
+    <section class="install dark" id="install" aria-labelledby="install-title">
       <div class="rails">
         <p class="kicker">Install</p>
         <h2 id="install-title">Two commands per app.<br><span class="tone">Then just ask.</span></h2>
