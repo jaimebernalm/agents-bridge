@@ -38,11 +38,11 @@
   color-scheme: dark;
 }
 
-/* Cream (?theme=cream): warm paper under the black hero, softer than white and closer to the orange. */
+/* Cream (?theme=cream): a warm, slightly pink-gray paper under the black hero; alternate sections go one step deeper. */
 :root[data-theme="cream"] {
-  --paper: #f2ede4;
-  --paper-2: #ebe4d8;
-  --card: #faf7f1;
+  --paper: #ebe4d8;
+  --paper-2: #e1d8ca;
+  --card: #f6f2eb;
   --text: #1c1917;
   --text-muted: #6b6258;
   --line-light: rgb(28 25 23 / .1);
