@@ -306,6 +306,12 @@
   </footer>
 
   <script>
+    // The top bar shrinks into a floating pill once the page leaves the very top.
+    var nav = document.querySelector('.nav');
+    var onScroll = function () { nav.classList.toggle('is-compact', window.scrollY > 24); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
     // Copy buttons: fall back to selecting the command when the clipboard API is unavailable.
     document.querySelectorAll('.copy').forEach(function (btn) {
       btn.addEventListener('click', function () {
