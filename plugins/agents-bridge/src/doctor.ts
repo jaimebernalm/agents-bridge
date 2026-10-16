@@ -8,6 +8,7 @@ import { observeClaudeSettings, evaluateInbound, type InboundPolicy } from './pe
 import { observeProjectAuthorization } from './project-authorization';
 import { codexEntrypoint, pluginName, stateFolder } from './names';
 import { ProjectNotReadable, projectDirectory, projectNotReadableRemedy } from './project';
+import { claudeCliSurface, claudeSurfaceSupported, surfaceLabel } from './surfaces';
 
 export type DoctorOptions = { project: string; threadId?: string; peerId?: string; configDir: string; codexHome: string; pluginRoot: string };
 type Check = { code: string; level: 'ok' | 'warning' | 'blocked'; message: string; remedy?: string };
@@ -52,14 +53,16 @@ export async function doctor(options: DoctorOptions) {
   const surfaces = candidates.filter(peer => peer.entrypoint !== codexEntrypoint).map(peer => {
     let version: unknown;
     try { version = (ownedJson(join(options.configDir, 'sessions', `${peer.pid}.json`), 262144) as Record<string, unknown>).version; } catch { /* Report unknown version. */ }
-    return { sessionId: peer.sessionId, name: peer.name, surface: peer.entrypoint ?? 'unknown', status: peer.status,
+    return { sessionId: peer.sessionId, name: peer.name, surface: peer.entrypoint ?? 'unknown', surfaceLabel: surfaceLabel(peer.entrypoint),
+      supportedSurface: claudeSurfaceSupported(peer), status: peer.status,
       version: typeof version === 'string' ? version : null, messagingVersionSupported: claudeVersionSupported(version) };
   });
-  const eligible = surfaces.filter(peer => peer.surface === 'claude-desktop' && (!options.peerId || peer.sessionId === options.peerId));
-  if (eligible.length !== 1) add('needs_selection', 'blocked', eligible.length ? 'Multiple Claude Desktop chats match this project.' : 'No selected Claude Desktop Code chat matches this project.',
-    eligible.length ? 'Choose one exact --peer UUID from surfaces.' : 'Open a local Code chat in Claude Desktop for this folder and send its first prompt. CLI and VS Code chats are listed but are not substituted.');
-  else if (!eligible[0]!.messagingVersionSupported) add('unsupported_version', 'blocked', 'Selected Claude Desktop engine version is missing or below 2.1.224.', 'Check the engine in the Desktop chat; updating the independent CLI does not update that engine.');
-  else add('claude_engine', 'ok', `Selected Claude Desktop engine ${eligible[0]!.version}; peer protocol 1 observed.`);
+  const eligible = surfaces.filter(peer => peer.supportedSurface && (!options.peerId || peer.sessionId === options.peerId));
+  if (eligible.length !== 1) add('needs_selection', 'blocked', eligible.length ? 'Multiple Claude Code chats match this project.' : 'No selected Claude Code chat matches this project.',
+    eligible.length ? 'Choose one exact --peer UUID from surfaces.' : 'Open a local Code chat in Claude Desktop for this folder, or run claude in a terminal in this folder, and send its first prompt. VS Code, print mode (-p) and SDK sessions are listed but are not substituted.');
+  else if (!eligible[0]!.messagingVersionSupported) add('unsupported_version', 'blocked', `Selected ${eligible[0]!.surfaceLabel} engine version is missing or below 2.1.224.`,
+    eligible[0]!.surface === claudeCliSurface ? 'Update Claude Code (claude update) and start a new terminal chat.' : 'Check the engine in the Desktop chat; updating the independent CLI does not update that engine.');
+  else add('claude_engine', 'ok', `Selected ${eligible[0]!.surfaceLabel} engine ${eligible[0]!.version}; peer protocol 1 observed.`);
 
   let native: Awaited<ReturnType<typeof readDesktopInfo>> | undefined;
   if (!options.threadId || !uuid.safeParse(options.threadId).success) add('needs_selection', 'blocked', 'No valid Codex chat identity was supplied.', 'Run from the Desktop chat (CODEX_THREAD_ID), use --thread UUID, or invoke the MCP doctor tool.');
@@ -110,7 +113,7 @@ export async function doctor(options: DoctorOptions) {
     else if(projectAuthorization.folderChanged)add('project_folder_changed','warning','The project folder identity changed; its old authorization is not inherited.','Confirm the current folder in the authenticated panel if desired.');
   }catch{add('project_authorization_unknown','warning','Remembered project reception could not be inspected.','Inspect private state ownership and schema; no permission is inferred or changed.');}
   if (settings.some(item => !item.readable || item.inbound === 'invalid')) add('settings_unreadable', 'warning', 'One or more relevant settings observations are unavailable or invalid.', 'Review the indicated scope locally; doctor never outputs the complete configuration.');
-  add('policy_unknown', 'warning', 'Claude Desktop does not expose effective inbound policy, permission class or managed/session overrides in its registry.',
+  add('policy_unknown', 'warning', 'Claude Code does not expose effective inbound policy, permission class or managed/session overrides in its registry.',
     'Use sessions whose reception is already allowed and an explicitly requested round-trip check. User-level accept affects all Claude sessions; project accept cannot loosen reception. No settings change or message is performed by doctor.');
   add('hook_trust_unknown', 'warning', 'Installation and hook trust cannot be established from receiver presence.', 'Review the installed fork in Codex Plugins, trust its hooks, and validate a new or resumed chat separately.');
   const blocker = checks.find(check => check.level === 'blocked');

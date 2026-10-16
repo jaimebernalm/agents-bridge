@@ -1,13 +1,15 @@
-// Resolves which Claude Code Desktop conversation is calling this MCP process, from evidence the
-// host controls: the process tree and Claude's own session registry (sessions/<pid>.json). Tool
-// arguments never take part. A stdio MCP server is expected to be a descendant of its session's
-// engine; when that does not hold (shared or app-hosted servers) the caller is rejected, not guessed.
+// Resolves which Claude Code conversation (Desktop Code tab or interactive terminal) is calling this MCP
+// process, from evidence the host controls: the process tree and Claude's own session registry
+// (sessions/<pid>.json). Tool arguments never take part. A stdio MCP server is expected to be a
+// descendant of its session's engine; when that does not hold (shared or app-hosted servers) the
+// caller is rejected, not guessed.
 import { createHash } from 'node:crypto';
 import { statSync } from 'node:fs';
 import { peers, processStart, uuid, type Peer } from './claude';
 import { readHookSession } from './claude-sidecar';
 import { codexEntrypoint } from './names';
 import { ProjectNotReadable, projectDirectory } from './project';
+import { claudeSurfaceSupported } from './surfaces';
 
 export type Provider = 'codex' | 'claude';
 export type BindingMethod = 'codex_meta' | 'claude_process_ancestry' | 'claude_process_ancestry+hook';
@@ -26,7 +28,7 @@ export type ClaudeCallerOptions = { configDir: string; stateDir: string; meta?: 
 
 const maxDepth = 6;
 // Codex's bridge registers its own receivers in the same directory; those are never Claude callers.
-const bridgeEntrypoint = codexEntrypoint, desktopSurface = 'claude-desktop';
+const bridgeEntrypoint = codexEntrypoint;
 
 export async function processParent(pid: number) {
   const child = Bun.spawn(['ps', '-o', 'ppid=,comm=', '-p', String(pid)], { env: { ...process.env, LC_ALL: 'C' }, stdout: 'pipe', stderr: 'ignore' });
@@ -81,8 +83,8 @@ export async function authenticateClaudeCaller(options: ClaudeCallerOptions, tra
   const engine: Peer = await registeredAncestor(options.configDir, options.pid ?? process.pid, trace);
   const evidence = ['registry_record', 'socket_owned'];
   if (engine.entrypoint === bridgeEntrypoint) throw new CallerRejected('caller_mismatch', 'The nearest registered ancestor is a bridge receiver, not a Claude session');
-  // Only Desktop conversations qualify; CLI, IDE and SDK sessions are other surfaces.
-  if (engine.entrypoint !== desktopSurface) throw new CallerRejected('caller_mismatch', `Session surface ${engine.entrypoint ?? 'unknown'} is not Claude Code Desktop`);
+  // Desktop Code tab and interactive terminal chats qualify; print mode (-p), IDE and SDK sessions are other surfaces.
+  if (!claudeSurfaceSupported(engine)) throw new CallerRejected('caller_mismatch', `Session surface ${engine.entrypoint ?? 'unknown'}${engine.kind ? ` (${engine.kind})` : ''} is not the Claude Desktop Code tab or an interactive Claude Code terminal`);
   if (!engine.procStart) throw new CallerRejected('caller_stale', 'The session record has no process start time');
   let started: string;
   try { started = await processStart(engine.pid); } catch { throw new CallerRejected('caller_stale', 'The session engine exited'); }

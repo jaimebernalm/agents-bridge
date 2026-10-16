@@ -64,6 +64,12 @@ test('Desktop selection verifies surface, process and engine version without sen
     const discovered=await discoverParticipants(f.configDir); expect(discovered.some(p=>p.sessionId===f.peerId && p.surface==='claude-desktop')).toBe(true);
     const inspect=()=>inspectParticipant(f.options,f.peerId,'claude');
     f.write({entrypoint:'claude-vscode'}); await expect(inspect()).rejects.toThrow('Desktop');
+    // A terminal chat counts only when interactive; print mode and records without a kind are other surfaces.
+    for(const kind of [undefined,'print']){f.write({entrypoint:'cli',kind});await expect(inspect()).rejects.toThrow('not substituted');
+      expect((await discoverParticipants(f.configDir)).find(p=>p.sessionId===f.peerId)).toMatchObject({surface:'cli',surfaceLabel:'Claude CLI',eligibleSurface:false});}
+    f.write({entrypoint:'cli',kind:'interactive'});expect(await inspect()).toMatchObject({sessionId:f.peerId,provider:'claude',surface:'cli'});
+    expect((await discoverParticipants(f.configDir)).find(p=>p.sessionId===f.peerId)).toMatchObject({surface:'cli',surfaceLabel:'Claude CLI',eligibleSurface:true});
+    f.write({entrypoint:'cli',kind:'interactive',version:'2.1.223'});await expect(inspect()).rejects.toThrow('Claude CLI engine is unsupported');
     f.write({procStart:'different'}); await expect(inspect()).rejects.toThrow('stale');
     f.write({version:'2.1.223'}); await expect(inspect()).rejects.toThrow('unsupported');
     f.write(); expect((await inspect()).sessionId).toBe(f.peerId);

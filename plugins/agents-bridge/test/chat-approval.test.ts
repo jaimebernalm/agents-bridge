@@ -267,7 +267,7 @@ test('a new Claude chat the app started without its folder moves itself there; a
  const ticket={targetProvider:'claude',requester:'person_answer:'+randomUUID(),project:'/work/app'} as Parameters<typeof bootstrapPrompt>[0];
  const claude=bootstrapPrompt(ticket,randomUUID()).split('\n'),codex=bootstrapPrompt({...ticket,targetProvider:'codex'},randomUUID());
  expect(claude[0]).toMatch(/^AGENTS-BRIDGE-CORR-/);expect(claude[1]).toContain('the person, answering in their other chat');
- expect(claude[2]).toContain('change_directory tool, passing exactly that path');expect(claude[2]).toContain('ask for the collaboration again in their other chat');expect(claude[2]).not.toContain('same message');
+ expect(claude[2]).toContain('change_directory tool, passing exactly that path');expect(claude[2]).toContain('If this chat runs in the Claude Desktop app and');expect(claude[2]).toContain('a terminal chat stays in the folder where claude was started');expect(claude[2]).toContain('ask for the collaboration again in their other chat');expect(claude[2]).not.toContain('same message');
  expect(codex).not.toContain('change_directory');expect(codex).toContain('send it this same message');
  // The person's own words travel along only so the new chat answers them in their language.
  expect(codex).not.toContain('language');expect(bootstrapPrompt(ticket,randomUUID(),'Prueba del bridge:\n un saludo')).toContain('in the language of their request, which was: «Prueba del bridge: un saludo»');

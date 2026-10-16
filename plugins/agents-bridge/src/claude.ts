@@ -20,7 +20,7 @@ const registry = z.object({
   pid: z.number().int().positive(), sessionId: uuid, messagingSocketPath: z.string(),
   name: z.string().default('Claude Code'), cwd: z.string(), status: z.string().default('unknown'),
   peerProtocol: z.literal(1), procStart: z.string().optional(),
-  entrypoint: z.string().optional(), startedAt: z.number().int().nonnegative().optional(),
+  entrypoint: z.string().optional(), kind: z.string().optional(), startedAt: z.number().int().nonnegative().optional(),
   peerFeatures: z.array(z.string()).default([]),
 });
 export type Peer = z.infer<typeof registry>;
