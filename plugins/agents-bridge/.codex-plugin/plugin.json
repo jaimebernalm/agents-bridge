@@ -1,6 +1,6 @@
 {
   "name": "agents-bridge",
-  "version": "0.15.8",
+  "version": "0.15.9",
   "description": "Let a Codex chat and a Claude Code chat work together on the same project, with a panel where you approve and follow each collaboration.",
   "author": {
     "name": "Jaime Bernal"
@@ -12,12 +12,17 @@
     "shortDescription": "Work on one project with Codex and Claude together.",
     "longDescription": "Pair this Codex chat with a Claude Code chat on the same computer: plan, review, compare approaches or implement together. You start a collaboration in words or from the panel, approve it there, and set its limits (messages and up to 24 hours). The panel shows the exchange, results, reviews and disagreements, and is the only place that can let the other chat edit files and make local commits. Nothing is pushed or published by the bridge.",
     "developerName": "Jaime Bernal",
+    "websiteURL": "https://jaimebernalm.github.io/agents-bridge/",
     "category": "Productivity",
     "capabilities": [
       "Read",
       "Write"
     ],
-    "defaultPrompt": "Use bridge-collaboration to compare approaches with a Claude Code chat in this project."
+    "defaultPrompt": "Use bridge-collaboration to compare approaches with a Claude Code chat in this project.",
+    "brandColor": "#FF7A3D",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/logo.svg",
+    "logoDark": "./assets/logo-dark.svg"
   },
   "mcpServers": "./.mcp.json",
   "skills": "./skills/"
