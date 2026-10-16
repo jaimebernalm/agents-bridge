@@ -9,13 +9,6 @@
   <meta property="og:description" content="Two models catch what one misses. Connect Claude and Codex in a real conversation, in either direction.">
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#0c0c0d">
-  <script>
-    // ?theme=split (white sections) and ?theme=cream are for side-by-side review; the page is all dark otherwise.
-    (function () {
-      var theme = new URLSearchParams(location.search).get('theme');
-      if (theme === 'split' || theme === 'cream') document.documentElement.dataset.theme = theme;
-    })();
-  </script>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -64,7 +57,7 @@
       </div>
     </section>
 
-    <section class="showcase" aria-labelledby="panel-caption">
+    <section class="showcase dark" aria-labelledby="panel-caption">
       <div class="rails">
         <div class="window">
           <div class="window-bar">
@@ -130,7 +123,7 @@
       </div>
     </section>
 
-    <section class="conversation light" id="conversation" aria-labelledby="conversation-title">
+    <section class="conversation dark" id="conversation" aria-labelledby="conversation-title">
       <div class="rails">
         <p class="kicker">Two real chats. One shared conversation.</p>
         <h2 id="conversation-title">Not a delegated job.<br><span>A conversation.</span></h2>
@@ -164,7 +157,7 @@
       </div>
     </section>
 
-    <section class="why light alt" id="why" aria-labelledby="why-title">
+    <section class="why light" id="why" aria-labelledby="why-title">
       <div class="rails">
         <p class="kicker">Why two models</p>
         <h2 id="why-title">Every model has blind spots.<br><span class="tone">Different models have different ones.</span></h2>
@@ -250,7 +243,7 @@
       </div>
     </section>
 
-    <section class="compare light alt" id="compare" aria-labelledby="compare-title">
+    <section class="compare dark" id="compare" aria-labelledby="compare-title">
       <div class="rails">
         <p class="kicker">Compare</p>
         <h2 id="compare-title">Different ways to work together.</h2>
@@ -272,7 +265,7 @@
       </div>
     </section>
 
-    <section class="install dark" id="install" aria-labelledby="install-title">
+    <section class="install light" id="install" aria-labelledby="install-title">
       <div class="rails">
         <p class="kicker">Install</p>
         <h2 id="install-title">Two commands per app.<br><span class="tone">Then just ask.</span></h2>
