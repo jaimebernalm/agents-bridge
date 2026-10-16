@@ -1,14 +1,14 @@
 {
   "name": "jaimebernalm",
-  "description": "Claude ⇄ Codex Bridge: collaboration between Claude Code and Codex chats.",
+  "description": "Agents Bridge: collaboration between Claude Code and Codex chats.",
   "owner": {
     "name": "Jaime Bernal"
   },
   "plugins": [
     {
-      "name": "cc-cdx-bridge",
-      "source": "./plugins/cc-cdx-bridge-claude",
-      "description": "Claude Code side of Claude ⇄ Codex Bridge."
+      "name": "agents-bridge",
+      "source": "./plugins/agents-bridge-claude",
+      "description": "Claude Code side of Agents Bridge."
     }
   ]
 }

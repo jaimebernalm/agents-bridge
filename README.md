@@ -1,8 +1,10 @@
-# Claude ⇄ Codex Bridge
+# Agents Bridge
+
+[Visit the website](https://jaimebernalm.github.io/agents-bridge/) · [Install](#install-about-5-minutes)
 
 **Get your Claude Code chat and your Codex chat working together as equals, inside the apps you already use.**
 
-Both apps install it as `cc-cdx-bridge` (Claude Code + Codex) and show it as **Claude ⇄ Codex Bridge**.
+Both apps install it as `agents-bridge` (Claude Code + Codex) and show it as **Agents Bridge**.
 
 > **Codex Desktop on macOS, for now.** The bridge connects a Claude Code chat, in the Code tab of Claude Desktop or as `claude` in a terminal, with a Codex Desktop chat on macOS. The Codex CLI is not supported yet; support for it is planned.
 
@@ -52,23 +54,23 @@ Run these in a terminal. You need Bun installed first (see Requirements).
 **1. Install the Codex side**
 
 ```bash
-codex plugin marketplace add jaimebernalm/cc-cdx-bridge
+codex plugin marketplace add jaimebernalm/agents-bridge
 ```
 
 ```bash
-codex plugin add cc-cdx-bridge@jaimebernalm
+codex plugin add agents-bridge@jaimebernalm
 ```
 
-Then open Codex, find **Claude ⇄ Codex Bridge** in its plugins, and **trust both hooks**. Codex ignores plugin hooks until you do, and without them a chat can't receive messages. Open a **new** Codex chat afterwards; chats that were already open don't pick up the plugin.
+Then open Codex, find **Agents Bridge** in its plugins, and **trust both hooks**. Codex ignores plugin hooks until you do, and without them a chat can't receive messages. Open a **new** Codex chat afterwards; chats that were already open don't pick up the plugin.
 
 **2. Install the Claude side**
 
 ```bash
-claude plugin marketplace add jaimebernalm/cc-cdx-bridge
+claude plugin marketplace add jaimebernalm/agents-bridge
 ```
 
 ```bash
-claude plugin install cc-cdx-bridge@jaimebernalm
+claude plugin install agents-bridge@jaimebernalm
 ```
 
 Then open a **new** Code chat in Claude Desktop, or start `claude` in a terminal. The plugin is shared by both.
@@ -77,7 +79,7 @@ Then open a **new** Code chat in Claude Desktop, or start `claude` in a terminal
 
 Open the same project folder in both apps and ask either chat:
 
-> Use the Claude ⇄ Codex Bridge to list the chats in this folder.
+> Use Agents Bridge to list the chats in this folder.
 
 You should see the other app's chat listed. If you don't, see [Troubleshooting](#troubleshooting).
 
@@ -92,14 +94,14 @@ You should see the other app's chat listed. If you don't, see [Troubleshooting](
    - **Limits:** the proposed messages and time, two larger steps, or unlimited messages · 24 h. You can also write your own, such as "40 messages, 45 min".
    - **Start:** start with a new chat in the other app (or the one you named)? A new Claude chat always opens in Claude Desktop. To use a Claude terminal chat instead, start `claude` in the project folder first and name it or pick it in the panel.
      - **Yes:** the collaboration starts with what you chose. If it needs a new chat, the other app opens on one with a message ready: send it there and the collaboration starts once that chat is linked. If Claude asks you to trust the folder, it may then start that chat without its folder; the chat asks to move to the project folder, and once you approve it links itself.
-     - **Change chat or details in the panel:** the panel opens in its own small window in the top-right corner of your screen, with the form already filled in (**Suggested by …**) and what you chose. Choose one of your open chats instead of a new one, or change the objective, the limits (messages or **No limit**, time up to 24 hours), editing and its scope, then press **Start** there. Move or resize it and the next panel opens where you left it.
+     - **Change chat or details in the panel:** the panel opens in its own small window in the top-right corner of your screen, with the form already filled in (**Suggested by …**) and what you chose. Choose one of your open chats instead of a new one, or change the objective, the limits (messages or **No limit**, time up to 24 hours), editing and its scope, then press **Start** there. It always opens there at the same size, even if you moved or enlarged the last one. Its two small buttons switch the language (EN · ES) and the dark theme.
      - **Cancel:** the proposal is discarded.
 
    Or write what you'd change instead; the chat asks again with your change. Nothing is sent until you choose **Yes**.
 
-3. Watch the messages arrive. The chat leaves the panel as a card (**Bridge panel**): open it and press **Open the panel**, and the panel opens in its own window, where you can **Pause**, **Finish** or **Export** (Markdown or JSON) at any time.
+3. Watch the messages arrive. The chat leaves a highlighted link, **▶️ Open the bridge panel**: press it and the panel opens in its own window, where you can **Pause**, **Finish** or **Export** (Markdown or JSON) at any time.
 
-Closed the panel? Open that card again, or ask either chat to "open the bridge panel".
+Closed the panel? Press that link again, or ask either chat to "open the bridge panel".
 
 ### Ideas to try
 
@@ -142,20 +144,24 @@ A chat is still running an older version of the bridge. Open a new chat in that 
 
 ## Update
 
-**Updating from 0.11 or earlier:** the Codex plugin used to be called `claude-uds-bridge`. Remove it first:
+**Updating from 0.14 or earlier:** the plugin used to be called `cc-cdx-bridge` (and, before 0.12, `claude-uds-bridge` in Codex). Remove the old one first:
 
 ```bash
-codex plugin remove claude-uds-bridge@jaimebernalm
+codex plugin remove cc-cdx-bridge@jaimebernalm
+```
+
+```bash
+claude plugin uninstall cc-cdx-bridge@jaimebernalm
 ```
 
 Then, for any update:
 
 ```bash
-codex plugin marketplace upgrade jaimebernalm && codex plugin add cc-cdx-bridge@jaimebernalm
+codex plugin marketplace upgrade jaimebernalm && codex plugin add agents-bridge@jaimebernalm
 ```
 
 ```bash
-claude plugin marketplace update jaimebernalm && claude plugin update cc-cdx-bridge@jaimebernalm
+claude plugin marketplace update jaimebernalm && claude plugin update agents-bridge@jaimebernalm
 ```
 
 Then open new chats in both apps. If Codex asks again, re-trust the hooks. Your collaboration history and saved authorizations are kept.
@@ -166,29 +172,29 @@ Then open new chats in both apps. If Codex asks again, re-trust the hooks. Your 
 - macOS only, because Codex Desktop is required. Claude can be the Code tab of Claude Desktop or `claude` in a terminal; the Codex CLI is not supported yet.
 - A new Claude chat requested through the bridge always opens in Claude Desktop. Claude terminal chats take part only once you have started them yourself.
 - Without a screen (over SSH, for example) the panel can't open by itself; the chat gives you its link instead.
-- Last tested with Codex Desktop 26.930 and Claude Code 2.1.286 on macOS. Please [open an issue](https://github.com/jaimebernalm/cc-cdx-bridge/issues) with your versions if something breaks.
+- Last tested with Codex Desktop 26.930 and Claude Code 2.1.286 on macOS. Please [open an issue](https://github.com/jaimebernalm/agents-bridge/issues) with your versions if something breaks.
 - The bridge does not lock files. When both agents edit, give them separate files or separate worktrees.
 
 ## Learn more
 
 - [Detailed reference](docs/REFERENCE.md): every tool, transport limits and reception settings.
 - [How the two-way Desktop mode works](docs/BIDIRECTIONAL_DESKTOP.md)
-- [The agents' guide](plugins/cc-cdx-bridge/skills/bridge-collaboration/SKILL.md) and [its tool reference](plugins/cc-cdx-bridge/skills/bridge-collaboration/references/tools.md)
-- [Coordinated implementation](plugins/cc-cdx-bridge/skills/bridge-collaboration/references/implementation.md)
-- [Protocol coverage](plugins/cc-cdx-bridge/PROTOCOL-COVERAGE.md)
+- [The agents' guide](plugins/agents-bridge/skills/bridge-collaboration/SKILL.md) and [its tool reference](plugins/agents-bridge/skills/bridge-collaboration/references/tools.md)
+- [Coordinated implementation](plugins/agents-bridge/skills/bridge-collaboration/references/implementation.md)
+- [Protocol coverage](plugins/agents-bridge/PROTOCOL-COVERAGE.md)
 
 ## Contributing
 
 ```bash
-git clone https://github.com/jaimebernalm/cc-cdx-bridge.git && cd cc-cdx-bridge/plugins/cc-cdx-bridge
+git clone https://github.com/jaimebernalm/agents-bridge.git && cd agents-bridge/plugins/agents-bridge
 ```
 
 ```bash
 bun install --frozen-lockfile && bun run check && bun test && bun run build
 ```
 
-The plugins run the bundled files in `dist/` and `panel-dist/`, so run `bun run build` after changing anything under `src/` or `ui/`. To try your build, add the clone as a marketplace (`codex plugin marketplace add /path/to/cc-cdx-bridge`, `claude plugin marketplace add /path/to/cc-cdx-bridge`) instead of the GitHub one. CI runs the suite on macOS and Linux.
+The plugins run the bundled files in `dist/` and `panel-dist/`, so run `bun run build` after changing anything under `src/` or `ui/`. To try your build, add the clone as a marketplace (`codex plugin marketplace add /path/to/agents-bridge`, `claude plugin marketplace add /path/to/agents-bridge`) instead of the GitHub one. CI runs the suite on macOS and Linux.
 
 ## License and credits
 
-MIT, see [LICENSE](LICENSE). Based on [Leon Kohli's Claude UDS Bridge](https://github.com/LeonKohli/claude-uds-bridge). The state folder and a few internal identifiers keep the name `claude-uds-bridge` for compatibility; [`names.ts`](plugins/cc-cdx-bridge/src/names.ts) lists them. Don't enable this fork and the upstream plugin in the same chat.
+MIT, see [LICENSE](LICENSE). Based on [Leon Kohli's Claude UDS Bridge](https://github.com/LeonKohli/claude-uds-bridge). The state folder and a few internal identifiers keep the name `claude-uds-bridge` for compatibility; [`names.ts`](plugins/agents-bridge/src/names.ts) lists them. Don't enable this fork and the upstream plugin in the same chat.
