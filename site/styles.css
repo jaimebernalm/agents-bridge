@@ -163,23 +163,25 @@ h3 { font-family: var(--display); font-weight: 500; font-size: 18px; line-height
 .panel-intro { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 16px; }
 .panel-label { font: 500 13px/20px var(--mono); color: var(--on-dark); }
 .panel-hint { font-size: 13px; line-height: 20px; color: var(--on-dark-muted); text-align: right; white-space: nowrap; }
+/* The panel in its light theme: a white window that lifts off the dark chapter, with the real panel's tokens. */
 .window {
   position: relative; z-index: 2; max-width: 860px; margin: 0;
-  --panel-background: #141416;
-  --panel-foreground: #fafafa;
-  --panel-card: #18181b;
-  --panel-secondary: #27272a;
-  --panel-muted: #1f1f23;
-  --panel-muted-foreground: #a1a1aa;
-  --panel-border: #2e2e33;
+  --panel-background: #f7f7f8;
+  --panel-foreground: #18181b;
+  --panel-card: #fff;
+  --panel-secondary: #efeff1;
+  --panel-muted: #f4f4f5;
+  --panel-muted-foreground: #63636b;
+  --panel-border: #e4e4e7;
   --panel-primary: #ff7a3d;
-  --panel-primary-ink: #ff7a3d;
-  --panel-warning: #f5b800;
-  --panel-success: #30d158;
+  --panel-primary-ink: #c2410c;
+  --panel-warning: #8a6100;
+  --panel-warning-foreground: #fff;
+  --panel-success: #1e7d36;
   background: var(--panel-background); color: var(--panel-foreground); border-radius: 14px; overflow: hidden;
   font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, sans-serif; letter-spacing: 0;
-  border: 1px solid rgb(255 255 255 / .10);
-  box-shadow: 0 40px 120px -40px rgb(255 122 61 / .18);
+  color-scheme: light;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / .14), 0 40px 120px -40px rgb(255 122 61 / .28), 0 30px 60px -30px rgb(0 0 0 / .6);
 }
 .window-bar { position: relative; height: 38px; display: flex; align-items: center; justify-content: center; background: var(--panel-card); box-shadow: 0 1px 0 var(--panel-border); }
 .lights { position: absolute; left: 14px; display: flex; gap: 8px; }
@@ -189,7 +191,7 @@ h3 { font-family: var(--display); font-weight: 500; font-size: 18px; line-height
 .window-title { padding: 0 72px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; font-weight: 600; color: var(--panel-muted-foreground); }
 .window-body { padding: 18px 20px 22px; display: grid; gap: 12px; }
 .row-head { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--panel-muted-foreground); }
-.waiting { color: #18181b; background: var(--panel-warning); padding: 2px 8px; border-radius: 6px; }
+.waiting { color: var(--panel-warning-foreground); background: var(--panel-warning); padding: 2px 8px; border-radius: 6px; }
 .tile { background: var(--panel-card); border-radius: 12px; padding: 12px 14px; min-width: 0; box-shadow: 0 0 0 .5px var(--panel-border), 0 1px 2px rgb(0 0 0 / .05); }
 .objective { font-size: 15px; }
 .tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
