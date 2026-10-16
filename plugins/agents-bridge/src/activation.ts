@@ -2,12 +2,13 @@ import { realpathSync } from 'node:fs';
 import { readDesktopInfo } from './desktop';
 import { peers, processStart, uuid } from './claude';
 import { codexEntrypoint } from './names';
+import { projectDirectory } from './project';
 
 export type ActivationOptions = { threadId: string; project: string; configDir: string; codexHome: string; hookPath: string };
 
 export async function activateReceiver(options: ActivationOptions) {
   const thread = uuid.parse(options.threadId);
-  const project = realpathSync(options.project);
+  const project = projectDirectory(options.project);
   const info = await readDesktopInfo(`${options.codexHome}/ipc/ipc.sock`, thread);
   if (realpathSync(info.project) !== project) throw new Error('Project mismatch: select the existing Codex chat for this exact folder.');
   const previous = peers(options.configDir).filter(peer => peer.sessionId === thread);

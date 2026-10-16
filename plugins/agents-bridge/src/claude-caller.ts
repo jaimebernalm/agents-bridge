@@ -3,10 +3,11 @@
 // arguments never take part. A stdio MCP server is expected to be a descendant of its session's
 // engine; when that does not hold (shared or app-hosted servers) the caller is rejected, not guessed.
 import { createHash } from 'node:crypto';
-import { realpathSync, statSync } from 'node:fs';
+import { statSync } from 'node:fs';
 import { peers, processStart, uuid, type Peer } from './claude';
 import { readHookSession } from './claude-sidecar';
 import { codexEntrypoint } from './names';
+import { ProjectNotReadable, projectDirectory } from './project';
 
 export type Provider = 'codex' | 'claude';
 export type BindingMethod = 'codex_meta' | 'claude_process_ancestry' | 'claude_process_ancestry+hook';
@@ -14,7 +15,7 @@ export type AuthenticatedCaller = {
   provider: Provider; sessionId: string; pid: number; procStart: string; project: string;
   binding: { method: BindingMethod; generation: string; surface: string; evidence: string[] };
 };
-export type CallerRejectionCode = 'caller_unavailable' | 'caller_ambiguous' | 'caller_stale' | 'caller_mismatch' | 'caller_transition';
+export type CallerRejectionCode = 'caller_unavailable' | 'caller_ambiguous' | 'caller_stale' | 'caller_mismatch' | 'caller_transition' | 'project_not_readable';
 export class CallerRejected extends Error {
   constructor(readonly code: CallerRejectionCode, message: string) { super(`${code}: ${message}`); }
 }
@@ -69,7 +70,10 @@ export function metaSessionHints(meta: Record<string, unknown> | undefined) {
 }
 
 function folder(path: string) {
-  const project = realpathSync(path), stat = statSync(project, { bigint: true });
+  let project: string;
+  try { project = projectDirectory(path); }
+  catch (error) { throw error instanceof ProjectNotReadable ? new CallerRejected(error.code, error.message) : error; }
+  const stat = statSync(project, { bigint: true });
   return { project, device: String(stat.dev), inode: String(stat.ino) };
 }
 

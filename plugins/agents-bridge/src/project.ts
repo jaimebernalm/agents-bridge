@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { realpathSync, statSync } from 'node:fs';
+import { opendirSync, realpathSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 export type ProjectIdentity = {
@@ -7,6 +7,31 @@ export type ProjectIdentity = {
   head: string | null; branch: string | null; dirty: boolean | null; diffHash: string | null;
   statusHash: string | null; untrackedPaths: string[]; untrackedSnapshot: null;
 };
+
+// macOS privacy protection (TCC) refuses folders such as Desktop, Documents, Downloads and cloud-storage
+// folders to an app the person has not allowed, with EPERM or EACCES. Each process names the app it runs in.
+let readerApp = 'this app';
+export function setReaderApp(app: string) { readerApp = app; }
+export class ProjectNotReadable extends Error {
+  readonly code = 'project_not_readable';
+  constructor(readonly path: string, readonly app = readerApp) {
+    super(`macOS does not let ${app} read the project folder ${path}. ${projectNotReadableRemedy(app)}`);
+  }
+}
+export const projectNotReadableRemedy = (app = readerApp) => `In System Settings › Privacy & Security › Files and Folders (or Full Disk Access), allow ${app}, then quit and reopen ${app}; or use a project folder outside protected locations such as Desktop, Documents, Downloads, iCloud Drive and other cloud-storage folders (OneDrive, Dropbox, Google Drive).`;
+export function projectReadError(error: unknown, path: string, app = readerApp) {
+  const code = error instanceof Error && 'code' in error ? error.code : undefined;
+  return code === 'EPERM' || code === 'EACCES' ? new ProjectNotReadable(path, app) : error;
+}
+
+// The real path of a project folder this process can list; ENOENT and other errors pass through unchanged.
+export function projectDirectory(path: string, app = readerApp) {
+  try {
+    const directory = realpathSync(path);
+    opendirSync(directory).closeSync();
+    return directory;
+  } catch (error) { throw projectReadError(error, path, app); }
+}
 
 async function readLimited(stream: ReadableStream<Uint8Array>, limit = 16 * 1024 * 1024) {
   const reader = stream.getReader(); const chunks: Uint8Array[] = []; let bytes = 0;
@@ -37,8 +62,10 @@ export async function git(directory: string, args: string[], extraEnv: Record<st
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 
 export async function inspectProject(path: string): Promise<ProjectIdentity> {
-  const directory = realpathSync(path);
+  let directory: string;
+  try { directory = realpathSync(path); } catch (error) { throw projectReadError(error, path); }
   if (!statSync(directory).isDirectory()) throw new Error('Project must be a directory');
+  try { opendirSync(directory).closeSync(); } catch (error) { throw projectReadError(error, path); }
   const probe = await git(directory, ['rev-parse', '--is-inside-work-tree']);
   if (probe.code !== 0 && !probe.error.includes('not a git repository')) throw new Error('Git project inspection failed; repository identity is unknown');
   if (probe.code === 0 && probe.output.trim() !== 'true') throw new Error('Bare repositories are not supported as participant worktrees');

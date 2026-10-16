@@ -8,7 +8,9 @@ import { peers, privateDirectory, processStart, uuid } from './claude';
 import { readDesktopInfo, watchDesktop } from './desktop';
 import { withReceiverLock } from './receiver-lock';
 import { codexEntrypoint, stateFolder } from './names';
+import { projectDirectory, setReaderApp } from './project';
 
+setReaderApp('Codex');
 const eventSchema = z.object({ session_id: uuid, cwd: z.string().refine(isAbsolute),
   hook_event_name: z.enum(['SessionStart', 'SessionEnd']), generation: uuid.optional() });
 const event = eventSchema.parse(JSON.parse(await Bun.stdin.text()));
@@ -82,6 +84,8 @@ async function runHook() {
       return;
     } finally { await state.close(); }
   }
+  // A receiver in a folder macOS keeps from Codex could never inspect it; say why instead of starting one.
+  projectDirectory(event.cwd);
   await withReceiverLock(stateDir, event.session_id, async () => {
     const state = new Bridge(event.session_id, configDir, stateDir, ipcPath);
     try {

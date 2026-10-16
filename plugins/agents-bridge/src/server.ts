@@ -10,9 +10,11 @@ import { Bridge } from './bridge';
 import { HeldDialogs } from './held-dialogs';
 import { activateReceiver } from './activation';
 import { doctor } from './doctor';
-import { inspectParticipant } from './participants';
+import { ownCodexParticipant } from './participants';
+import { setReaderApp } from './project';
 import { diagnoseTool, serverInstructions, serverName, stateFolder } from './names';
 
+setReaderApp('Codex');
 const configDir = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude');
 const codexHome = process.env.CODEX_HOME ?? join(homedir(), '.codex');
 const stateDir = join(codexHome, 'plugin-state', stateFolder);
@@ -71,7 +73,7 @@ server.registerTool(diagnoseTool, { description: 'Check why the bridge works or 
 
 const desktopRuntime=registerDesktopTools(server,{configDir,stateDir,ipcPath:join(codexHome,'ipc','ipc.sock'),codexHome,pluginRoot:dirname(import.meta.dir),authenticate:async(meta)=>{
   const id=callerThread(meta);current(meta);
-  const participant=await inspectParticipant({configDir,stateDir,ipcPath:join(codexHome,'ipc','ipc.sock')},id,'codex');
+  const participant=await ownCodexParticipant({configDir,stateDir,ipcPath:join(codexHome,'ipc','ipc.sock')},id);
   return {provider:'codex',sessionId:id,pid:participant.pid,procStart:participant.procStart,project:participant.project.directory,
     binding:{method:'codex_meta',generation:id+'|'+participant.procStart,surface:participant.surface,evidence:['native_turn_metadata','process_verified_receiver']}};
 }});

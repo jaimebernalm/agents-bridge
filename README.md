@@ -133,6 +133,9 @@ Check that both plugin hooks are trusted in Codex, then open a new Codex chat. F
 
 It changes nothing and tells you what's missing.
 
+**"macOS does not let Codex (or Claude) read the project folder".**
+macOS protects some folders, such as Desktop, Documents, Downloads, iCloud Drive and other cloud-storage folders (OneDrive, Dropbox, Google Drive), until you allow each app. The app named in the message isn't allowed yet; the other app or Terminal may be. In System Settings › Privacy & Security › Files and Folders (or Full Disk Access), allow that app, quit and reopen it, then open a new chat. Or keep the project in a folder outside those locations.
+
 **Messages to Claude show as "Held by the other chat".**
 By default, Claude holds messages from a session running in a different permission mode. Use the same permission mode in both chats, or set `"crossSessionInbound": "accept"` in `~/.claude/settings.json`. That setting applies to all your Claude sessions, so choose it knowingly.
 

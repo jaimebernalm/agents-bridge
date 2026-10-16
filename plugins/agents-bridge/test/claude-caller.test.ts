@@ -99,6 +99,17 @@ test('a different project is rejected when the caller must work in a given folde
   expect((await authenticate({ expectedProject: project })).binding.evidence).toContain('project_identity');
 });
 
+test('a project folder the Claude process may not read is rejected as project_not_readable', async () => {
+  const locked = join(root, 'locked'), inside = join(locked, 'project');
+  mkdirSync(inside, { recursive: true }); record(process.pid, { cwd: inside });
+  chmodSync(locked, 0o000);
+  try {
+    if (process.getuid?.() === 0) return;
+    expect(await rejection(authenticate())).toBe('project_not_readable');
+    await expect(authenticate()).rejects.toThrow('macOS does not let this app read the project folder');
+  } finally { chmodSync(locked, 0o700); }
+});
+
 test('hook generations bind, detect clear/resume transitions and end the session', async () => {
   record(process.pid);
   const started = await recordHookEvent(stateDir, hookInput('SessionStart', { source: 'startup', model: 'claude-opus-5-5' }), engine());

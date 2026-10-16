@@ -7,6 +7,7 @@ import { readDesktopInfo } from './desktop';
 import { observeClaudeSettings, evaluateInbound, type InboundPolicy } from './permissions';
 import { observeProjectAuthorization } from './project-authorization';
 import { codexEntrypoint, pluginName, stateFolder } from './names';
+import { ProjectNotReadable, projectDirectory, projectNotReadableRemedy } from './project';
 
 export type DoctorOptions = { project: string; threadId?: string; peerId?: string; configDir: string; codexHome: string; pluginRoot: string };
 type Check = { code: string; level: 'ok' | 'warning' | 'blocked'; message: string; remedy?: string };
@@ -23,8 +24,11 @@ export async function doctor(options: DoctorOptions) {
   const checks: Check[] = [];
   const add = (code: string, level: Check['level'], message: string, remedy?: string) => checks.push({ code, level, message, ...(remedy ? { remedy } : {}) });
   let project: string;
-  try { project = realpathSync(options.project); }
-  catch { return { schemaVersion: 1, state: 'needs_selection', checks: [{ code: 'project_missing', level: 'blocked', message: 'Project directory is unavailable.', remedy: 'Select an existing local project directory.' }] }; }
+  try { project = projectDirectory(options.project); }
+  catch (error) {
+    if (error instanceof ProjectNotReadable) return { schemaVersion: 1, state: error.code, checks: [{ code: error.code, level: 'blocked', message: `macOS does not let ${error.app} read the project folder ${options.project}.`, remedy: projectNotReadableRemedy(error.app) }] };
+    return { schemaVersion: 1, state: 'needs_selection', checks: [{ code: 'project_missing', level: 'blocked', message: 'Project directory is unavailable.', remedy: 'Select an existing local project directory.' }] };
+  }
   add('runtime', 'ok', `Bun ${Bun.version} at ${process.execPath}; tested runtime: 1.4.2.`);
   if (!['darwin', 'linux'].includes(process.platform)) add('platform', 'blocked', 'This fork requires POSIX Unix sockets.', 'Use macOS or Linux; Windows transport is not implemented.');
   try {
