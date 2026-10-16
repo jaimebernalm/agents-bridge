@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { closeSync, constants, openSync, renameSync, writeSync } from 'node:fs';
 import { join } from 'node:path';
 import { privateSubdirectory } from './claude-sidecar';
-import { displayName } from './names';
+import { brandName } from './names';
 
 const texts = {
   en: { file: 'Bridge panel.html', title: 'Bridge panel', ask: 'Open the panel in its own window to watch this collaboration, pause it or export it.',
@@ -27,8 +27,8 @@ const page = (language: 'en' | 'es', url: string) => {
 <meta name="color-scheme" content="light dark">
 <title>${escape(t.title)}</title>
 <style>
-:root{--bg:#f6f5f2;--card:#fff;--text:#1f1e1c;--muted:#6b6862;--line:#e3e0da;--accent:#c96442;--accent-text:#fff}
-@media (prefers-color-scheme:dark){:root{--bg:#1c1b19;--card:#262522;--text:#f1efe9;--muted:#a8a49c;--line:#3a3834;--accent:#d97757;--accent-text:#1c1b19}}
+:root{--bg:#f7f7f8;--card:#fff;--text:#18181b;--muted:#63636b;--line:#e4e4e7;--accent:#ff7a3d;--accent-text:#1a0d06}
+@media (prefers-color-scheme:dark){:root{--bg:#0c0c0d;--card:#18181b;--text:#fafafa;--muted:#a1a1aa;--line:#2e2e33;--accent:#ff7a3d;--accent-text:#1a0d06}}
 body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,sans-serif}
 main{box-sizing:border-box;width:min(28rem,calc(100% - 32px));padding:28px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
 h1{margin:0 0 4px;font-size:20px}p{margin:0 0 20px;color:var(--muted)}
@@ -37,7 +37,7 @@ a{display:inline-block;padding:10px 18px;border-radius:9px;background:var(--acce
 </head>
 <body>
 <main>
-<h1>${escape(displayName)}</h1>
+<h1>${escape(brandName)}</h1>
 <p id="status">${escape(t.ask)}</p>
 <a id="again" href="${escape(url)}">${escape(t.button)}</a>
 </main>

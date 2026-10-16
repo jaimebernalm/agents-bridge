@@ -13,7 +13,7 @@ import {claimPanelWindow} from './lib/single-window';
 import {hasDraft,trackDrafts} from './lib/drafts';
 import {useCompact} from './lib/compact';
 import {pagePreferences,remember,saveWith} from './lib/preferences';
-import {displayName} from '../../src/names';
+import {brandName} from '../../src/names';
 
 type Participant={sessionId:string;name:string;cwd:string;provider:'codex'|'claude';status:string;eligibleSurface:boolean;projectAuthorizationReceiver:boolean|null;implementationReceiver?:boolean|null};
 // A name is a label, not an identity. Expand the suffix if homonyms share a prefix.
@@ -40,7 +40,7 @@ export function ReplacedWindow(){
 }
 export default function App({onReplaced}:{onReplaced?:()=>void}){
  const [language,setLanguage]=useLanguage(),compact=useCompact();
- useEffect(()=>{document.documentElement.lang=language;document.title=displayName+' · '+t('Colaboraciones')},[language]);
+ useEffect(()=>{document.documentElement.lang=language;document.title=brandName+' · '+t('Colaboraciones')},[language]);
  const [ready,setReady]=useState(false),[error,setError]=useState(''),[view,setView]=useState<'diagnostic'|'authorization'|'desktop'>(initialNavigation.view),[bound,setBound]=useState<string|null>(null),[participants,setParticipants]=useState<Participant[]>([]),[connected,setConnected]=useState(false),[dark,setDark]=useState(()=>pagePreferences(document.documentElement).theme==='dark');
  const [desktop,setDesktop]=useState(false),[ownerProvider,setOwnerProvider]=useState('codex');const [serviceVersion,setServiceVersion]=useState('');const [lastUpdated,setLastUpdated]=useState<number|null>(null),[sectionErrors,setSectionErrors]=useState<Record<string,string>>({});const refreshErrors=[...new Set(Object.values(sectionErrors))],refreshError=refreshErrors.map(e=>t(e)).join(' ');
  useEffect(()=>{document.documentElement.classList.toggle('dark',dark)},[dark]);
@@ -73,7 +73,7 @@ export default function App({onReplaced}:{onReplaced?:()=>void}){
  // The small window keeps most of its height for the work: a panel with several pages shows them, with the
  // bar's controls, in one slim line fixed on top, so they stay in view whichever page it opened on; a
  // single page has no bar, status shows only as the offline notice, and language and theme come back with a larger window.
- return <div className="app">{compact&&nav&&<header className="topbar compact-bar"><div className="mx-auto flex h-11 max-w-3xl items-center gap-1 px-3 text-muted-foreground">{nav}{controls}</div></header>}{!compact&&<header className="topbar"><div className="topbar-inner"><div className="flex items-center gap-2.5"><div className="rounded-md bg-primary p-1.5 text-primary-foreground"><Link2 className="size-4"/></div><span className="font-semibold tracking-tight">{displayName}</span></div>{nav}{controls}</div></header>}
+ return <div className="app">{compact&&nav&&<header className="topbar compact-bar"><div className="mx-auto flex h-11 max-w-3xl items-center gap-1 px-3 text-muted-foreground">{nav}{controls}</div></header>}{!compact&&<header className="topbar"><div className="topbar-inner"><div className="flex items-center gap-2.5"><div className="rounded-md bg-primary p-1.5 text-primary-foreground"><Link2 className="size-4"/></div><span className="font-semibold tracking-tight">{brandName}</span></div>{nav}{controls}</div></header>}
  <main className="workspace"><div aria-live="polite" className={view==='desktop'?'mx-auto max-w-3xl':undefined}>{superseded&&<Alert className="mb-6"><AlertDescription><p>{t("Se abrió otra ventana de este panel. Esta sigue abierta porque tiene texto sin enviar.")}</p><div className="mt-3 flex flex-wrap gap-2"><Button size="sm" onClick={()=>{windowClaim.current?.reclaim();setSuperseded(false)}}>{t("Seguir en esta ventana")}</Button><Button size="sm" variant="outline" onClick={()=>onReplaced?.()}>{t("Descartar y cerrar")}</Button></div></AlertDescription></Alert>}{/* Every section fails with the same notice when the service is gone; it shows once, and the header already says offline. */}{refreshError&&<Alert className="mb-6 compact:mb-3 compact:py-2 compact:text-xs"><AlertDescription>{refreshError}{refreshErrors.some(e=>e!==offlineNotice)&&' '+(connected?t("Algunas secciones no se han actualizado; el intercambio sigue disponible."):t("La vista conserva los últimos datos recibidos. Reintentando sin reenviar órdenes."))}</AlertDescription></Alert>}</div>
  {view==='desktop'&&<DesktopCollaboration api={api} onError={setError} initialRun={initialNavigation.selected}/>}
  {view==='authorization'&&<AuthorizationPage participants={participants} bound={bound} onError={setError}/>}

@@ -118,9 +118,9 @@ function ApprovalCard({run,api,busy,act,onDetails,ownerBusy,onChange,onNotice}:{
   onNotice(startedNotice(await approveAndStart(api,current,edit),peer))});
  const prepared=l(`Prepared by ${providerName(run.initiator.provider)} · ${ago(run.createdAt)}`,`Preparada por ${providerName(run.initiator.provider)} · ${ago(run.createdAt)}`);
  const waiting=l('Waiting for your approval','Esperando tu aprobación');
- const tile=compact?'rounded-2xl bg-card p-3.5 shadow-tile':'rounded-xl border bg-background p-4',label=compact?'text-[14px] font-medium tracking-[-0.01em]':'text-sm font-medium';
+ const tile='rounded-2xl bg-card p-3.5 shadow-tile',label='text-[14px] font-medium tracking-[-0.01em]';
  const body=<>
-  <p className={`whitespace-pre-wrap leading-relaxed ${compact?'rounded-2xl bg-card px-4 py-3 text-[15px] shadow-tile':'rounded-xl border bg-background px-4 py-3 text-base'}`}>{run.context.objective}</p>
+  <p className="whitespace-pre-wrap rounded-2xl bg-card px-4 py-3 text-[15px] leading-relaxed shadow-tile">{run.context.objective}</p>
   <div className="grid gap-3 sm:grid-cols-2">
    <div className={tile}><p className={label}>{l(`${peer} chat`,`Chat de ${peer}`)}</p><p className="mt-1 truncate text-xs leading-5 text-muted-foreground" title={with_}>{with_}</p></div>
    <Choice checked={edit.enabled} onChange={v=>setEdit({...edit,enabled:v})} title={l(`${peer} can edit and commit`,`${peer} puede editar y hacer commits`)} detail={edit.enabled?undefined:l('Read and discuss only.','Solo leer y debatir.')}>
@@ -134,12 +134,9 @@ function ApprovalCard({run,api,busy,act,onDetails,ownerBusy,onChange,onNotice}:{
   <p className="text-xs leading-5 text-muted-foreground">{l('Covers every phase of this collaboration; you will not be asked again for the next one.','Cubre todas las fases de esta colaboración; no se te volverá a pedir para la siguiente.')}{ownerBusy&&' '+l('It can start once the collaboration in progress ends.','Podrá empezar cuando termine la colaboración en curso.')}</p>
   <div className="flex items-center gap-2"><Button className="h-11 flex-1 rounded-xl text-[15px] font-semibold shadow-sm" disabled={busy||!!ownerBusy||edit.enabled&&!edit.scope.trim()} onClick={()=>void approve()}><Play/>{l('Approve and start','Aprobar e iniciar')}</Button><Button variant="ghost" className="h-11 rounded-xl" disabled={busy||!!ownerBusy} onClick={()=>void change()}>{l('Change','Cambiar')}</Button><Button variant="ghost" className="h-11 rounded-xl" onClick={onDetails}>{l('See details','Ver detalles')}</Button></div>
  </>;
- if(compact)return <div className="reveal flex min-w-0 flex-col gap-3">
-  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"><p className="flex items-center gap-1.5 text-[13px] text-muted-foreground"><Sparkles className="size-3.5 text-primary"/>{prepared}</p><p className="text-[13px] font-medium text-warning">{waiting}</p></div>
-  {body}
- </div>;
- return <div className="reveal space-y-5 rounded-xl border border-warning/35 bg-card p-6 shadow-sm">
-  <div className="-mx-6 -mt-6 rounded-t-xl border-b border-warning/20 bg-warning/[.07] px-6 py-3"><p className="text-sm font-medium text-warning">{waiting}</p><p className="text-xs text-muted-foreground">{prepared}</p></div>
+ // One look at every size, the one the landing page shows: grouped tiles under a quiet header.
+ return <div className="reveal flex min-w-0 flex-col gap-3">
+  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"><p className="flex items-center gap-1.5 text-[13px] text-muted-foreground"><Sparkles className="size-3.5 text-primary"/>{prepared}</p><p className="rounded-full bg-warning/10 px-2.5 py-0.5 text-[13px] font-medium text-warning">{waiting}</p></div>
   {body}
  </div>;
 }
@@ -152,11 +149,10 @@ function EditAuthorization({run,api,busy,act,edit,setEdit}:{run:Run;api:Api;busy
 }
 
 // A setting that reads as a choice: title, consequence, and a switch on the same surface.
-// In the small window it is a neutral grouped tile and the switch alone shows the state.
+// It is a neutral grouped tile and the switch alone shows the state.
 function Choice({checked,onChange,title,detail,children}:{checked:boolean;onChange:(v:boolean)=>void;title:string;detail?:string;children?:React.ReactNode}){
- const compact=useCompact();
- return <div className={compact?'rounded-2xl bg-card p-3.5 shadow-tile':`rounded-xl border p-4 transition-colors duration-200 ${checked?'border-primary/40 bg-primary/[.05]':'bg-background'}`}>
-  <label className="flex cursor-pointer items-start justify-between gap-3"><span><span className={`block font-medium ${compact?'text-[14px] tracking-[-0.01em]':'text-sm'}`}>{title}</span>{detail&&<span className="mt-1 block text-xs leading-5 text-muted-foreground">{detail}</span>}</span><Switch className="mt-0.5" aria-label={title} checked={checked} onCheckedChange={onChange}/></label>
+ return <div className="rounded-2xl bg-card p-3.5 shadow-tile">
+  <label className="flex cursor-pointer items-start justify-between gap-3"><span><span className="block text-[14px] font-medium tracking-[-0.01em]">{title}</span>{detail&&<span className="mt-1 block text-xs leading-5 text-muted-foreground">{detail}</span>}</span><Switch className="mt-0.5" aria-label={title} checked={checked} onCheckedChange={onChange}/></label>
   {children}
  </div>;
 }

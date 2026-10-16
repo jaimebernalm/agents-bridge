@@ -2,6 +2,8 @@
 // collaboration tools under the same names. Everything a person or an agent reads takes its names from here.
 export const pluginName = 'cc-cdx-bridge';
 export const displayName = 'Claude ⇄ Codex Bridge';
+// The brand people see on the panel and the website.
+export const brandName = 'Agents Bridge';
 export const serverName = 'cc_cdx_bridge';
 
 // Names from before the rename that stay because they are stored on disk or travel between chats.

@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { discoverParticipants, inspectParticipant, type ParticipantOptions } from './participants';
 import { doctor } from './doctor';
 import { version } from './version';
+import { brandName } from './names';
 import { ProjectAuthorizations, authorizationIdentitySchema, authorizationChangeSchema } from './project-authorization';
 import { readPanelPreferences, savePanelPreferences, withPanelPreferences } from './panel-preferences';
 
@@ -18,7 +19,7 @@ const openingPages={
 };
 // Once the window is asked for, the tab that carried the link closes itself: a tab the link opened has nothing else in
 // its history, which is what lets a page close it.
-const openingPage=(language:'en'|'es',state:keyof typeof openingPages.en,nonce:string)=>`<!doctype html><html lang="${language}"><meta charset="utf-8"><meta name="color-scheme" content="light dark"><title>Claude ⇄ Codex Bridge</title><body style="font:16px/1.5 system-ui,sans-serif;margin:48px auto;max-width:36em;padding:0 16px"><p>${openingPages[language][state]}</p>${state==='opened'?`<script nonce="${nonce}">setTimeout(()=>window.close(),700)</script>`:''}</body></html>`;
+const openingPage=(language:'en'|'es',state:keyof typeof openingPages.en,nonce:string)=>`<!doctype html><html lang="${language}"><meta charset="utf-8"><meta name="color-scheme" content="light dark"><title>${brandName}</title><body style="font:16px/1.5 system-ui,sans-serif;margin:48px auto;max-width:36em;padding:0 16px"><p>${openingPages[language][state]}</p>${state==='opened'?`<script nonce="${nonce}">setTimeout(()=>window.close(),700)</script>`:''}</body></html>`;
 export function startPanel(options:Options){
   const authorizations=new ProjectAuthorizations(options.stateDir);
   let token=randomBytes(32).toString('hex');const session=randomBytes(32).toString('hex'),csrf=randomBytes(32).toString('hex');
