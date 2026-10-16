@@ -64,9 +64,11 @@ export async function bringAppForward(provider: 'claude' | 'codex', exec: Run = 
   if (await exec('open', ['-b', chatApps[provider]], 2000).then(() => true, () => false)) await Bun.sleep(150);
 }
 
-export function panelLink(url: string, target: {runId?: string; authorization?: boolean} = {}) {
+export function panelLink(url: string, target: {runId?: string; authorization?: boolean; pickChat?: boolean} = {}) {
   const link = new URL(url), hash = new URLSearchParams(link.hash.slice(1));
   if (target.runId) hash.set('run', target.runId);
   if (target.authorization) hash.set('view', 'authorization');
+  // The person chose to change the chat: the suggestion opens on their open chats instead of a new one.
+  if (target.pickChat) hash.set('chat', 'existing');
   link.hash = hash.toString(); return link.toString();
 }
