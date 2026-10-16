@@ -1,10 +1,10 @@
-# Claude ⇄ Codex Bridge
+# Agents Bridge
 
 [Visit the website](https://jaimebernalm.github.io/cc-cdx-bridge/) · [Install](#install-about-5-minutes)
 
 **Get your Claude Code chat and your Codex chat working together as equals, inside the Desktop apps you already use.**
 
-Both apps install it as `cc-cdx-bridge` (Claude Code + Codex) and show it as **Claude ⇄ Codex Bridge**.
+Both apps install it as `agents-bridge` (Claude Code + Codex) and show it as **Agents Bridge**.
 
 Ask either chat to work with the other one. The chat asks you three short questions: whether the other agent may edit code, the limits, and whether to start. You answer **Yes**, or open a small panel to change anything first. The two chats message each other directly while you watch. At the end you get a result that shows who said what and where they still disagree.
 
@@ -56,10 +56,10 @@ codex plugin marketplace add jaimebernalm/cc-cdx-bridge
 ```
 
 ```bash
-codex plugin add cc-cdx-bridge@jaimebernalm
+codex plugin add agents-bridge@jaimebernalm
 ```
 
-Then open Codex, find **Claude ⇄ Codex Bridge** in its plugins, and **trust both hooks**. Codex ignores plugin hooks until you do, and without them a chat can't receive messages. Open a **new** Codex chat afterwards; chats that were already open don't pick up the plugin.
+Then open Codex, find **Agents Bridge** in its plugins, and **trust both hooks**. Codex ignores plugin hooks until you do, and without them a chat can't receive messages. Open a **new** Codex chat afterwards; chats that were already open don't pick up the plugin.
 
 **2. Install the Claude side**
 
@@ -68,7 +68,7 @@ claude plugin marketplace add jaimebernalm/cc-cdx-bridge
 ```
 
 ```bash
-claude plugin install cc-cdx-bridge@jaimebernalm
+claude plugin install agents-bridge@jaimebernalm
 ```
 
 Then open a **new** Code chat in Claude Desktop.
@@ -77,7 +77,7 @@ Then open a **new** Code chat in Claude Desktop.
 
 Open the same project folder in both apps and ask either chat:
 
-> Use the Claude ⇄ Codex Bridge to list the chats in this folder.
+> Use Agents Bridge to list the chats in this folder.
 
 You should see the other app's chat listed. If you don't, see [Troubleshooting](#troubleshooting).
 
@@ -139,20 +139,24 @@ A chat is still running an older version of the bridge. Open a new chat in that 
 
 ## Update
 
-**Updating from 0.11 or earlier:** the Codex plugin used to be called `claude-uds-bridge`. Remove it first:
+**Updating from 0.14 or earlier:** the plugin used to be called `cc-cdx-bridge` (and, before 0.12, `claude-uds-bridge` in Codex). Remove the old one first:
 
 ```bash
-codex plugin remove claude-uds-bridge@jaimebernalm
+codex plugin remove cc-cdx-bridge@jaimebernalm
+```
+
+```bash
+claude plugin uninstall cc-cdx-bridge@jaimebernalm
 ```
 
 Then, for any update:
 
 ```bash
-codex plugin marketplace upgrade jaimebernalm && codex plugin add cc-cdx-bridge@jaimebernalm
+codex plugin marketplace upgrade jaimebernalm && codex plugin add agents-bridge@jaimebernalm
 ```
 
 ```bash
-claude plugin marketplace update jaimebernalm && claude plugin update cc-cdx-bridge@jaimebernalm
+claude plugin marketplace update jaimebernalm && claude plugin update agents-bridge@jaimebernalm
 ```
 
 Then open new chats in both apps. If Codex asks again, re-trust the hooks. Your collaboration history and saved authorizations are kept.
@@ -168,14 +172,14 @@ Then open new chats in both apps. If Codex asks again, re-trust the hooks. Your 
 
 - [Detailed reference](docs/REFERENCE.md): every tool, transport limits and reception settings.
 - [How the two-way Desktop mode works](docs/BIDIRECTIONAL_DESKTOP.md)
-- [The agents' guide](plugins/cc-cdx-bridge/skills/bridge-collaboration/SKILL.md) and [its tool reference](plugins/cc-cdx-bridge/skills/bridge-collaboration/references/tools.md)
-- [Coordinated implementation](plugins/cc-cdx-bridge/skills/bridge-collaboration/references/implementation.md)
-- [Protocol coverage](plugins/cc-cdx-bridge/PROTOCOL-COVERAGE.md)
+- [The agents' guide](plugins/agents-bridge/skills/bridge-collaboration/SKILL.md) and [its tool reference](plugins/agents-bridge/skills/bridge-collaboration/references/tools.md)
+- [Coordinated implementation](plugins/agents-bridge/skills/bridge-collaboration/references/implementation.md)
+- [Protocol coverage](plugins/agents-bridge/PROTOCOL-COVERAGE.md)
 
 ## Contributing
 
 ```bash
-git clone https://github.com/jaimebernalm/cc-cdx-bridge.git && cd cc-cdx-bridge/plugins/cc-cdx-bridge
+git clone https://github.com/jaimebernalm/cc-cdx-bridge.git && cd cc-cdx-bridge/plugins/agents-bridge
 ```
 
 ```bash
@@ -186,4 +190,4 @@ The plugins run the bundled files in `dist/` and `panel-dist/`, so run `bun run 
 
 ## License and credits
 
-MIT, see [LICENSE](LICENSE). Based on [Leon Kohli's Claude UDS Bridge](https://github.com/LeonKohli/claude-uds-bridge). The state folder and a few internal identifiers keep the name `claude-uds-bridge` for compatibility; [`names.ts`](plugins/cc-cdx-bridge/src/names.ts) lists them. Don't enable this fork and the upstream plugin in the same chat.
+MIT, see [LICENSE](LICENSE). Based on [Leon Kohli's Claude UDS Bridge](https://github.com/LeonKohli/claude-uds-bridge). The state folder and a few internal identifiers keep the name `claude-uds-bridge` for compatibility; [`names.ts`](plugins/agents-bridge/src/names.ts) lists them. Don't enable this fork and the upstream plugin in the same chat.

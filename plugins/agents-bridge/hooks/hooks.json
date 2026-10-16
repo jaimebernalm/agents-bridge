@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "SessionStart": [{
+      "matcher": "^(startup|resume|clear)$",
+      "hooks": [{ "type": "mcp_tool", "server": "agents_bridge", "tool": "session_start", "input": { "cwd": "${cwd}" }, "timeout": 15 }]
+    }],
+    "SessionEnd": [{
+      "hooks": [{ "type": "command", "command": "/bin/sh \"${PLUGIN_ROOT}/scripts/run-bun.sh\" \"${PLUGIN_ROOT}/dist/hook.js\"", "timeout": 3 }]
+    }]
+  }
+}
