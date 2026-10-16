@@ -318,11 +318,16 @@ h3 { font-family: var(--display); font-weight: 500; font-size: 18px; line-height
 table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 15px; }
 th, td { text-align: left; vertical-align: top; padding: 16px 22px; }
 tbody tr { border-top: 1px solid var(--line-light); }
-thead th { font: 500 12px/20px var(--mono); color: var(--text-muted); letter-spacing: 0; }
-thead th:last-child { color: var(--accent-ink); }
+thead th { font: 500 12px/20px var(--mono); color: var(--text-muted); letter-spacing: 0; vertical-align: bottom; }
 tbody th { font-weight: 500; white-space: nowrap; }
 tbody td { color: var(--text-muted); }
-tbody td:last-child { color: var(--text); }
+/* The Agents Bridge column reads as the answer: a faint orange wash, an orange rule on top, heavier type. */
+thead th:last-child, .bridge-cell { background: rgb(255 122 61 / .06); }
+thead th:last-child {
+  padding-top: 20px; font: 600 17px/24px var(--display); letter-spacing: -.01em; color: var(--text);
+  box-shadow: inset 0 3px 0 var(--accent);
+}
+.bridge-cell { color: var(--text); font-weight: 500; }
 
 /* The same table becomes labeled answer pairs on a narrow screen. */
 @media (max-width: 640px) {
@@ -333,7 +338,8 @@ tbody td:last-child { color: var(--text); }
   .compare tbody th, .compare tbody td { display: block; white-space: normal; padding: 12px 18px; }
   .compare tbody th { padding-top: 18px; padding-bottom: 4px; font-size: 17px; }
   .compare-cell-label { display: block; margin-bottom: 6px; font: 500 12px/20px var(--mono); color: var(--text-muted); }
-  .compare tbody .bridge-cell { background: #efeff1; border-top: 1px solid var(--line-light); padding-bottom: 18px; }
+  .compare tbody .bridge-cell { background: rgb(255 122 61 / .07); box-shadow: inset 3px 0 0 var(--accent); border-top: 1px solid var(--line-light); padding-bottom: 18px; }
+  .bridge-cell .compare-cell-label { color: var(--accent-ink); font-weight: 600; }
 }
 
 /* Install */
