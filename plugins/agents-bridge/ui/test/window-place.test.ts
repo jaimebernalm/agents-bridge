@@ -1,12 +1,13 @@
 import {describe,expect,test} from 'bun:test';
-import {placePanelWindow,savedPlace,topRight} from '../src/lib/window-place';
+import {placePanelWindow,topRight} from '../src/lib/window-place';
 
 // The 16-inch MacBook screen the probe measured: a menu bar on top and the Dock below.
 const laptop={availLeft:0,availTop:33,availWidth:1728,availHeight:986};
 // A window that records where it was sent and lets the test fire its events.
-function fakeWindow(options:{standalone?:boolean;cookie?:string;area?:typeof laptop}={}){
+function fakeWindow(options:{standalone?:boolean;cookie?:string;area?:typeof laptop;at?:{x:number;y:number;w:number;h:number}}={}){
  const listeners:Record<string,()=>void>={},moves:string[]=[];
- const win={screen:options.area??laptop,document:{cookie:options.cookie??''},screenX:22,screenY:55,outerWidth:1200,outerHeight:942,
+ const at=options.at??{x:22,y:55,w:1200,h:942};
+ const win={screen:options.area??laptop,document:{cookie:options.cookie??''},screenX:at.x,screenY:at.y,outerWidth:at.w,outerHeight:at.h,
   matchMedia:(query:string)=>({matches:query==='(display-mode: standalone)'&&(options.standalone??true)}),
   resizeTo(w:number,h:number){moves.push(`size ${w}x${h}`);win.outerWidth=w;win.outerHeight=h},
   moveTo(x:number,y:number){moves.push(`at ${x},${y}`);win.screenX=x;win.screenY=y},
@@ -38,22 +39,16 @@ describe('panel window placement',()=>{
   const {moves,fire,win}=fakeWindow({standalone:false});
   fire('pagehide');expect(moves).toEqual([]);expect(win.document.cookie).toBe('');
  });
- test('the place the person leaves the window is where the next panel opens',()=>{
-  const first=fakeWindow();
-  first.win.screenX=300;first.win.screenY=200;first.win.outerWidth=900;first.win.outerHeight=600;first.fire('blur');
-  expect(first.win.document.cookie).toBe('agents_bridge_panel_window=300_200_900_600; Path=/; Max-Age=31536000; SameSite=Strict');
-  const next=fakeWindow({cookie:'agents_bridge_panel_49999=secret; agents_bridge_panel_window=300_200_900_600'});
-  expect(next.moves).toEqual(['size 900x600','at 300,200']);
+ test('it always opens in the corner at the default size, however the last window was moved or enlarged',()=>{
+  const corner='agents_bridge_panel_window=956_45_760_611; Path=/; Max-Age=31536000; SameSite=Strict';
+  const first=fakeWindow();expect(first.win.document.cookie).toBe(corner);
+  first.win.screenX=300;first.win.screenY=200;first.win.outerWidth=1400;first.win.outerHeight=900;first.fire('blur');first.fire('pagehide');
+  expect(first.win.document.cookie).toBe(corner);
+  // The bridge opened the next window where an earlier version had remembered it: it goes back to the corner.
+  const next=fakeWindow({cookie:'agents_bridge_panel_window=300_200_1400_900',at:{x:300,y:200,w:1400,h:900}});
+  expect(next.moves).toEqual(['size 760x611','at 956,45']);expect(next.win.document.cookie).toBe(corner);
  });
- test('closing the window also keeps its place',()=>{
-  const {win,fire}=fakeWindow();win.screenX=100;fire('pagehide');
-  expect(savedPlace(win.document.cookie)).toEqual({x:100,y:45,w:760,h:611});
- });
- test('a place from another screen layout, or one too small, falls back to the corner',()=>{
-  for(const cookie of ['agents_bridge_panel_window=2400_100_800_600','agents_bridge_panel_window=10_40_200_100','agents_bridge_panel_window=0_0_800_600','agents_bridge_panel_window=956_45_760_463','agents_bridge_panel_window=797_138_845_494'])
-   expect(fakeWindow({cookie}).moves).toEqual(['size 760x611','at 956,45']);
- });
- test('a damaged cookie is ignored',()=>{
-  for(const cookie of ['agents_bridge_panel_window=','agents_bridge_panel_window=a_b_c_d','agents_bridge_panel_window=1_2_3','other=1_2_3_4'])expect(savedPlace(cookie)).toBeUndefined();
+ test('a window the bridge already opened in the corner is not moved',()=>{
+  expect(fakeWindow({at:{x:956,y:45,w:760,h:611}}).moves).toEqual([]);
  });
 });

@@ -94,14 +94,14 @@ You should see the other app's chat listed. If you don't, see [Troubleshooting](
    - **Limits:** the proposed messages and time, two larger steps, or unlimited messages · 24 h. You can also write your own, such as "40 messages, 45 min".
    - **Start:** start with a new chat in the other app (or the one you named)?
      - **Yes:** the collaboration starts with what you chose. If it needs a new chat, the other app opens on one with a message ready: send it there and the collaboration starts once that chat is linked. If Claude asks you to trust the folder, it may then start that chat without its folder; the chat asks to move to the project folder, and once you approve it links itself.
-     - **Change chat or details in the panel:** the panel opens in its own small window in the top-right corner of your screen, with the form already filled in (**Suggested by …**) and what you chose. Choose one of your open chats instead of a new one, or change the objective, the limits (messages or **No limit**, time up to 24 hours), editing and its scope, then press **Start** there. Move or resize it and the next panel opens where you left it.
+     - **Change chat or details in the panel:** the panel opens in its own small window in the top-right corner of your screen, with the form already filled in (**Suggested by …**) and what you chose. Choose one of your open chats instead of a new one, or change the objective, the limits (messages or **No limit**, time up to 24 hours), editing and its scope, then press **Start** there. It always opens there at the same size, even if you moved or enlarged the last one. Its two small buttons switch the language (EN · ES) and the dark theme.
      - **Cancel:** the proposal is discarded.
 
    Or write what you'd change instead; the chat asks again with your change. Nothing is sent until you choose **Yes**.
 
-3. Watch the messages arrive. The chat leaves the panel as a card (**Bridge panel**): open it and press **Open the panel**, and the panel opens in its own window, where you can **Pause**, **Finish** or **Export** (Markdown or JSON) at any time.
+3. Watch the messages arrive. The chat leaves a highlighted link, **▶️ Open the bridge panel**: press it and the panel opens in its own window, where you can **Pause**, **Finish** or **Export** (Markdown or JSON) at any time.
 
-Closed the panel? Open that card again, or ask either chat to "open the bridge panel".
+Closed the panel? Press that link again, or ask either chat to "open the bridge panel".
 
 ### Ideas to try
 
