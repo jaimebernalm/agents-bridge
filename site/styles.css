@@ -25,7 +25,7 @@
   --glass-line: rgb(255 255 255 / .12);
   --glass-strong: rgb(255 255 255 / .1);
   --term-text: #e4e4e7;
-  --term-dim: #71717a;
+  --term-dim: #a1a1aa;
   --raise: #34343a;
   --bar-shadow: 0 0 0 1px rgb(255 255 255 / .1), 0 8px 24px -12px rgb(0 0 0 / .3);
   --display: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -68,7 +68,7 @@ button { font: inherit; letter-spacing: inherit; cursor: pointer; }
 .light.alt { background: var(--paper-2); }
 
 /* Headlines: light weight, tight tracking, a second line in a quieter tone. */
-h1, h2 { font-family: var(--display); font-weight: 400; }
+h1, h2 { font-family: var(--display); font-weight: 400; text-wrap: balance; }
 h2 { font-size: clamp(32px, 3.6vw, 44px); line-height: 1.1; letter-spacing: -.022em; }
 .tone { color: var(--text-muted); }
 .dark .tone { color: var(--on-dark-muted); }
@@ -79,6 +79,8 @@ h3 { font-family: var(--display); font-weight: 500; font-size: 18px; line-height
 .dark .body-lede { color: var(--on-dark-muted); }
 .body-lede a { color: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
 .body-lede a:hover { color: var(--accent); }
+.light .body-lede a:hover { color: var(--accent-ink); }
+.light :focus-visible, .skip:focus-visible { outline-color: var(--accent-ink); }
 
 /* Nav */
 /* Solid black bar at the top; once the page scrolls it shrinks into a floating black pill. */
