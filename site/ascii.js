@@ -69,10 +69,10 @@
           const i = row * rippleCols + col;
           const laplacian = heights[i - 1] + heights[i + 1]
             + heights[i - rippleCols] + heights[i + rippleCols] - heights[i] * 4;
-          // Two height buffers implement an elastic wave with absorbing edges.
+          // Two height buffers implement a thick, viscous wave with absorbing edges: it spreads slowly and settles fast.
           const edge = Math.min(col, row, rippleCols - 1 - col, rippleRows - 1 - row);
-          const damping = edge < 5 ? .90 + edge * .016 : .98;
-          previous[i] = (2 * heights[i] - previous[i] + .28 * laplacian) * damping;
+          const damping = edge < 5 ? .88 + edge * .014 : .955;
+          previous[i] = (2 * heights[i] - previous[i] + .16 * laplacian) * damping;
         }
       }
       [heights, previous] = [previous, heights];
@@ -221,14 +221,14 @@
         - interpolate(heights, i - rippleCols, tx, ty, rippleCols)) * .5;
       // Several narrow, curved wavefronts travel slowly across the whole field.
       const phase = cell.ny * 38 + cell.nx * 11
-        + Math.sin(cell.nx * 7.2 - time * .18) * 1.3 - time * .48;
-      const crossPhase = cell.nx * 26 - cell.ny * 17 + time * .31
-        + Math.sin(cell.ny * 5 + time * .12);
+        + Math.sin(cell.nx * 7.2 - time * .12) * 1.3 - time * .3;
+      const crossPhase = cell.nx * 26 - cell.ny * 17 + time * .2
+        + Math.sin(cell.ny * 5 + time * .08);
       const wave = Math.pow(.5 + .5 * Math.sin(phase), 5);
       const crossWave = Math.pow(.5 + .5 * Math.sin(crossPhase), 7);
       const wake = still ? 0 : Math.min(1, Math.abs(height) * .3 + Math.hypot(slopeX, slopeY) * 1.4);
-      const refractX = Math.tanh(slopeX * 2) * 24;
-      const refractY = Math.tanh(slopeY * 2) * 24;
+      const refractX = Math.tanh(slopeX * 2) * 12;
+      const refractY = Math.tanh(slopeY * 2) * 12;
       const logo = wake > .002 ? logoAt(cell.x + refractX, cell.y + refractY) : cell.logo;
       const distance = ((cell.x - pointer.x) ** 2 + (cell.y - pointer.y) ** 2) / (125 ** 2);
       const glow = Math.exp(-distance * 1.8) * pointer.strength;
@@ -238,8 +238,8 @@
       ctx.globalAlpha = Math.min(.85, base + (1 - base) * (ambient + extra) * cell.balance);
       // Density changes in the wake, while ambient motion keeps glyphs stable.
       const glyph = Math.min(glyphs.length - 1, Math.floor(cell.seed * 7 + logo * 3 + wake * 3));
-      const driftX = still ? 0 : Math.sin(phase * .7) * 1.2;
-      const driftY = still ? 0 : Math.cos(crossPhase * .6) * 1.5;
+      const driftX = still ? 0 : Math.sin(phase * .7) * .6;
+      const driftY = still ? 0 : Math.cos(crossPhase * .6) * .8;
       stamp(cell, glyph, cell.x + driftX + refractX * .45, cell.y + driftY + refractY * .45);
     }
     ctx.globalAlpha = 1;
@@ -281,7 +281,7 @@
     const speed = Math.hypot(x - fromX, y - fromY) / Math.max(8, time - pointer.time);
     if (x >= 0 && y >= 0 && x <= width && y <= height) {
       if (strokes.length >= 24) strokes.shift();
-      strokes.push({ x, y, fromX, fromY, energy: .08 + Math.min(speed, 2.5) * .36 });
+      strokes.push({ x, y, fromX, fromY, energy: .05 + Math.min(speed, 2.5) * .22 });
       pointer.x = x;
       pointer.y = y;
       pointer.time = time;

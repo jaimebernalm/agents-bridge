@@ -9,6 +9,14 @@
   <meta property="og:description" content="Two models catch what one misses. Connect Claude and Codex in a real conversation, in either direction.">
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#0c0c0d">
+  <script>
+    // Theme for side-by-side review: ?theme=light or ?theme=dark (dark by default).
+    (function () {
+      var theme = new URLSearchParams(location.search).get('theme') === 'light' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = theme;
+      document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#ffffff' : '#0c0c0d';
+    })();
+  </script>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,7 +30,7 @@
   <header class="nav">
     <div class="nav-inner">
       <a class="brand" href="#top">
-        <img src="assets/logo.svg" alt="" width="24" height="24">
+        <svg class="mark" viewBox="4 4 24 24" width="24" height="24" aria-hidden="true"><mask id="mark-cut-nav" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32"><rect width="32" height="32" fill="#fff"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" stroke="#000" stroke-width="5.5" stroke-linejoin="round"/></mask><path d="M18 7H9a3 3 0 0 0-3 3v10l4-4h8a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3Z" fill="none" stroke="#ff7a3d" stroke-width="2.5" stroke-linejoin="round" mask="url(#mark-cut-nav)"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
         <span>Agents Bridge</span>
       </a>
       <nav aria-label="Sections">
@@ -297,7 +305,7 @@
   <footer class="footer dark">
     <div class="rails footer-inner">
       <div class="brand">
-        <img src="assets/logo.svg" alt="" width="20" height="20">
+        <svg class="mark" viewBox="4 4 24 24" width="20" height="20" aria-hidden="true"><mask id="mark-cut-foot" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32"><rect width="32" height="32" fill="#fff"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" stroke="#000" stroke-width="5.5" stroke-linejoin="round"/></mask><path d="M18 7H9a3 3 0 0 0-3 3v10l4-4h8a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3Z" fill="none" stroke="#ff7a3d" stroke-width="2.5" stroke-linejoin="round" mask="url(#mark-cut-foot)"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
         <span>Agents Bridge</span>
       </div>
       <p>MIT licensed. An independent project, not affiliated with Anthropic or OpenAI.</p>

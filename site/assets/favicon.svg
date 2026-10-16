@@ -1,7 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Agents Bridge">
-  <rect width="32" height="32" rx="8" fill="#0c0c0d"/>
-  <!-- Two interlocking conversations, with an open path between the agents. -->
-  <path d="M18 7H9a3 3 0 0 0-3 3v10l4-4h8a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3Z" fill="#0c0c0d" stroke="#ff7a3d" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="#0c0c0d" stroke="#0c0c0d" stroke-width="5.5" stroke-linejoin="round"/>
-  <path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="#0c0c0d" stroke="#f4f4f5" stroke-width="2.5" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 4 24 24" color="#f4f4f5" role="img" aria-label="Agents Bridge">
+  <style>@media (prefers-color-scheme: light) { svg { color: #0c0c0d; } }</style>
+  <!-- Two conversations, one orange and one in ink; the front bubble cuts a gap out of the back one, so the mark works on any background. -->
+  <defs>
+    <mask id="ab-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
+      <rect width="32" height="32" fill="#fff"/>
+      <path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="#000" stroke="#000" stroke-width="5.5" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <path d="M18 7H9a3 3 0 0 0-3 3v10l4-4h8a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3Z" fill="none" stroke="#ff7a3d" stroke-width="2.5" stroke-linejoin="round" mask="url(#ab-cut)"/>
+  <path class="ink" d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
 </svg>
