@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { checkSocket, uuid } from './claude';
 import { desktopInputs } from './desktop-input';
 import { codexIpcClient } from './names';
+import { projectDirectory } from './project';
 
 const packetSchema = z.object({
   type: z.string(), requestId: z.string().optional(), sourceClientId: z.string().optional(),
@@ -277,7 +278,8 @@ export async function watchDesktop(path: string, threadId: string, onState: (sta
   const connection = new DesktopConnection(path, threadId, onDisconnect);
   try {
     await connection.connect();
-    if (expectedProject && realpathSync((await connection.info()).project) !== realpathSync(expectedProject)) {
+    const expected = expectedProject && projectDirectory(expectedProject);
+    if (expected && realpathSync((await connection.info()).project) !== expected) {
       throw new Error('Codex project mismatch; receiver was not registered');
     }
     await connection.observe(onState); return () => connection.close();

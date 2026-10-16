@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { findPeer, ownedJson, peers, processStart, uuid, type Peer } from './claude';
 import { readDesktopInfo } from './desktop';
 import { claudeVersionSupported } from './doctor';
-import { inspectProject, type ProjectIdentity } from './project';
+import { inspectProject, projectDirectory, type ProjectIdentity } from './project';
 import { codexEntrypoint } from './names';
 import { claudeSurfaceSupported, surfaceLabel } from './surfaces';
 
@@ -47,6 +47,18 @@ export async function discoverParticipants(configDir: string, stateDir?: string)
     } catch { /* Stale or ambiguous metadata is not selectable. */ }
   }
   return result.sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0));
+}
+
+// A Codex chat in a folder macOS keeps from Codex never registers a receiver, so a failed lookup of the
+// caller's own chat says so when its native project is unreadable, instead of a generic lookup error.
+export async function ownCodexParticipant(options: ParticipantOptions, id: string) {
+  try { return await inspectParticipant(options, id, 'codex'); }
+  catch (error) {
+    let project: string | undefined;
+    try { project = (await readDesktopInfo(options.ipcPath, id)).project; } catch { /* Keep the original error. */ }
+    if (project) projectDirectory(project);
+    throw error;
+  }
 }
 
 export async function inspectParticipant(options: ParticipantOptions, id: string, provider: 'codex' | 'claude'): Promise<Participant> {

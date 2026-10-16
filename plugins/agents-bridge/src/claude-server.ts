@@ -10,6 +10,7 @@ import { authenticateClaudeCaller, CallerRejected, metaSessionHints, parentPid, 
 import { version } from './version';
 import { registerDesktopTools } from './desktop-runtime';
 import { diagnoseTool, serverInstructions, serverName, stateFolder } from './names';
+import { setReaderApp } from './project';
 
 export type Authenticate = (meta?: Record<string, unknown>) => Promise<AuthenticatedCaller>;
 export type ClaudeServerOptions = {
@@ -67,6 +68,7 @@ export function createClaudeServer(options: ClaudeServerOptions) {
 }
 
 if (import.meta.main) {
+  setReaderApp('Claude');
   const paths = claudePaths();
   let parent: number | null = null;
   try { parent = await parentPid(process.pid); } catch { /* Recorded as unknown. */ }
