@@ -66,7 +66,10 @@ export function writePanelCard(stateDir: string, owner: { provider: string; sess
   const fd = openSync(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
   try { writeSync(fd, page(language, url)); } finally { closeSync(fd); }
   renameSync(temporary, path);
-  // What the chat shows: a quoted block with a heading-sized link, so it reads as the thing to press. A link in the chat
-  // opens in the app's own side browser, never in the default browser, so pressing it brings no other window forward.
-  return { file: path, link: url, markdown: `> ### ▶️ [${texts[language].link}](${url})\n> ${texts[language].blurb}` };
+  // What the chat shows. A link in the chat opens in the app's own side browser, never in the default browser, so pressing
+  // it brings no other window forward. Claude gets a quoted block with a heading-sized link, so it reads as the thing to
+  // press; Codex already adds a preview card of its own under any link, so a plain link keeps it from showing twice.
+  const t = texts[language];
+  const markdown = owner.provider === 'codex' ? `**[${t.link}](${url})**` : `> ### ▶️ [${t.link}](${url})\n> ${t.blurb}`;
+  return { file: path, link: url, markdown };
 }

@@ -13,6 +13,7 @@ import {join} from 'node:path';
 import {limitsFromText} from '../src/chat-approval';
 import {bootstrapPrompt} from '../src/desktop-creation';
 import {nativeFixture} from './collaboration-fixture';
+import {writePanelCard} from '../src/panel-card';
 import {tools as toolNames,type Operation} from '../src/names';
 const root=resolve(import.meta.dir,'..');
 
@@ -78,6 +79,8 @@ test('the person’s Start in their own chat starts the collaboration as the pan
   expect(link).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/open\?k=[0-9a-f]{32}$/);expect(readFileSync(file,'utf8')).toContain(`href="${link}"`);
   // The chat shows the link as a quoted block with a heading-sized link: it opens in the app itself, not the default browser.
   expect(markdown).toBe(`> ### ▶️ [Open the bridge panel](${link})\n> Watch this collaboration in its own window, and pause or export it from there.`);expect(confirmed.instruction).toContain('panel.markdown');expect(confirmed.instruction).toContain('Do not send panel.file');
+  // Codex adds a preview card of its own under any link, so it gets the plain link and shows it once.
+  expect(writePanelCard(x.f.state,{provider:'codex',sessionId:randomUUID()},link,'en').markdown).toBe(`**[Open the bridge panel](${link})**`);
   expect((await fetch(link.replace(/k=.*/,'k=0'))).status).toBe(404);expect((await fetch(link.replace(/\?.*/,''))).status).toBe(404);expect(x.panels).toEqual([]);
   // The page opened from the card is a file, so the browser follows the link cross-site; the key is what makes it count.
   const page=await fetch(link,{headers:{'Sec-Fetch-Site':'cross-site','Sec-Fetch-Mode':'navigate'}});
