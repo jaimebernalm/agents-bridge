@@ -25,11 +25,11 @@ async function fixture(){
  const auto=process.env.AGENTS_BRIDGE_PANEL_AUTO_OPEN;delete process.env.AGENTS_BRIDGE_PANEL_AUTO_OPEN;
  const f=await nativeFixture(false,{reception:'default'}),codex=await f.connect();
  const p=await inspectParticipant({configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path},f.peerId,'claude');f.bridge.updateRuntime({status:'idle',mode:'bypass'});
- const panels:string[]=[],apps:string[]=[];
+ const panels:string[]=[],apps:string[]=[],opening:string[]=[];
  // This chat's bridge; restart() replaces it with a fresh one on the same saved state, as a reload of the chat's MCP does.
  const connect=async()=>{
   const server=new McpServer({name:'claude-fixture',version:'1'}),client=new Client({name:'fixture',version:'1'});
-  const runtime=registerDesktopTools(server,{configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path,codexHome:f.root,pluginRoot:root,openPrivatePanel:async url=>{panels.push(url)},openApp:async url=>{apps.push(url)},
+  const runtime=registerDesktopTools(server,{configDir:f.config,stateDir:f.state,ipcPath:f.desktop.path,codexHome:f.root,pluginRoot:root,openPrivatePanel:async url=>{panels.push(url);opening.push('panel')},showChatApp:async provider=>{opening.push('app:'+provider)},openApp:async url=>{apps.push(url)},
    authenticate:async()=>({provider:'claude',sessionId:p.sessionId,pid:p.pid,procStart:p.procStart,project:f.root,binding:{method:'fixture',generation:'fixture',surface:'claude-desktop',evidence:[]}})});
   const [a,b]=InMemoryTransport.createLinkedPair();await server.connect(a);await client.connect(b);
   return {server,client,runtime,close:async()=>{await client.close();await server.close();await runtime.close();}};
@@ -43,7 +43,7 @@ async function fixture(){
  const answer=(asked:Asked,answers:(string|undefined)[],shown=asked.ask.questions.map(q=>q.question))=>recordAnswer(f.state,{session_id:p.sessionId,hook_event_name:'PostToolUse',tool_name:'AskUserQuestion',
   tool_input:{questions:shown.map((question,i)=>({...asked.ask.questions[i],question,multiSelect:false}))},tool_response:{answers:Object.fromEntries(shown.flatMap((question,i)=>answers[i]===undefined?[]:[[question,answers[i]]]))}});
  const close=async()=>{await live.close();await codex.close();await f.close();if(auto===undefined)delete process.env.AGENTS_BRIDGE_PANEL_AUTO_OPEN;else process.env.AGENTS_BRIDGE_PANEL_AUTO_OPEN=auto;};
- return {f,p,get runtime(){return live.runtime},call,propose,answer,restart,panels,apps,close};
+ return {f,p,get runtime(){return live.runtime},call,propose,answer,restart,panels,apps,opening,close};
 }
 
 const labels=(q:Question)=>q.options.map(o=>o.label);
@@ -81,11 +81,14 @@ test('the person’s Start in their own chat starts the collaboration as the pan
   // The page opened from the card is a file, so the browser follows the link cross-site; the key is what makes it count.
   const page=await fetch(link,{headers:{'Sec-Fetch-Site':'cross-site','Sec-Fetch-Mode':'navigate'}});
   const html=await page.text(),nonce=/script-src 'nonce-([^']+)'/.exec(page.headers.get('content-security-policy')??'')?.[1];
-  expect(page.status).toBe(200);expect(html).toContain('opens in its own window');expect(x.panels).toHaveLength(1);
+  expect(page.status).toBe(200);expect(html).toContain('opens in its own window');expect(x.panels).toEqual([]);
+  // The window is asked for after the page has answered, once the chat's own app is back in front, so it opens over the chat.
+  for(let i=0;i<80&&x.panels.length<1;i++)await Bun.sleep(25);
+  expect(x.panels).toHaveLength(1);expect(x.opening).toEqual([`app:${x.p.provider}`,'panel']);
   // The tab the link opened closes itself, with the only script the page's policy allows.
-  expect(nonce).toBeString();expect(html).toContain(`<script nonce="${nonce}">setTimeout(()=>window.close(),700)</script>`);
+  expect(nonce).toBeString();expect(html).toContain(`<script nonce="${nonce}">window.close()</script>`);
   // A page opened from a file has no origin; the key alone lets it ask, and a burst of asks opens one window.
-  expect((await fetch(link,{headers:{Origin:'null','Sec-Fetch-Site':'cross-site','Sec-Fetch-Mode':'no-cors'}})).status).toBe(200);expect(x.panels).toHaveLength(1);
+  expect((await fetch(link,{headers:{Origin:'null','Sec-Fetch-Site':'cross-site','Sec-Fetch-Mode':'no-cors'}})).status).toBe(200);await Bun.sleep(600);expect(x.panels).toHaveLength(1);
   // One decision per answer: asking again only reads it back, and starts nothing else.
   expect(await x.call('confirm',{questionId:asked.questionId})).toMatchObject({state:'starting',choice:'start',launch:{state:'started',runId:run.id},panel:{link}});
   expect(x.runtime.store.list(x.p)).toHaveLength(1);

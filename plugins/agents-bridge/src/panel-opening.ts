@@ -32,19 +32,36 @@ const appWindowBrowsers = new Set(['com.google.chrome', 'com.google.chrome.beta'
 // Launch Services answers which app opens the panel's own kind of link; no extra permission needed.
 const defaultBrowserScript = "ObjC.import('AppKit');const app=$.NSWorkspace.sharedWorkspace.URLForApplicationToOpenURL($.NSURL.URLWithString('http://127.0.0.1/'));app?$.NSBundle.bundleWithURL(app).bundleIdentifier.js:''";
 
-export async function launchLocalBrowser(url: string, exec: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env): Promise<'app' | 'tab'> {
+// With a profile of its own the panel runs in a browser instance that holds only panel windows: opening one brings
+// nothing else forward, and closing the last one leaves the person's own browser windows where they were.
+// A known place opens the window there at its size, so the page has nothing left to move.
+type Place = {x: number; y: number; w: number; h: number};
+const appWindowArgs = (url: string, profile?: string, place?: Place) => [
+  ...(profile ? [`--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check'] : []),
+  ...(place ? [`--window-position=${place.x},${place.y}`, `--window-size=${place.w},${place.h}`] : []), `--app=${url}`];
+
+export async function launchLocalBrowser(url: string, exec: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env, profile?: string, place?: Place): Promise<'app' | 'tab'> {
   const parsed = new URL(url);
   if (parsed.protocol !== 'http:' || parsed.hostname !== '127.0.0.1') throw new Error('Only the private local panel can be opened');
   if (platform === 'darwin') {
     if (env.AGENTS_BRIDGE_PANEL_APP_WINDOW !== '0') {
       const browser = await exec('osascript', ['-l', 'JavaScript', '-e', defaultBrowserScript], 2000).catch(() => '');
       // -n hands the flag to a browser that is already running. Its single-use token is spent on first load.
-      if (appWindowBrowsers.has(browser.toLowerCase()) && await exec('open', ['-n', '-b', browser, '--args', `--app=${url}`], 3000).then(() => true, () => false)) return 'app';
+      if (appWindowBrowsers.has(browser.toLowerCase()) && await exec('open', ['-n', '-b', browser, '--args', ...appWindowArgs(url, profile, place)], 3000).then(() => true, () => false)) return 'app';
     }
     await exec('open', [url], 3000); return 'tab';
   }
   if (platform === 'linux' && (env.DISPLAY || env.WAYLAND_DISPLAY)) {await exec('xdg-open', [url], 3000); return 'tab';}
   throw new Error('No desktop browser launcher available');
+}
+
+// A card's button reaches the bridge through the default browser when the app shows the card as a still page (Claude
+// does), and that browser brings its own window over the chat. Bringing the chat's app back first, by its bundle so no
+// Apple event or permission is involved, leaves the panel window on top of the chat rather than behind the browser.
+const chatApps = {claude: 'com.anthropic.claudefordesktop', codex: 'com.openai.codex'} as const;
+export async function bringAppForward(provider: 'claude' | 'codex', exec: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env) {
+  if (platform !== 'darwin' || env.AGENTS_BRIDGE_PANEL_AUTO_OPEN === '0') return;
+  if (await exec('open', ['-b', chatApps[provider]], 2000).then(() => true, () => false)) await Bun.sleep(150);
 }
 
 export function panelLink(url: string, target: {runId?: string; authorization?: boolean} = {}) {

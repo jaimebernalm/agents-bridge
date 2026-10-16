@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { launchLocalBrowser, type Run } from '../src/panel-opening';
+import { bringAppForward, launchLocalBrowser, type Run } from '../src/panel-opening';
 
 const url = 'http://127.0.0.1:4100/#token=abc';
 function recorder(defaultBrowser: string | Error, failing: string[] = []) {
@@ -18,6 +18,16 @@ describe('opening the panel window', () => {
     const r = recorder('com.google.Chrome');
     expect(await launchLocalBrowser(url, r.exec, 'darwin', {})).toBe('app');
     expect(r.launches()).toEqual([['open', '-n', '-b', 'com.google.Chrome', '--args', `--app=${url}`]]);
+  });
+  test('with a profile, the app window runs in a browser instance of its own', async () => {
+    const r = recorder('com.google.Chrome');
+    expect(await launchLocalBrowser(url, r.exec, 'darwin', {}, '/state/panel-browser')).toBe('app');
+    expect(r.launches()).toEqual([['open', '-n', '-b', 'com.google.Chrome', '--args', '--user-data-dir=/state/panel-browser', '--no-first-run', '--no-default-browser-check', `--app=${url}`]]);
+  });
+  test('a remembered place opens the app window there at its size', async () => {
+    const r = recorder('com.google.Chrome');
+    expect(await launchLocalBrowser(url, r.exec, 'darwin', {}, '/state/panel-browser', {x: 2690, y: -218, w: 845, h: 651})).toBe('app');
+    expect(r.launches()).toEqual([['open', '-n', '-b', 'com.google.Chrome', '--args', '--user-data-dir=/state/panel-browser', '--no-first-run', '--no-default-browser-check', '--window-position=2690,-218', '--window-size=845,651', `--app=${url}`]]);
   });
   test('other default browsers keep a normal tab', async () => {
     const r = recorder('com.apple.Safari');
@@ -50,5 +60,21 @@ describe('opening the panel window', () => {
     await expect(launchLocalBrowser('https://example.com/', r.exec, 'darwin', {})).rejects.toThrow('Only the private local panel');
     await expect(launchLocalBrowser('http://localhost:4100/', r.exec, 'darwin', {})).rejects.toThrow('Only the private local panel');
     expect(r.calls).toEqual([]);
+  });
+});
+
+describe('bringing the chat back before the panel opens', () => {
+  test('macOS brings each chat app forward by its bundle, and nothing happens elsewhere', async () => {
+    const r = recorder('');
+    await bringAppForward('claude', r.exec, 'darwin', {});
+    await bringAppForward('codex', r.exec, 'darwin', {});
+    await bringAppForward('claude', r.exec, 'linux', {});
+    await bringAppForward('claude', r.exec, 'darwin', {AGENTS_BRIDGE_PANEL_AUTO_OPEN: '0'});
+    expect(r.calls).toEqual([['open', '-b', 'com.anthropic.claudefordesktop'], ['open', '-b', 'com.openai.codex']]);
+  });
+
+  test('an app that cannot be brought forward does not stop the panel from opening', async () => {
+    const r = recorder('', ['-b']);
+    await expect(bringAppForward('claude', r.exec, 'darwin', {})).resolves.toBeUndefined();
   });
 });

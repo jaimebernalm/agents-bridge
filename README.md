@@ -6,6 +6,8 @@
 
 Both apps install it as `agents-bridge` (Claude Code + Codex) and show it as **Agents Bridge**.
 
+> **Desktop apps only, for now.** The bridge connects Claude Desktop (Code tab) with Codex Desktop on macOS. The terminal versions (Claude Code CLI and Codex CLI) are not supported yet; support for them is planned.
+
 Ask either chat to work with the other one. The chat asks you three short questions: whether the other agent may edit code, the limits, and whether to start. You answer **Yes**, or open a small panel to change anything first. The two chats message each other directly while you watch. At the end you get a result that shows who said what and where they still disagree.
 
 It's an easier, collaboration-focused take on [Claude UDS Bridge](https://github.com/LeonKohli/claude-uds-bridge): the same local Claude ↔ Codex bridge, plus a guided panel so you never have to manage sessions or settings by hand.
@@ -37,7 +39,7 @@ Use codex-plugin-cc for a one-shot review. Use this bridge when you want the two
 
 ## Requirements
 
-- **macOS or Linux.** Windows is not supported.
+- **macOS.** The Desktop apps the bridge connects aren't available on Linux, and Windows is not supported.
 - **[Codex Desktop](https://openai.com/codex/)**, running. Messages are delivered into a Codex chat through the app, so the Codex CLI alone is not enough.
 - **[Claude Desktop](https://claude.ai/download)**, using the **Code** tab (Claude Code 2.1.224 or later).
 - **[Bun](https://bun.sh)** 1.4 or later: `curl -fsSL https://bun.sh/install | bash`
@@ -164,7 +166,7 @@ Then open new chats in both apps. If Codex asks again, re-trust the hooks. Your 
 ## Known limits
 
 - Delivery into Codex relies on Codex Desktop's internal app connection. A Codex update can break it. The bridge then refuses to deliver rather than guessing, and the panel tells you.
-- macOS and Linux only.
+- Desktop apps on macOS only. The Claude Code CLI and the Codex CLI are not supported yet.
 - Last tested with Codex Desktop 26.930 and Claude Code 2.1.286 on macOS. Please [open an issue](https://github.com/jaimebernalm/agents-bridge/issues) with your versions if something breaks.
 - The bridge does not lock files. When both agents edit, give them separate files or separate worktrees.
 
