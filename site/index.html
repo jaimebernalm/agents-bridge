@@ -13,8 +13,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="styles.css?v=compare3">
-  <script src="ascii.js?v=compare3" defer></script>
+  <link rel="stylesheet" href="styles.css?v=toggles1">
+  <script src="ascii.js?v=toggles1" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -44,11 +44,11 @@
       <div class="rails">
         <div class="hero-copy">
           <a class="pill" href="https://github.com/jaimebernalm/agents-bridge">
-            <span>Claude Desktop ⇄ Codex Desktop</span>
+            <span>Claude Code ⇄ Codex Desktop</span>
             <span class="pill-cta">Open source</span>
           </a>
           <h1><span>Two models catch</span> <span class="tone">what one misses.</span></h1>
-          <p class="lede">Claude and Codex were trained differently, so they make different mistakes. Agents Bridge puts the two chats you already have open in one conversation: one does the work, the other checks it.</p>
+          <p class="lede">Claude and Codex were trained differently, so they make different mistakes. Agents Bridge puts the two chats you already have open in one conversation, so together they catch and fix each other’s errors.</p>
           <div class="actions">
             <a class="btn btn-accent" href="#install">Install the bridge</a>
             <a class="btn btn-dark" href="#how">See how it works</a>
@@ -64,68 +64,75 @@
             <p class="panel-label">Interactive panel preview</p>
             <p class="panel-hint">Set the limits. You approve before the chats begin.</p>
           </div>
-          <div class="window">
+          <div class="window" lang="en">
             <div class="window-bar">
               <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
-              <span class="window-title">Agents Bridge · Collaborations</span>
+              <span class="window-title">Agents Bridge · <span data-es="Colaboraciones">Collaborations</span></span>
             </div>
             <div class="window-body">
               <div class="row-head">
-                <span class="prepared">Prepared by Claude · just now</span>
-                <span class="waiting">Waiting for your approval</span>
+                <span class="prepared" data-es="Sugerida por Claude · ahora mismo">Suggested by Claude · just now</span>
+                <span class="row-end">
+                  <span class="waiting" data-es="Esperando tu aprobación">Waiting for your approval</span>
+                  <button type="button" class="ptoggle" id="panel-lang" lang="es" aria-label="Cambiar a español" title="Cambiar a español">EN</button>
+                  <button type="button" class="ptoggle" id="panel-theme" aria-label="Use dark theme">
+                    <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                    <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2m-7.07-17.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                  </button>
+                </span>
               </div>
-              <div class="tile objective">Review the error handling in <code>src/api</code> and propose fixes.</div>
+              <div class="tile objective"><span data-es="Revisa el manejo de errores en">Review the error handling in</span> <code>src/api</code> <span data-es="y propón arreglos.">and propose fixes.</span></div>
               <div class="tile-grid">
                 <div class="tile">
-                  <div class="tile-title">Codex chat</div>
+                  <div class="tile-title" data-es="Chat de Codex">Codex chat</div>
                   <div class="tile-sub mono">codex-my-app-3f</div>
                 </div>
                 <div class="tile">
                   <div class="tile-row">
-                    <div class="tile-title">Codex can edit and commit</div>
-                    <button type="button" class="switch" role="switch" aria-checked="true" aria-label="Codex can edit and commit"><span></span></button>
+                    <div class="tile-title" data-es="Codex puede editar y hacer commits">Codex can edit and commit</div>
+                    <button type="button" class="switch" role="switch" aria-checked="true" aria-label="Codex can edit and commit" data-es-label="Codex puede editar y hacer commits"><span></span></button>
                   </div>
-                  <div class="tile-sub">Local edits and commits only; no push, pull requests or merges.</div>
+                  <div class="tile-sub" data-es="Solo ediciones y commits locales; sin push, pull requests ni merges.">Local edits and commits only; no push, pull requests or merges.</div>
                 </div>
                 <div class="tile">
                   <div class="tile-row">
-                    <div class="tile-title">Messages</div>
+                    <div class="tile-title" data-es="Mensajes">Messages</div>
                     <div class="stepper" data-step="4" data-min="4" data-max="200" data-suffix="">
-                      <button type="button" aria-label="Fewer messages">−</button>
+                      <button type="button" aria-label="Fewer messages" data-es-label="Menos mensajes">−</button>
                       <output>24</output>
-                      <button type="button" aria-label="More messages">+</button>
+                      <button type="button" aria-label="More messages" data-es-label="Más mensajes">+</button>
                     </div>
                   </div>
                 </div>
                 <div class="tile">
                   <div class="tile-row">
-                    <div class="tile-title">Time</div>
+                    <div class="tile-title" data-es="Tiempo">Time</div>
                     <div class="stepper" data-step="5" data-min="5" data-max="240" data-suffix=" min">
-                      <button type="button" aria-label="Less time">−</button>
+                      <button type="button" aria-label="Less time" data-es-label="Menos tiempo">−</button>
                       <output>30 min</output>
-                      <button type="button" aria-label="More time">+</button>
+                      <button type="button" aria-label="More time" data-es-label="Más tiempo">+</button>
                     </div>
                   </div>
                 </div>
               </div>
               <div class="approve-row">
-                <button type="button" class="approve" id="approve">Approve and start</button>
-                <span class="quiet">Change</span>
+                <button type="button" class="approve" id="approve" data-es="Aprobar e iniciar">Approve and start</button>
+                <span class="quiet" data-es="Cambiar">Change</span>
               </div>
-              <ul class="list" aria-label="Earlier collaborations">
+              <ul class="list" aria-label="Earlier collaborations" data-es-label="Colaboraciones anteriores">
                 <li>
-                  <div><div class="li-title">Plan the caching layer, then implement it phase by phase.</div><div class="li-sub">Claude ⇄ Codex · 31/60 messages · 1 h ago</div></div>
-                  <span class="badge completed">Completed</span>
+                  <div><div class="li-title" data-es="Planificar la capa de caché y luego implementarla por fases.">Plan the caching layer, then implement it phase by phase.</div><div class="li-sub" data-es="Claude ⇄ Codex · 31/60 mensajes · hace 1 h">Claude ⇄ Codex · 31/60 messages · 1 h ago</div></div>
+                  <span class="badge completed" data-es="Completada">Completed</span>
                 </li>
                 <li>
-                  <div><div class="li-title">Investigate why the sync test is flaky.</div><div class="li-sub">Claude ⇄ Codex · 12/24 messages · yesterday</div></div>
-                  <span class="badge paused">Paused</span>
+                  <div><div class="li-title" data-es="Investigar por qué falla a veces el test de sincronización.">Investigate why the sync test is flaky.</div><div class="li-sub" data-es="Claude ⇄ Codex · 12/24 mensajes · ayer">Claude ⇄ Codex · 12/24 messages · yesterday</div></div>
+                  <span class="badge paused" data-es="Pausada">Paused</span>
                 </li>
               </ul>
             </div>
           </div>
         </div>
-        <p class="caption" id="panel-caption">The collaboration panel, as it opens on your Mac. Try the switch and the steppers.</p>
+        <p class="caption" id="panel-caption">The collaboration panel, as it opens on your Mac. Try the switch, the steppers, and the language and theme buttons.</p>
       </div>
     </section>
 
@@ -250,7 +257,7 @@
               <tr role="row"><th scope="col" role="columnheader"><span class="sr">Aspect</span></th><th scope="col" role="columnheader">Delegation plugins</th><th scope="col" role="columnheader">Agents Bridge</th></tr>
             </thead>
             <tbody role="rowgroup">
-              <tr role="row"><th scope="row" role="rowheader">The idea</th><td role="cell"><span class="compare-cell-label">Delegation plugins</span>Delegate reviews and tasks from Claude Code; resume jobs or transfer context</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Two live Desktop chats in an ongoing exchange</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">The idea</th><td role="cell"><span class="compare-cell-label">Delegation plugins</span>Delegate reviews and tasks from Claude Code; resume jobs or transfer context</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Two live chats in an ongoing exchange</td></tr>
               <tr role="row"><th scope="row" role="rowheader">Who starts</th><td role="cell"><span class="compare-cell-label">Delegation plugins</span>Claude Code, with slash commands</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Either chat, in plain words</td></tr>
               <tr role="row"><th scope="row" role="rowheader">Shape</th><td role="cell"><span class="compare-cell-label">Delegation plugins</span>A job and its result</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>A back-and-forth with message and time limits</td></tr>
               <tr role="row"><th scope="row" role="rowheader">Your controls</th><td role="cell"><span class="compare-cell-label">Delegation plugins</span>Slash commands and job status</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Three questions, then the panel: pause, finish, export</td></tr>
@@ -266,7 +273,7 @@
         <p class="kicker">Install</p>
         <h2 id="install-title">Two commands per app.<br><span class="tone">Then just ask.</span></h2>
         <p class="package-note">Installs as <code>agents-bridge</code>.</p>
-        <p class="body-lede">For the desktop apps on macOS. Support for the Claude Code and Codex CLIs is coming. You need <a href="https://claude.ai/download">Claude Desktop</a> (Code tab, Claude Code 2.1.224 or later), <a href="https://openai.com/codex/">Codex Desktop</a> running, <a href="https://bun.sh">Bun</a> 1.4 or later, and Git.</p>
+        <p class="body-lede">For macOS. You need Claude Code 2.1.224 or later, in the Code tab of <a href="https://claude.ai/download">Claude Desktop</a> or as <code>claude</code> in a terminal; <a href="https://openai.com/codex/">Codex Desktop</a> running (support for the Codex CLI is coming); <a href="https://bun.sh">Bun</a> 1.4 or later; and Git.</p>
 
         <ol class="steps">
           <li>
@@ -279,7 +286,7 @@
             <h3><span class="num">02</span> Install the Claude side</h3>
             <div class="code"><code>claude plugin marketplace add jaimebernalm/agents-bridge</code><button type="button" class="copy">Copy</button></div>
             <div class="code"><code>claude plugin install agents-bridge@jaimebernalm</code><button type="button" class="copy">Copy</button></div>
-            <p>Then open a new Code chat in Claude Desktop.</p>
+            <p>Then open a new Code chat in Claude Desktop, or start <code>claude</code> in a terminal in the project folder.</p>
           </li>
           <li>
             <h3><span class="num">03</span> Check that they see each other</h3>
@@ -373,6 +380,36 @@
       });
     });
     document.getElementById('approve').addEventListener('click', function () { location.hash = 'install'; });
+
+    // The replica's language and theme buttons switch only the panel, as they do in the real one.
+    var panel = document.querySelector('.window');
+    var lang = document.getElementById('panel-lang'), theme = document.getElementById('panel-theme');
+    var texts = panel.querySelectorAll('[data-es]'), labels = panel.querySelectorAll('[data-es-label]');
+    texts.forEach(function (el) { el.dataset.en = el.textContent; });
+    labels.forEach(function (el) { el.dataset.enLabel = el.getAttribute('aria-label'); });
+    var spanish = false, dark = false;
+    function paintTheme() {
+      var label = dark ? (spanish ? 'Usar tema claro' : 'Use light theme') : (spanish ? 'Usar tema oscuro' : 'Use dark theme');
+      theme.setAttribute('aria-label', label);
+      theme.title = label;
+    }
+    lang.addEventListener('click', function () {
+      spanish = !spanish;
+      panel.lang = spanish ? 'es' : 'en';
+      texts.forEach(function (el) { el.textContent = spanish ? el.dataset.es : el.dataset.en; });
+      labels.forEach(function (el) { el.setAttribute('aria-label', spanish ? el.dataset.esLabel : el.dataset.enLabel); });
+      lang.textContent = spanish ? 'ES' : 'EN';
+      lang.lang = spanish ? 'en' : 'es';
+      lang.title = spanish ? 'Switch to English' : 'Cambiar a español';
+      lang.setAttribute('aria-label', lang.title);
+      paintTheme();
+    });
+    theme.addEventListener('click', function () {
+      dark = !dark;
+      panel.classList.toggle('is-dark', dark);
+      paintTheme();
+    });
+    paintTheme();
   </script>
 </body>
 </html>
