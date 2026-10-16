@@ -12,9 +12,9 @@
  /* A grouped tile, as in macOS settings: a raised plane with a hairline edge instead of a border. */
  --shadow-tile:0 0 0 .5px color-mix(in srgb,var(--foreground) 11%,transparent),0 1px 2px rgb(0 0 0 / .05);
 }
-/* System-style palette: neutral grays, one blue accent, semantic state colors tuned per theme. */
-:root {--background:#f5f5f7;--foreground:#1d1d1f;--card:#fff;--primary:#0071e3;--primary-foreground:#fff;--secondary:#e8e8ed;--muted:#f0f0f3;--muted-foreground:#6e6e73;--border:#dcdce1;--success:#1e7d36;--warning:#a85200;--warning-foreground:#fff;--danger:#d70015;--material:rgb(255 255 255 / .72);--shadow:0 1px 2px rgb(0 0 0 / .04),0 8px 28px rgb(0 0 0 / .08);--radius:.75rem; color-scheme:light;}
-:root.dark {--background:#0f0f11;--foreground:#f5f5f7;--card:#1c1c1e;--primary:#0a84ff;--primary-foreground:#fff;--secondary:#2c2c2e;--muted:#232326;--muted-foreground:#98989d;--border:#38383a;--success:#30d158;--warning:#ff9f0a;--warning-foreground:#1d1d1f;--danger:#ff453a;--material:rgb(28 28 30 / .72);--shadow:0 1px 2px rgb(0 0 0 / .3),0 10px 32px rgb(0 0 0 / .45);color-scheme:dark;}
+/* The landing page's palette: zinc neutrals, one orange accent, semantic state colors tuned per theme. */
+:root {--background:#f7f7f8;--foreground:#18181b;--card:#fff;--primary:#c94a14;--primary-foreground:#fff;--secondary:#efeff1;--muted:#f4f4f5;--muted-foreground:#63636b;--border:#e4e4e7;--success:#1e7d36;--warning:#8a6100;--warning-foreground:#fff;--danger:#d70015;--material:rgb(255 255 255 / .72);--shadow:0 1px 2px rgb(0 0 0 / .04),0 8px 28px rgb(0 0 0 / .08);--radius:.75rem; color-scheme:light;}
+:root.dark {--background:#0c0c0d;--foreground:#fafafa;--card:#18181b;--primary:#ff7a3d;--primary-foreground:#1a0d06;--secondary:#27272a;--muted:#1f1f23;--muted-foreground:#a1a1aa;--border:#2e2e33;--success:#30d158;--warning:#f5b800;--warning-foreground:#18181b;--danger:#ff453a;--material:rgb(24 24 27 / .72);--shadow:0 1px 2px rgb(0 0 0 / .3),0 10px 32px rgb(0 0 0 / .45);color-scheme:dark;}
 /* Layered so border-* utilities (state badges, accents) can override it; unlayered rules always win over utilities. */
 @layer base{*{border-color:var(--border)}}
 body {margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--background);color:var(--foreground);font-size:14px;line-height:1.55;font-optical-sizing:auto;-webkit-font-smoothing:antialiased}
@@ -71,7 +71,7 @@ details[open]::details-content{height:auto}
 }
 @keyframes fade{from{opacity:0}}
 @media(prefers-reduced-transparency:reduce){
- :root{--material:#fff}:root.dark{--material:#1c1c1e}
+ :root{--material:#fff}:root.dark{--material:#18181b}
  .topbar,.toast{backdrop-filter:none;-webkit-backdrop-filter:none}
 }
 @media(prefers-contrast:more){
