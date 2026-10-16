@@ -12,7 +12,7 @@
     "shortDescription": "Work on one project with Codex and Claude together.",
     "longDescription": "Pair this Codex chat with a Claude Code chat on the same computer: plan, review, compare approaches or implement together. You start a collaboration in words or from the panel, approve it there, and set its limits (messages and up to 24 hours). The panel shows the exchange, results, reviews and disagreements, and is the only place that can let the other chat edit files and make local commits. Nothing is pushed or published by the bridge.",
     "developerName": "Jaime Bernal",
-    "websiteURL": "https://jaimebernalm.github.io/agents-bridge/",
+    "websiteURL": "https://agentsbridge.dev",
     "category": "Productivity",
     "capabilities": [
       "Read",

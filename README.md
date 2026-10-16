@@ -1,6 +1,6 @@
 # Agents Bridge
 
-[Visit the website](https://jaimebernalm.github.io/agents-bridge/) · [Install](#install-about-5-minutes)
+[Visit the website](https://agentsbridge.dev) · [Install](#install-about-5-minutes)
 
 **Get your Claude Code chat and your Codex chat working together as equals, inside the apps you already use.**
 
