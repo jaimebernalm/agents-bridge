@@ -27,7 +27,9 @@ export function panelIn(response: unknown): {link: string; markdown: string} | u
   return undefined;
 }
 
-type Notices = {shown: string[]; pending?: {link: string; markdown: string}};
+type Notices = {shown: string[]; pending?: {link: string; markdown: string; at?: number}};
+// A turn the person interrupts ends without Stop; past this, its reminder is dropped rather than added to a later turn.
+const pendingFor = 2 * 60 * 60 * 1000;
 
 function noticesFile(stateDir: string, session: string) {
   return join(privateSubdirectory(stateDir, 'panel-notices'), createHash('sha256').update(session).digest('hex').slice(0, 32) + '.json');
@@ -47,12 +49,12 @@ const showLines = (markdown: string) => 'The person sees neither tool results no
   + 'your own message contains it. Begin your next message to the person with these lines, exactly as they are; they open this '
   + 'collaboration\'s panel, the only way to watch it from this chat. Do not paraphrase them, and do not say you opened the panel yourself.\n\n' + markdown;
 
-export function panelContext(stateDir: string, event: {session_id?: unknown; tool_response?: unknown}): string | undefined {
+export function panelContext(stateDir: string, event: {session_id?: unknown; tool_response?: unknown}, now = Date.now()): string | undefined {
   const panel = panelIn(event.tool_response);
   if (!panel || typeof event.session_id !== 'string') return undefined;
   const file = noticesFile(stateDir, event.session_id), notices = readNotices(file);
   if (notices.shown.includes(panel.link)) return undefined;
-  writeAtomic(file, { shown: [...notices.shown.slice(-20), panel.link], pending: panel });
+  writeAtomic(file, { shown: [...notices.shown.slice(-20), panel.link], pending: { ...panel, at: now } });
   return 'From the Claude ⇄ Codex Bridge plugin: ' + showLines(panel.markdown);
 }
 
@@ -72,12 +74,13 @@ function agentText(transcript: string) {
 }
 
 // At the end of a turn: when a link was handed over and the agent has not written it, keep the turn going once to write it.
-export function panelReminder(stateDir: string, event: {session_id?: unknown; transcript_path?: unknown; last_assistant_message?: unknown}): string | undefined {
+export function panelReminder(stateDir: string, event: {session_id?: unknown; transcript_path?: unknown; last_assistant_message?: unknown}, now = Date.now()): string | undefined {
   if (typeof event.session_id !== 'string') return undefined;
   const file = noticesFile(stateDir, event.session_id), notices = readNotices(file);
   if (!notices.pending) return undefined;
-  const { link, markdown } = notices.pending;
+  const { link, markdown, at } = notices.pending;
   writeAtomic(file, { shown: notices.shown });
+  if (typeof at !== 'number' || now - at > pendingFor) return undefined;
   const written = (typeof event.last_assistant_message === 'string' && event.last_assistant_message.includes(link))
     || (typeof event.transcript_path === 'string' && event.transcript_path.endsWith('.jsonl') && existsSync(event.transcript_path) && agentText(event.transcript_path).includes(link));
   return written ? undefined : 'Before you stop, the Claude ⇄ Codex Bridge plugin needs one short message from you. ' + showLines(markdown)

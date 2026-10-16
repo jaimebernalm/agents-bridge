@@ -54,5 +54,10 @@ test('a turn that ends without the link is kept going once to write it', () => {
     panelContext(state, { session_id: 'chat-3', tool_response: response({ link, markdown }) });
     said(markdown + '\nCodex is answering.');
     expect(panelReminder(state, { ...stop, session_id: 'chat-3' })).toBeUndefined();
+    // A turn the person interrupted never reached Stop: hours later, its reminder is dropped.
+    panelContext(state, { session_id: 'chat-4', tool_response: response({ link, markdown }) }, 0);
+    said('Something else.');
+    expect(panelReminder(state, { ...stop, session_id: 'chat-4' }, 3 * 60 * 60 * 1000)).toBeUndefined();
+    expect(panelReminder(state, { ...stop, session_id: 'chat-4' })).toBeUndefined();
   } finally { rmSync(state, { recursive: true, force: true }); }
 });
