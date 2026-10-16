@@ -66,5 +66,5 @@ test('a stalled command section does not delay subsequent live detail refreshes'
  release();await Promise.all([first,second]);loader.stop();
 });
 test('deep links select the exact run or authorization and never mistake a token for an identity',()=>{
- const id=randomUUID();expect(panelNavigation('#token=private&run='+id)).toEqual({selected:id,view:'desktop'});expect(panelNavigation('#token=private')).toEqual({selected:'',view:'desktop'});expect(panelNavigation('#token=private&view=authorization&run='+id).view).toBe('authorization');expect(panelNavigation('#run=not-a-uuid').selected).toBe('');
+ const id=randomUUID();expect(panelNavigation('#token=private&run='+id)).toEqual({selected:id,view:'desktop',pickChat:false});expect(panelNavigation('#token=private')).toEqual({selected:'',view:'desktop',pickChat:false});expect(panelNavigation(new URL(panelLink('http://127.0.0.1:1/#token=t',{pickChat:true})).hash).pickChat).toBe(true);expect(panelNavigation('#token=private&view=authorization&run='+id).view).toBe('authorization');expect(panelNavigation('#run=not-a-uuid').selected).toBe('');
 });
