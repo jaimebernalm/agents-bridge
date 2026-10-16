@@ -28,7 +28,7 @@ export function panelNavigation(hash: string) {
   const params = new URLSearchParams(hash.replace(/^#/, ''));
   const requested = params.get('run') ?? '';
   const selected = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(requested) ? requested : '';
-  return {selected, view: params.get('view') === 'authorization' ? 'authorization' as const : 'desktop' as const};
+  return {selected, view: params.get('view') === 'authorization' ? 'authorization' as const : 'desktop' as const, pickChat: params.get('chat') === 'existing'};
 }
 
 // The panel lost its local service: the chat that opened it closed or reloaded. The header and one
