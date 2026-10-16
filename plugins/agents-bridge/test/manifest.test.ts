@@ -17,6 +17,12 @@ test('package.json, the plugin manifest, and the marketplace agree on name and v
   expect(existsSync(join(plugin, '../..', marketplace.plugins[0]!.source.path, '.codex-plugin/plugin.json'))).toBe(true);
 });
 
+test('the Codex manifest points at logo files that exist', () => {
+  const icons = z.object({ interface: z.object({ composerIcon: z.string(), logo: z.string(), logoDark: z.string() }) })
+    .parse(read(join(plugin, '.codex-plugin/plugin.json'))).interface;
+  for (const path of Object.values(icons)) expect(readFileSync(join(plugin, path), 'utf8')).toStartWith('<svg');
+});
+
 test('the hooks run servers and bundles that exist', () => {
   const mcp = z.object({ mcpServers: z.record(z.string(), z.object({ args: z.array(z.string()) })) }).parse(read(join(plugin, '.mcp.json')));
   const hooks = JSON.stringify(read(join(plugin, 'hooks/hooks.json')));

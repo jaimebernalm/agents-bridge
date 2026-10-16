@@ -183,6 +183,22 @@ h3 { font-family: var(--display); font-weight: 500; font-size: 18px; line-height
   color-scheme: light;
   box-shadow: 0 0 0 1px rgb(255 255 255 / .14), 0 40px 120px -40px rgb(255 122 61 / .28), 0 30px 60px -30px rgb(0 0 0 / .6);
 }
+/* The real panel's dark theme, switched by the replica's moon button. */
+.window.is-dark {
+  --panel-background: #0c0c0d;
+  --panel-foreground: #fafafa;
+  --panel-card: #18181b;
+  --panel-secondary: #27272a;
+  --panel-muted: #1f1f23;
+  --panel-muted-foreground: #a1a1aa;
+  --panel-border: #2e2e33;
+  --panel-primary-ink: #ff7a3d;
+  --panel-warning: #f5b800;
+  --panel-warning-foreground: #18181b;
+  --panel-success: #30d158;
+  color-scheme: dark;
+}
+.window, .window * { transition-property: background-color, color, box-shadow, border-color; transition-duration: 200ms; transition-timing-function: ease; }
 .window-bar { position: relative; height: 38px; display: flex; align-items: center; justify-content: center; background: var(--panel-card); box-shadow: 0 1px 0 var(--panel-border); }
 .lights { position: absolute; left: 14px; display: flex; gap: 8px; }
 .lights i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
@@ -191,6 +207,16 @@ h3 { font-family: var(--display); font-weight: 500; font-size: 18px; line-height
 .window-title { padding: 0 72px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; font-weight: 600; color: var(--panel-muted-foreground); }
 .window-body { padding: 18px 20px 22px; display: grid; gap: 12px; }
 .row-head { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--panel-muted-foreground); }
+.row-head .prepared { align-self: center; }
+.row-end { display: flex; align-items: center; gap: 4px; }
+.row-end .waiting { margin-left: 6px; }
+/* Small ghost buttons, as in the real panel's first row. */
+.ptoggle { flex: none; display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--panel-muted-foreground); font-size: 12px; font-weight: 600; }
+.ptoggle:hover { background: var(--panel-muted); color: var(--panel-foreground); }
+.ptoggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ptoggle .sun, .window.is-dark .ptoggle .moon { display: none; }
+.window.is-dark .ptoggle .sun { display: block; }
+.window :focus-visible { outline-color: var(--panel-primary-ink); }
 .waiting { color: var(--panel-warning-foreground); background: var(--panel-warning); padding: 2px 8px; border-radius: 6px; }
 .tile { background: var(--panel-card); border-radius: 12px; padding: 12px 14px; min-width: 0; box-shadow: 0 0 0 .5px var(--panel-border), 0 1px 2px rgb(0 0 0 / .05); }
 .objective { font-size: 15px; }
@@ -371,5 +397,5 @@ tbody td:last-child { color: var(--text); font-weight: 600; }
   .nav, .nav-inner { transition: none; }
   html { scroll-behavior: auto; }
   .btn:active, .approve:active { transform: none; }
-  .switch, .switch span { transition: none; }
+  .switch, .switch span, .window, .window * { transition: none; }
 }
