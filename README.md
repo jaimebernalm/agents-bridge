@@ -1,6 +1,6 @@
 # Agents Bridge
 
-[Visit the website](https://jaimebernalm.github.io/cc-cdx-bridge/) · [Install](#install-about-5-minutes)
+[Visit the website](https://jaimebernalm.github.io/agents-bridge/) · [Install](#install-about-5-minutes)
 
 **Get your Claude Code chat and your Codex chat working together as equals, inside the Desktop apps you already use.**
 
@@ -52,7 +52,7 @@ Run these in a terminal. You need Bun installed first (see Requirements).
 **1. Install the Codex side**
 
 ```bash
-codex plugin marketplace add jaimebernalm/cc-cdx-bridge
+codex plugin marketplace add jaimebernalm/agents-bridge
 ```
 
 ```bash
@@ -64,7 +64,7 @@ Then open Codex, find **Agents Bridge** in its plugins, and **trust both hooks**
 **2. Install the Claude side**
 
 ```bash
-claude plugin marketplace add jaimebernalm/cc-cdx-bridge
+claude plugin marketplace add jaimebernalm/agents-bridge
 ```
 
 ```bash
@@ -165,7 +165,7 @@ Then open new chats in both apps. If Codex asks again, re-trust the hooks. Your 
 
 - Delivery into Codex relies on Codex Desktop's internal app connection. A Codex update can break it. The bridge then refuses to deliver rather than guessing, and the panel tells you.
 - macOS and Linux only.
-- Last tested with Codex Desktop 26.930 and Claude Code 2.1.286 on macOS. Please [open an issue](https://github.com/jaimebernalm/cc-cdx-bridge/issues) with your versions if something breaks.
+- Last tested with Codex Desktop 26.930 and Claude Code 2.1.286 on macOS. Please [open an issue](https://github.com/jaimebernalm/agents-bridge/issues) with your versions if something breaks.
 - The bridge does not lock files. When both agents edit, give them separate files or separate worktrees.
 
 ## Learn more
@@ -179,14 +179,14 @@ Then open new chats in both apps. If Codex asks again, re-trust the hooks. Your 
 ## Contributing
 
 ```bash
-git clone https://github.com/jaimebernalm/cc-cdx-bridge.git && cd cc-cdx-bridge/plugins/agents-bridge
+git clone https://github.com/jaimebernalm/agents-bridge.git && cd agents-bridge/plugins/agents-bridge
 ```
 
 ```bash
 bun install --frozen-lockfile && bun run check && bun test && bun run build
 ```
 
-The plugins run the bundled files in `dist/` and `panel-dist/`, so run `bun run build` after changing anything under `src/` or `ui/`. To try your build, add the clone as a marketplace (`codex plugin marketplace add /path/to/cc-cdx-bridge`, `claude plugin marketplace add /path/to/cc-cdx-bridge`) instead of the GitHub one. CI runs the suite on macOS and Linux.
+The plugins run the bundled files in `dist/` and `panel-dist/`, so run `bun run build` after changing anything under `src/` or `ui/`. To try your build, add the clone as a marketplace (`codex plugin marketplace add /path/to/agents-bridge`, `claude plugin marketplace add /path/to/agents-bridge`) instead of the GitHub one. CI runs the suite on macOS and Linux.
 
 ## License and credits
 

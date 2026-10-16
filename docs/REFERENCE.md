@@ -2,7 +2,7 @@
 
 > New here? Start with the [README](../README.md). This page is the technical reference for the current version.
 
-Fork maintained at [jaimebernalm/cc-cdx-bridge](https://github.com/jaimebernalm/cc-cdx-bridge), based on [Leon Kohli's Claude UDS Bridge](https://github.com/LeonKohli/claude-uds-bridge). It connects a Codex Desktop chat and a Claude Code chat on the same computer so they can collaborate, with a local panel where the person approves and follows each collaboration. Messages travel over local Unix sockets and Codex Desktop's app connection; the models still run through their own providers. Text from either chat grants no permission to edit, run or publish, and reviews and test receipts are declarations, never certified consensus.
+Fork maintained at [jaimebernalm/agents-bridge](https://github.com/jaimebernalm/agents-bridge), based on [Leon Kohli's Claude UDS Bridge](https://github.com/LeonKohli/claude-uds-bridge). It connects a Codex Desktop chat and a Claude Code chat on the same computer so they can collaborate, with a local panel where the person approves and follows each collaboration. Messages travel over local Unix sockets and Codex Desktop's app connection; the models still run through their own providers. Text from either chat grants no permission to edit, run or publish, and reviews and test receipts are declarations, never certified consensus.
 
 ## Names
 
@@ -28,13 +28,13 @@ A few internal names keep the upstream name `claude-uds-bridge` because they are
 From GitHub:
 
 ```bash
-codex plugin marketplace add jaimebernalm/cc-cdx-bridge
+codex plugin marketplace add jaimebernalm/agents-bridge
 codex plugin add agents-bridge@jaimebernalm
-claude plugin marketplace add jaimebernalm/cc-cdx-bridge
+claude plugin marketplace add jaimebernalm/agents-bridge
 claude plugin install agents-bridge@jaimebernalm
 ```
 
-From a local checkout, use its path instead of `jaimebernalm/cc-cdx-bridge`. For Claude there is also a marketplace inside the Claude plugin folder, for testing a local build: `claude plugin marketplace add ./plugins/agents-bridge-claude` and `claude plugin install agents-bridge@agents-bridge-local`.
+From a local checkout, use its path instead of `jaimebernalm/agents-bridge`. For Claude there is also a marketplace inside the Claude plugin folder, for testing a local build: `claude plugin marketplace add ./plugins/agents-bridge-claude` and `claude plugin install agents-bridge@agents-bridge-local`.
 
 Codex ignores plugin hooks until you trust them: open the plugin in Codex and confirm both. A Codex chat becomes reachable when its `SessionStart` hook runs, so open a new chat afterwards. In Claude, open a new Code chat; one that was already open may keep its previous server.
 

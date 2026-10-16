@@ -6,7 +6,7 @@
     "name": "Jaime Bernal (fork of Leon Kohli)"
   },
   "license": "MIT",
-  "homepage": "https://github.com/jaimebernalm/cc-cdx-bridge",
+  "homepage": "https://github.com/jaimebernalm/agents-bridge",
   "interface": {
     "displayName": "Agents Bridge",
     "shortDescription": "Work on one project with Codex and Claude together.",
