@@ -59,9 +59,16 @@ export async function launchLocalBrowser(url: string, exec: Run = run, platform:
 // does), and that browser brings its own window over the chat. Bringing the chat's app back first, by its bundle so no
 // Apple event or permission is involved, leaves the panel window on top of the chat rather than behind the browser.
 const chatApps = {claude: 'com.anthropic.claudefordesktop', codex: 'com.openai.codex'} as const;
-export async function bringAppForward(provider: 'claude' | 'codex', exec: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env) {
+// A Claude chat in a terminal lives in that terminal's app (Warp, Terminal, iTerm, an editor), which macOS names in the
+// environment it hands every process the app starts, this bridge's server included.
+export function terminalApp(env: Record<string, string | undefined> = process.env) {
+  const id = env.__CFBundleIdentifier;
+  return id && /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/.test(id) ? id : undefined;
+}
+// app: the chat's own app when it is not the provider's Desktop app (a terminal's, for a Claude CLI chat).
+export async function bringAppForward(provider: 'claude' | 'codex', exec: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env, app?: string) {
   if (platform !== 'darwin' || env.AGENTS_BRIDGE_PANEL_AUTO_OPEN === '0') return;
-  if (await exec('open', ['-b', chatApps[provider]], 2000).then(() => true, () => false)) await Bun.sleep(150);
+  if (await exec('open', ['-b', app ?? chatApps[provider]], 2000).then(() => true, () => false)) await Bun.sleep(150);
 }
 
 export function panelLink(url: string, target: {runId?: string; authorization?: boolean; pickChat?: boolean} = {}) {
