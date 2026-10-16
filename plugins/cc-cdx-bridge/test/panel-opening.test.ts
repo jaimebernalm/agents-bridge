@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { bringAppForward, coveredApp, launchLocalBrowser, type Run, type ScreenWindow } from '../src/panel-opening';
+import { bringAppForward, launchLocalBrowser, type Run } from '../src/panel-opening';
 
 const url = 'http://127.0.0.1:4100/#token=abc';
 function recorder(defaultBrowser: string | Error, failing: string[] = []) {
@@ -70,37 +70,11 @@ describe('bringing the chat back before the panel opens', () => {
     await bringAppForward('codex', r.exec, 'darwin', {});
     await bringAppForward('claude', r.exec, 'linux', {});
     await bringAppForward('claude', r.exec, 'darwin', {CC_CDX_PANEL_AUTO_OPEN: '0'});
-    expect(r.launches()).toEqual([['open', '-b', 'com.anthropic.claudefordesktop'], ['open', '-b', 'com.openai.codex']]);
+    expect(r.calls).toEqual([['open', '-b', 'com.anthropic.claudefordesktop'], ['open', '-b', 'com.openai.codex']]);
   });
 
   test('an app that cannot be brought forward does not stop the panel from opening', async () => {
     const r = recorder('', ['-b']);
     await expect(bringAppForward('claude', r.exec, 'darwin', {})).resolves.toBeUndefined();
-  });
-
-  test('the app the browser\'s window came over, on any screen, comes back before the chat', async () => {
-    const windows: ScreenWindow[] = [
-      {pid: 2, bundle: 'com.google.Chrome', x: 0, y: 33, w: 1728, h: 985},
-      {pid: 1, bundle: 'com.anthropic.claudefordesktop', x: 1728, y: -273, w: 1920, h: 1050},
-      {pid: 3, bundle: 'com.openai.codex', x: 0, y: 33, w: 1728, h: 986}];
-    const calls: string[][] = [];
-    const exec: Run = async (command, args) => {
-      calls.push([command, ...args]);
-      if (command !== 'osascript') return '';
-      return args[3]!.includes('CGWindowList') ? JSON.stringify(windows) : 'com.google.Chrome';
-    };
-    await bringAppForward('claude', exec, 'darwin', {});
-    expect(calls.filter(c => c[0] === 'open')).toEqual([['open', '-b', 'com.openai.codex'], ['open', '-b', 'com.anthropic.claudefordesktop']]);
-  });
-});
-
-describe('what the browser covered', () => {
-  const at = (pid: number, bundle: string, x: number) => ({pid, bundle, x, y: 0, w: 100, h: 100});
-  test('only a window under the browser\'s front window counts, and only when the browser is in front', () => {
-    expect(coveredApp([at(2, 'com.google.Chrome', 0), at(1, 'chat', 500), at(3, 'other', 50)], 'com.google.chrome', 'chat')).toBe('other');
-    expect(coveredApp([at(2, 'com.google.Chrome', 0), at(2, 'com.google.Chrome', 20), at(1, 'chat', 0)], 'com.google.Chrome', 'chat')).toBeUndefined();
-    expect(coveredApp([at(1, 'chat', 0), at(2, 'com.google.Chrome', 0), at(3, 'other', 0)], 'com.google.Chrome', 'chat')).toBeUndefined();
-    expect(coveredApp([at(2, 'com.google.Chrome', 0), at(3, 'other', 500)], 'com.google.Chrome', 'chat')).toBeUndefined();
-    expect(coveredApp([], 'com.google.Chrome', 'chat')).toBeUndefined();
   });
 });

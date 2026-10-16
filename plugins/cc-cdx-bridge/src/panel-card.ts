@@ -1,6 +1,6 @@
-// The panel as a file the agent hands to the person, so it shows in the chat as a card of its own (Claude Code's
-// SendUserFile) instead of a link inside a sentence. Its button, or opening the page in a browser, opens the panel window;
-// the page holds only the link that does that, while the panel itself, and everything the person can do there, stays in that window.
+// The panel as a page the person can open in a browser: opening it, or its button, opens the panel window, while the panel
+// itself, and everything the person can do there, stays in that window. The chat shows `markdown` instead of this file:
+// Claude shows a file as a still page whose link goes through the default browser, which then comes over other windows.
 import { randomUUID } from 'node:crypto';
 import { closeSync, constants, openSync, renameSync, writeSync } from 'node:fs';
 import { join } from 'node:path';
@@ -10,10 +10,10 @@ import { displayName } from './names';
 const texts = {
   en: { file: 'Bridge panel.html', title: 'Bridge panel', ask: 'Open the panel in its own window to watch this collaboration, pause it or export it.',
     opening: 'Opening the panel in its own window…', opened: 'The panel opens in its own window. You can close this page.', button: 'Open the panel', stale: 'This chat’s bridge is no longer running, so the panel cannot open from here. Ask in your chat to open the bridge panel.',
-    link: 'Open the bridge panel' },
+    link: 'Open the bridge panel', blurb: 'Watch this collaboration in its own window, and pause or export it from there.' },
   es: { file: 'Panel del bridge.html', title: 'Panel del bridge', ask: 'Abre el panel en su propia ventana para ver esta colaboración, pausarla o exportarla.',
     opening: 'Abriendo el panel en su propia ventana…', opened: 'El panel se abre en su propia ventana. Puedes cerrar esta página.', button: 'Abrir el panel', stale: 'El bridge de este chat ya no está abierto, así que el panel no se puede abrir desde aquí. Pide en tu chat que abra el panel del bridge.',
-    link: 'Abrir el panel del bridge' },
+    link: 'Abrir el panel del bridge', blurb: 'Míralo en su propia ventana, y desde ahí pausa o exporta la colaboración.' },
 };
 
 const escape = (text: string) => text.replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
@@ -66,5 +66,7 @@ export function writePanelCard(stateDir: string, owner: { provider: string; sess
   const fd = openSync(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
   try { writeSync(fd, page(language, url)); } finally { closeSync(fd); }
   renameSync(temporary, path);
-  return { file: path, link: url, markdown: `**[${texts[language].link}](${url})**` };
+  // What the chat shows: a quoted block with a heading-sized link, so it reads as the thing to press. A link in the chat
+  // opens in the app's own side browser, never in the default browser, so pressing it brings no other window forward.
+  return { file: path, link: url, markdown: `> ### ▶️ [${texts[language].link}](${url})\n> ${texts[language].blurb}` };
 }

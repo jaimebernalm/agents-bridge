@@ -97,9 +97,9 @@ You should see the other app's chat listed. If you don't, see [Troubleshooting](
 
    Or write what you'd change instead; the chat asks again with your change. Nothing is sent until you choose **Yes**.
 
-3. Watch the messages arrive. The chat leaves the panel as a card (**Bridge panel**): open it and press **Open the panel**, and the panel opens in its own window, where you can **Pause**, **Finish** or **Export** (Markdown or JSON) at any time.
+3. Watch the messages arrive. The chat leaves a highlighted link, **▶️ Open the bridge panel**: press it and the panel opens in its own window, where you can **Pause**, **Finish** or **Export** (Markdown or JSON) at any time.
 
-Closed the panel? Open that card again, or ask either chat to "open the bridge panel".
+Closed the panel? Press that link again, or ask either chat to "open the bridge panel".
 
 ### Ideas to try
 

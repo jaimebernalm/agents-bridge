@@ -1,6 +1,6 @@
 {
   "name": "cc-cdx-bridge",
-  "version": "0.14.26",
+  "version": "0.14.27",
   "description": "Let a Codex chat and a Claude Code chat work together on the same project, with a panel where you approve and follow each collaboration.",
   "author": {
     "name": "Jaime Bernal (fork of Leon Kohli)"

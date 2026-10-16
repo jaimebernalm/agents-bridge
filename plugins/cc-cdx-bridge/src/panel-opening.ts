@@ -56,32 +56,12 @@ export async function launchLocalBrowser(url: string, exec: Run = run, platform:
 }
 
 // A card's button reaches the bridge through the default browser when the app shows the card as a still page (Claude
-// does), and that browser brings one of its windows to the front: over the chat, or over another app on another screen.
-// Putting back the app that window covered, then the chat's own app, restores what the person had in front before the
-// click. Apps are brought forward by bundle and windows read from CoreGraphics, so no Apple event or permission is involved.
+// does), and that browser brings its own window over the chat. Bringing the chat's app back first, by its bundle so no
+// Apple event or permission is involved, leaves the panel window on top of the chat rather than behind the browser.
 const chatApps = {claude: 'com.anthropic.claudefordesktop', codex: 'com.openai.codex'} as const;
-export type ScreenWindow = {pid: number; bundle: string; x: number; y: number; w: number; h: number};
-// On-screen app windows, front to back, each with the bundle of the app that owns it.
-const windowsScript = "ObjC.import('CoreGraphics');ObjC.import('AppKit');const l=ObjC.castRefToObject($.CGWindowListCopyWindowInfo($.kCGWindowListOptionOnScreenOnly|$.kCGWindowListExcludeDesktopElements,0)),o=[];for(let i=0;i<l.count;i++){const w=l.objectAtIndex(i);if(w.objectForKey('kCGWindowLayer').js!==0)continue;const b=w.objectForKey('kCGWindowBounds'),pid=w.objectForKey('kCGWindowOwnerPID').js,r={x:b.objectForKey('X').js,y:b.objectForKey('Y').js,w:b.objectForKey('Width').js,h:b.objectForKey('Height').js};if(r.w<60||r.h<60)continue;const a=$.NSRunningApplication.runningApplicationWithProcessIdentifier(pid);o.push({pid,bundle:a.isNil()||a.bundleIdentifier.isNil()?'':a.bundleIdentifier.js,...r})}JSON.stringify(o)";
-const overlaps = (a: ScreenWindow, b: ScreenWindow) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
-
-// The app whose window sits right under the browser's front window, when the browser is in front at all.
-export function coveredApp(windows: ScreenWindow[], browser: string, chat: string) {
-  const front = windows[0];
-  if (!front || !browser || front.bundle.toLowerCase() !== browser.toLowerCase()) return undefined;
-  const covered = windows.slice(1).find(w => w.pid !== front.pid && overlaps(w, front));
-  return covered?.bundle && covered.bundle !== chat ? covered.bundle : undefined;
-}
-
 export async function bringAppForward(provider: 'claude' | 'codex', exec: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env) {
   if (platform !== 'darwin' || env.CC_CDX_PANEL_AUTO_OPEN === '0') return;
-  const chat = chatApps[provider];
-  const [browser, windows] = await Promise.all([
-    exec('osascript', ['-l', 'JavaScript', '-e', defaultBrowserScript], 2000).catch(() => ''),
-    exec('osascript', ['-l', 'JavaScript', '-e', windowsScript], 2000).then(out => JSON.parse(out) as ScreenWindow[]).catch((): ScreenWindow[] => [])]);
-  const covered = coveredApp(windows, browser, chat);
-  if (covered) await exec('open', ['-b', covered], 2000).catch(() => '');
-  if (await exec('open', ['-b', chat], 2000).then(() => true, () => false)) await Bun.sleep(150);
+  if (await exec('open', ['-b', chatApps[provider]], 2000).then(() => true, () => false)) await Bun.sleep(150);
 }
 
 export function panelLink(url: string, target: {runId?: string; authorization?: boolean; pickChat?: boolean} = {}) {
