@@ -38,6 +38,18 @@
   color-scheme: dark;
 }
 
+/* Cream (?theme=cream): warm paper under the black hero, softer than white and closer to the orange. */
+:root[data-theme="cream"] {
+  --paper: #f2ede4;
+  --paper-2: #ebe4d8;
+  --card: #faf7f1;
+  --text: #1c1917;
+  --text-muted: #6b6258;
+  --line-light: rgb(28 25 23 / .1);
+  --accent-ink: #b9440f;
+  color-scheme: light;
+}
+
 /* The earlier look, kept for side-by-side review (?theme=split): white sections under a black hero. */
 :root[data-theme="split"] {
   --paper: #f7f7f8;

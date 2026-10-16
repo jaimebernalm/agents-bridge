@@ -10,8 +10,11 @@
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#0c0c0d">
   <script>
-    // ?theme=split shows the earlier look (white sections) for side-by-side review; the page is all dark otherwise.
-    if (new URLSearchParams(location.search).get('theme') === 'split') document.documentElement.dataset.theme = 'split';
+    // ?theme=split (white sections) and ?theme=cream are for side-by-side review; the page is all dark otherwise.
+    (function () {
+      var theme = new URLSearchParams(location.search).get('theme');
+      if (theme === 'split' || theme === 'cream') document.documentElement.dataset.theme = theme;
+    })();
   </script>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
