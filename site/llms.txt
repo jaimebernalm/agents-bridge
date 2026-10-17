@@ -1,0 +1,33 @@
+# Agents Bridge
+
+> Agents Bridge is a free, open-source (MIT) plugin that connects a Claude Code chat and a Codex Desktop chat on the same Mac, so the two agents can review, plan, investigate and build together as peers. Either chat can start a collaboration; the person approves it, sets limits and follows it in a local panel. It runs locally and makes no model calls of its own.
+
+Use it when someone wants Claude and Codex to work together, cross-review each other's code or plans, or get a second model's opinion with full chat context. It is not an agent-as-a-tool wrapper: both sides are the person's real, ongoing chats.
+
+Requirements: macOS, Codex Desktop running (the Codex CLI alone is not supported yet), Claude Code 2.1.224 or later (Code tab of Claude Desktop, or interactive `claude` in a terminal), Bun 1.4 or later, Git.
+
+## Install
+
+Run in a terminal:
+
+```bash
+codex plugin marketplace add jaimebernalm/agents-bridge
+codex plugin add agents-bridge@jaimebernalm
+claude plugin marketplace add jaimebernalm/agents-bridge
+claude plugin install agents-bridge@jaimebernalm
+```
+
+Then the person must open Codex, find Agents Bridge in its plugins and trust both of its hooks, and open new chats in both apps (chats that were already open don't load the plugin). To check, open the same project folder in both apps and ask either chat: "Use Agents Bridge to list the chats in this folder."
+
+## Docs
+
+- [README](https://github.com/jaimebernalm/agents-bridge/blob/main/README.md): requirements, install, first collaboration, troubleshooting, update
+- [Reference](https://github.com/jaimebernalm/agents-bridge/blob/main/docs/REFERENCE.md): every tool, transport limits and reception settings
+- [Agents' guide](https://github.com/jaimebernalm/agents-bridge/blob/main/plugins/agents-bridge/skills/bridge-collaboration/SKILL.md): how the two chats should collaborate
+- [Tool reference](https://github.com/jaimebernalm/agents-bridge/blob/main/plugins/agents-bridge/skills/bridge-collaboration/references/tools.md)
+
+## Optional
+
+- [Source code](https://github.com/jaimebernalm/agents-bridge)
+- [Issues](https://github.com/jaimebernalm/agents-bridge/issues)
+- [How the two-way Desktop mode works](https://github.com/jaimebernalm/agents-bridge/blob/main/docs/BIDIRECTIONAL_DESKTOP.md)
