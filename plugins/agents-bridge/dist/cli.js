@@ -6637,7 +6637,7 @@ function serializeFrame(frame) {
 // package.json
 var package_default = {
   name: "agents-bridge",
-  version: "1.0.2",
+  version: "1.0.3",
   private: true,
   type: "module",
   scripts: {
