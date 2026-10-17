@@ -12,9 +12,8 @@ export type QuestionTestOptions = { stateDir: string; codexHome: string; authent
 // hook, or Codex's own chat history) rather than from the agent.
 export function registerQuestionTest(server: McpServer, options: QuestionTestOptions) {
   server.registerTool(questionTestTool, {
-    description: 'Test asking the person a bridge question with this app’s own question tool. Without questionId it returns a sample '
-      + 'question to ask word for word; call it again with that questionId after the person answers to see whether the answer reached '
-      + 'the bridge directly from the app. Use it only when the person asks for this test. Sends nothing to the other chat and grants nothing.',
+    // One string literal, so tools that read the description from the source (such as MCP directories) see all of it.
+    description: 'Test asking the person a bridge question with this app’s own question tool. Without questionId it returns a sample question to ask word for word; call it again with that questionId after the person answers to see whether the answer reached the bridge directly from the app. Use it only when the person asks for this test. Sends nothing to the other chat and grants nothing.',
     inputSchema: { questionId: uuid.optional() }, annotations: writingTool({ destructive: false, idempotent: false }),
   }, async ({ questionId }, extra) => {
     const asker = await options.authenticate(extra._meta as Record<string, unknown> | undefined);

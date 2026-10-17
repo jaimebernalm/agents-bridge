@@ -26660,7 +26660,7 @@ var writingTool = (hints) => ({ readOnlyHint: false, destructiveHint: hints.dest
 // src/question-test.ts
 function registerQuestionTest(server, options) {
   server.registerTool(questionTestTool, {
-    description: "Test asking the person a bridge question with this app\u2019s own question tool. Without questionId it returns a sample " + "question to ask word for word; call it again with that questionId after the person answers to see whether the answer reached " + "the bridge directly from the app. Use it only when the person asks for this test. Sends nothing to the other chat and grants nothing.",
+    description: "Test asking the person a bridge question with this app\u2019s own question tool. Without questionId it returns a sample question to ask word for word; call it again with that questionId after the person answers to see whether the answer reached the bridge directly from the app. Use it only when the person asks for this test. Sends nothing to the other chat and grants nothing.",
     inputSchema: { questionId: uuid3.optional() },
     annotations: writingTool({ destructive: false, idempotent: false })
   }, async ({ questionId }, extra) => {
