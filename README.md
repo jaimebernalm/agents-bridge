@@ -197,6 +197,7 @@ Then open new chats in both apps. If Codex asks again, re-trust the hooks. Your 
 - [The agents' guide](plugins/agents-bridge/skills/bridge-collaboration/SKILL.md) and [its tool reference](plugins/agents-bridge/skills/bridge-collaboration/references/tools.md)
 - [Coordinated implementation](plugins/agents-bridge/skills/bridge-collaboration/references/implementation.md)
 - [Protocol coverage](plugins/agents-bridge/PROTOCOL-COVERAGE.md)
+- [Privacy](PRIVACY.md): everything stays on your computer; no telemetry.
 
 ## Contributing
 

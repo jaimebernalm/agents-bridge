@@ -15,6 +15,7 @@ export class PanelOpening {
   }
 }
 export type Run = (command: string, args: string[], timeoutMs: number) => Promise<string>;
+// Starts the program directly with its arguments as a list, never through a shell, so no argument is parsed as shell syntax.
 const run: Run = (command, args, timeoutMs) => new Promise((resolve, reject) => {
   const child = spawn(command, args, {stdio: ['ignore', 'pipe', 'ignore']});
   let output = '';
@@ -40,18 +41,18 @@ const appWindowArgs = (url: string, profile?: string, place?: Place) => [
   ...(profile ? [`--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check'] : []),
   ...(place ? [`--window-position=${place.x},${place.y}`, `--window-size=${place.w},${place.h}`] : []), `--app=${url}`];
 
-export async function launchLocalBrowser(url: string, exec: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env, profile?: string, place?: Place): Promise<'app' | 'tab'> {
+export async function launchLocalBrowser(url: string, runCommand: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env, profile?: string, place?: Place): Promise<'app' | 'tab'> {
   const parsed = new URL(url);
   if (parsed.protocol !== 'http:' || parsed.hostname !== '127.0.0.1') throw new Error('Only the private local panel can be opened');
   if (platform === 'darwin') {
     if (env.AGENTS_BRIDGE_PANEL_APP_WINDOW !== '0') {
-      const browser = await exec('osascript', ['-l', 'JavaScript', '-e', defaultBrowserScript], 2000).catch(() => '');
+      const browser = await runCommand('osascript', ['-l', 'JavaScript', '-e', defaultBrowserScript], 2000).catch(() => '');
       // -n hands the flag to a browser that is already running. Its single-use token is spent on first load.
-      if (appWindowBrowsers.has(browser.toLowerCase()) && await exec('open', ['-n', '-b', browser, '--args', ...appWindowArgs(url, profile, place)], 3000).then(() => true, () => false)) return 'app';
+      if (appWindowBrowsers.has(browser.toLowerCase()) && await runCommand('open', ['-n', '-b', browser, '--args', ...appWindowArgs(url, profile, place)], 3000).then(() => true, () => false)) return 'app';
     }
-    await exec('open', [url], 3000); return 'tab';
+    await runCommand('open', [url], 3000); return 'tab';
   }
-  if (platform === 'linux' && (env.DISPLAY || env.WAYLAND_DISPLAY)) {await exec('xdg-open', [url], 3000); return 'tab';}
+  if (platform === 'linux' && (env.DISPLAY || env.WAYLAND_DISPLAY)) {await runCommand('xdg-open', [url], 3000); return 'tab';}
   throw new Error('No desktop browser launcher available');
 }
 
@@ -66,9 +67,9 @@ export function terminalApp(env: Record<string, string | undefined> = process.en
   return id && /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/.test(id) ? id : undefined;
 }
 // app: the chat's own app when it is not the provider's Desktop app (a terminal's, for a Claude CLI chat).
-export async function bringAppForward(provider: 'claude' | 'codex', exec: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env, app?: string) {
+export async function bringAppForward(provider: 'claude' | 'codex', runCommand: Run = run, platform: string = process.platform, env: Record<string, string | undefined> = process.env, app?: string) {
   if (platform !== 'darwin' || env.AGENTS_BRIDGE_PANEL_AUTO_OPEN === '0') return;
-  if (await exec('open', ['-b', app ?? chatApps[provider]], 2000).then(() => true, () => false)) await Bun.sleep(150);
+  if (await runCommand('open', ['-b', app ?? chatApps[provider]], 2000).then(() => true, () => false)) await Bun.sleep(150);
 }
 
 export function panelLink(url: string, target: {runId?: string; authorization?: boolean; pickChat?: boolean} = {}) {

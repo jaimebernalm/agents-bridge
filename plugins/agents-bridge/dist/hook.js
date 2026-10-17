@@ -7436,7 +7436,7 @@ import { Database as Database2 } from "bun:sqlite";
 // package.json
 var package_default = {
   name: "agents-bridge",
-  version: "1.0.2",
+  version: "1.0.3",
   private: true,
   type: "module",
   scripts: {
@@ -8598,10 +8598,19 @@ var contextSchema = object({
   priorAnalysis: object({ codex: string2().max(32000).optional(), claude: string2().max(32000).optional() }).default({})
 }).strict();
 var principalSchema2 = object({ provider: _enum(["codex", "claude"]), sessionId: uuid3 }).strict();
-var desktopLimitsSchema = object({ maxMessages: number2().int().min(2).max(1e6).nullable().default(24), maxSeconds: number2().int().min(1).max(86400).default(1800) }).strict();
+var desktopLimitsSchema = object({
+  maxMessages: number2().int().min(2).max(1e6).nullable().default(24),
+  maxSeconds: number2().int().min(1).max(86400).default(1800)
+}).strict();
 var desktopPrefix = "CC_CDX_DESKTOP_V2 ";
 var isPersonActor = (actor) => !!actor && (actor.startsWith("panel_session:") || actor.startsWith("person_answer:"));
-var desktopHeaderSchema = object({ runId: uuid3, messageId: uuid3, capability: string2().regex(/^[a-f0-9]{64}$/), contextVersion: number2().int().positive(), replyTo: uuid3.optional() }).strict();
+var desktopHeaderSchema = object({
+  runId: uuid3,
+  messageId: uuid3,
+  capability: string2().regex(/^[a-f0-9]{64}$/),
+  contextVersion: number2().int().positive(),
+  replyTo: uuid3.optional()
+}).strict();
 var hash5 = (v) => createHash7("sha256").update(typeof v === "string" ? v : JSON.stringify(v)).digest("hex");
 var key2 = (p) => p.provider + ":" + uuid3.parse(p.sessionId);
 var same = (a, b) => key2(a) === key2(b);
@@ -8661,10 +8670,28 @@ class DesktopRunStore {
     return r.state === "active" && m.authorized && m.context_version === r.context_version && m.epoch === r.lease_epoch ? "deliver" : "drop";
   }
   consentHash(r, coversLaterContexts = false) {
-    const pinned = { initiator: r.initiator, participants: JSON.parse(r.participants).map((p) => {
-      const st = statSync4(p.project.directory, { bigint: true });
-      return { provider: p.provider, sessionId: p.sessionId, pid: p.pid, procStart: p.procStart, project: { kind: p.project.kind, directory: p.project.directory, worktree: p.project.worktree, commonGitDir: p.project.commonGitDir }, dev: String(st.dev), ino: String(st.ino) };
-    }), limits: r.limits, routine: r.routine };
+    const pinned = {
+      initiator: r.initiator,
+      participants: JSON.parse(r.participants).map((p) => {
+        const st = statSync4(p.project.directory, { bigint: true });
+        return {
+          provider: p.provider,
+          sessionId: p.sessionId,
+          pid: p.pid,
+          procStart: p.procStart,
+          project: {
+            kind: p.project.kind,
+            directory: p.project.directory,
+            worktree: p.project.worktree,
+            commonGitDir: p.project.commonGitDir
+          },
+          dev: String(st.dev),
+          ino: String(st.ino)
+        };
+      }),
+      limits: r.limits,
+      routine: r.routine
+    };
     return hash5(coversLaterContexts ? { ...pinned, scope: "run_and_later_contexts" } : { ...pinned, contextVersion: r.context_version, context: r.context });
   }
   coversLaterContexts(id) {
@@ -8682,7 +8709,11 @@ class DesktopRunStore {
         throw new Error("Run consent is for Claude initiation only");
       this.db.run("INSERT INTO desktop_run_consents(run_id,consent_hash,panel_session,created_at,expires_at,used_bootstrap_message_id,revoked_at) VALUES(?,?,?,?,?,NULL,NULL) ON CONFLICT(run_id) DO UPDATE SET consent_hash=excluded.consent_hash,panel_session=excluded.panel_session,created_at=excluded.created_at,expires_at=excluded.expires_at,revoked_at=NULL", [id, this.consentHash(r, coversLaterContexts), panelActor, this.now(), r.deadline ?? this.now() + 600000]);
       this.db.run("INSERT INTO desktop_consent_scopes VALUES(?,?) ON CONFLICT(run_id) DO UPDATE SET covers_later_contexts=excluded.covers_later_contexts", [id, coversLaterContexts ? 1 : 0]);
-      this.event(id, "run_consent", panelActor, { contextVersion: r.context_version, scope: coversLaterContexts ? "this_run_and_later_contexts" : "this_run_only", humanPresenceVerified: false });
+      this.event(id, "run_consent", panelActor, {
+        contextVersion: r.context_version,
+        scope: coversLaterContexts ? "this_run_and_later_contexts" : "this_run_only",
+        humanPresenceVerified: false
+      });
       return this.consentStatus(id);
     }).immediate();
   }
@@ -8693,7 +8724,13 @@ class DesktopRunStore {
     try {
       matches = !!c && c.consent_hash === this.consentHash(r, later);
     } catch {}
-    return { valid: matches && !!c && c.revoked_at === null && c.expires_at > this.now() && !["completed", "cancelled", "limit_reached"].includes(r.state), expiresAt: c?.expires_at ?? null, actor: c?.panel_session ?? null, bootstrapMessageId: c?.used_bootstrap_message_id ?? null, coversLaterContexts: !!c && later };
+    return {
+      valid: matches && !!c && c.revoked_at === null && c.expires_at > this.now() && !["completed", "cancelled", "limit_reached"].includes(r.state),
+      expiresAt: c?.expires_at ?? null,
+      actor: c?.panel_session ?? null,
+      bootstrapMessageId: c?.used_bootstrap_message_id ?? null,
+      coversLaterContexts: !!c && later
+    };
   }
   grantEdit(id, p, panelActor, expectedRevision, scope) {
     return this.db.transaction(() => {
@@ -8710,7 +8747,11 @@ class DesktopRunStore {
         throw new Error("Edit scope must contain 1\u20134000 characters");
       const grantee = JSON.parse(r.participants).find((x) => key2(x) !== r.initiator);
       this.db.run("INSERT INTO desktop_edit_grants VALUES(?,?,?,?,1,?,NULL,0) ON CONFLICT(run_id) DO UPDATE SET scope=excluded.scope,panel_session=excluded.panel_session,created_at=excluded.created_at,revoked_at=NULL,revision=revision+1", [id, key2(grantee), text, panelActor, this.now()]);
-      this.event(id, "edit_authorization", panelActor, { grantee: key2(grantee), scopeHash: hash5(text), humanPresenceVerified: false });
+      this.event(id, "edit_authorization", panelActor, {
+        grantee: key2(grantee),
+        scopeHash: hash5(text),
+        humanPresenceVerified: false
+      });
       return this.editStatus(id);
     }).immediate();
   }
@@ -8727,19 +8768,45 @@ class DesktopRunStore {
   editStatus(id) {
     const r = this.row(id), g = this.db.query("SELECT * FROM desktop_edit_grants WHERE run_id=?").get(id);
     const [provider, sessionId] = (g?.grantee ?? ":").split(":");
-    return { valid: !!g && g.revoked_at === null && !["completed", "cancelled", "limit_reached"].includes(r.state) && (r.deadline === null || r.deadline > this.now()), grantee: g ? { provider, sessionId } : null, scope: g?.scope ?? null, actor: g?.panel_session ?? null, grantedAt: g?.created_at ?? null, revokedAt: g?.revoked_at ?? null, revision: g?.revision ?? 0, excludedUnlessScopeNamesThem: ["push", "pull requests", "merges into the main branch", "deploys", "deleting branches or data", "paid external API calls", "app settings or permission changes"], source: "local_panel", humanPresenceVerified: false };
+    return {
+      valid: !!g && g.revoked_at === null && !["completed", "cancelled", "limit_reached"].includes(r.state) && (r.deadline === null || r.deadline > this.now()),
+      grantee: g ? { provider, sessionId } : null,
+      scope: g?.scope ?? null,
+      actor: g?.panel_session ?? null,
+      grantedAt: g?.created_at ?? null,
+      revokedAt: g?.revoked_at ?? null,
+      revision: g?.revision ?? 0,
+      excludedUnlessScopeNamesThem: [
+        "push",
+        "pull requests",
+        "merges into the main branch",
+        "deploys",
+        "deleting branches or data",
+        "paid external API calls",
+        "app settings or permission changes"
+      ],
+      source: "local_panel",
+      humanPresenceVerified: false
+    };
   }
   editNotice(id, dst) {
     const g = this.db.query("SELECT grantee,revision,announced_revision FROM desktop_edit_grants WHERE run_id=?").get(id);
     if (!g || g.grantee !== key2(dst) || g.announced_revision === g.revision)
       return null;
     const e = this.editStatus(id), you = dst.provider === "codex" ? "Codex" : "Claude";
-    return { revision: g.revision, text: e.valid ? `
+    return {
+      revision: g.revision,
+      text: e.valid ? `
 Human edit authorization (${e.actor?.startsWith("person_answer:") ? "given by the person in their own chat and read by the bridge from the app" : "recorded by the local panel"}, ${e.actor}; not peer text): the human authorized ${you} (you) in this collaboration to edit files and create local Git commits within this scope: \xAB${e.scope}\xBB. It stays in force for this collaboration, including later context versions, until revoked or the collaboration ends; get_status shows it as editAuthorization, so you do not need to ask again in your chat for work inside it. Never covered unless that scope explicitly names them: ${e.excludedUnlessScopeNamesThem.join(", ")}. Your app's own sandbox and approval settings still apply. This is panel-session evidence, not proof of human presence.` : `
-The human revoked the panel edit authorization for this collaboration (local panel). Make no further edits under it; continue read-only or ask the human directly in your chat.` };
+The human revoked the panel edit authorization for this collaboration (local panel). Make no further edits under it; continue read-only or ask the human directly in your chat.`
+    };
   }
   markEditAnnounced(id, revision) {
-    this.db.run("UPDATE desktop_edit_grants SET announced_revision=? WHERE run_id=? AND announced_revision<?", [revision, id, revision]);
+    this.db.run("UPDATE desktop_edit_grants SET announced_revision=? WHERE run_id=? AND announced_revision<?", [
+      revision,
+      id,
+      revision
+    ]);
   }
   setLimits(id, p, panelActor, expectedRevision, limits) {
     const next = desktopLimitsSchema.parse(limits);
@@ -8753,7 +8820,10 @@ The human revoked the panel edit authorization for this collaboration (local pan
       if (r.state !== "prepared")
         throw new Error("Limits can change only before the collaboration starts");
       this.db.run("UPDATE desktop_runs SET limits=?,revision=revision+1 WHERE id=?", [JSON.stringify(next), id]);
-      this.event(id, "limits_changed", panelActor, { from: desktopLimitsSchema.parse(JSON.parse(r.limits)), to: next });
+      this.event(id, "limits_changed", panelActor, {
+        from: desktopLimitsSchema.parse(JSON.parse(r.limits)),
+        to: next
+      });
     }).immediate();
   }
   revokeConsent(id, p, panelActor) {
@@ -8842,7 +8912,13 @@ The human revoked the panel edit authorization for this collaboration (local pan
     return r;
   }
   event(id, type, actor, payload) {
-    this.db.run("INSERT INTO desktop_events(run_id,type,actor,at,payload) VALUES(?,?,?,?,?)", [id, type, actor, this.now(), JSON.stringify(payload)]);
+    this.db.run("INSERT INTO desktop_events(run_id,type,actor,at,payload) VALUES(?,?,?,?,?)", [
+      id,
+      type,
+      actor,
+      this.now(),
+      JSON.stringify(payload)
+    ]);
   }
   expire(id) {
     const r = this.row(id);
@@ -8869,7 +8945,14 @@ The human revoked the panel edit authorization for this collaboration (local pan
     const c = contextSchema.parse(context), l = desktopLimitsSchema.parse(limits), orientation = normalizeRoutine(routine, c.priorAnalysis);
     if (participants.length !== 2 || new Set(participants.map((x) => x.provider)).size !== 2 || !participants.some((x) => same(p, x)))
       throw new Error("Select one exact Codex and one exact Claude participant");
-    const payload = { p, c, l, participants: participants.map((x) => ({ ...x, status: undefined, name: undefined })), orientation, extensions }, digest = hash5(payload);
+    const payload = {
+      p,
+      c,
+      l,
+      participants: participants.map((x) => ({ ...x, status: undefined, name: undefined })),
+      orientation,
+      extensions
+    }, digest = hash5(payload);
     return this.db.transaction(() => {
       const old = this.db.query("SELECT * FROM desktop_runs WHERE request_id=?").get(requestId);
       if (old) {
@@ -8882,7 +8965,18 @@ The human revoked the panel edit authorization for this collaboration (local pan
       if (participants.some((x) => !same(p, x) && this.activeFor(x)))
         throw new Error("The other chat is already in an active Desktop collaboration; choose or open another one");
       const id = randomUUID5();
-      this.db.run("INSERT INTO desktop_runs VALUES(?,?,?,?,? ,?,1,?,?,?,NULL,0,0,NULL,0,NULL,?,NULL)", [id, key2(p), requestId, digest, "prepared", JSON.stringify(c), JSON.stringify(orientation), JSON.stringify(l), JSON.stringify(participants), this.now()]);
+      this.db.run("INSERT INTO desktop_runs VALUES(?,?,?,?,? ,?,1,?,?,?,NULL,0,0,NULL,0,NULL,?,NULL)", [
+        id,
+        key2(p),
+        requestId,
+        digest,
+        "prepared",
+        JSON.stringify(c),
+        JSON.stringify(orientation),
+        JSON.stringify(l),
+        JSON.stringify(participants),
+        this.now()
+      ]);
       this.db.run("INSERT INTO desktop_contexts VALUES(?,1,?)", [id, JSON.stringify(c)]);
       this.event(id, "prepared", actor ?? key2(p), { schema: "desktop_v2", authority: "local_same_uid" });
       return id;
@@ -8913,7 +9007,10 @@ The human revoked the panel edit authorization for this collaboration (local pan
         this.db.run("INSERT INTO desktop_claims VALUES(?,?)", [participant.sessionId, id]);
       }
       this.db.run("UPDATE desktop_runs SET state='active',deadline=?,lease_holder=?,lease_epoch=lease_epoch+1,lease_until=?,revision=revision+1 WHERE id=?", [this.now() + JSON.parse(r.limits).maxSeconds * 1000, holder, this.now() + 300000, id]);
-      this.db.run("UPDATE desktop_run_consents SET expires_at=? WHERE run_id=? AND revoked_at IS NULL", [this.row(id).deadline, id]);
+      this.db.run("UPDATE desktop_run_consents SET expires_at=? WHERE run_id=? AND revoked_at IS NULL", [
+        this.row(id).deadline,
+        id
+      ]);
       this.event(id, "started", actor ?? key2(p), { holder, epoch: r.lease_epoch + 1 });
       return r.lease_epoch + 1;
     }).immediate();
@@ -8962,14 +9059,49 @@ The human revoked the panel edit authorization for this collaboration (local pan
           throw new Error("Reply must reference a current message addressed to this caller");
       }
       if (task && this.coordination.status(id, current.context_version).structured)
-        this.coordination.assign(id, { assigner: key2(p), assignee: key2(dst), contextVersion: current.context_version, messageId, task });
+        this.coordination.assign(id, {
+          assigner: key2(p),
+          assignee: key2(dst),
+          contextVersion: current.context_version,
+          messageId,
+          task
+        });
       const capability = randomBytes(32).toString("hex");
-      this.db.run("INSERT INTO desktop_messages VALUES(?,?,?,?,?,?,?,?,'reserved',?,NULL,?,?,0,?,0)", [messageId, id, key2(p), key2(dst), current.context_version, body, digest, hash5(capability), current.lease_epoch, replyTo ?? null, task ? JSON.stringify(task) : null, this.now()]);
+      this.db.run("INSERT INTO desktop_messages VALUES(?,?,?,?,?,?,?,?,'reserved',?,NULL,?,?,0,?,0)", [
+        messageId,
+        id,
+        key2(p),
+        key2(dst),
+        current.context_version,
+        body,
+        digest,
+        hash5(capability),
+        current.lease_epoch,
+        replyTo ?? null,
+        task ? JSON.stringify(task) : null,
+        this.now()
+      ]);
       if (current.messages_used === 0)
         this.db.run("INSERT INTO desktop_bootstraps VALUES(?,?)", [id, messageId]);
       this.db.run("UPDATE desktop_runs SET messages_used=messages_used+1,lease_until=? WHERE id=? AND lease_epoch=?", [this.now() + 300000, id, current.lease_epoch]);
-      this.event(id, "message_reserved", key2(p), { messageId, src: key2(p), dst: key2(dst), contextVersion: current.context_version });
-      return { reused: false, bootstrap: current.messages_used === 0, message: this.message(messageId), header: { runId: id, messageId, capability, contextVersion: current.context_version, ...replyTo ? { replyTo } : {} } };
+      this.event(id, "message_reserved", key2(p), {
+        messageId,
+        src: key2(p),
+        dst: key2(dst),
+        contextVersion: current.context_version
+      });
+      return {
+        reused: false,
+        bootstrap: current.messages_used === 0,
+        message: this.message(messageId),
+        header: {
+          runId: id,
+          messageId,
+          capability,
+          contextVersion: current.context_version,
+          ...replyTo ? { replyTo } : {}
+        }
+      };
     }).immediate();
   }
   abandon(id, p, messageId, reason) {
@@ -9031,7 +9163,11 @@ The human revoked the panel edit authorization for this collaboration (local pan
       const bootstrap = this.db.query("SELECT * FROM desktop_bootstraps WHERE run_id=?").get(r.id);
       if (m.src === r.initiator && r.initiator.startsWith("claude:"))
         this.db.run("UPDATE desktop_run_consents SET used_bootstrap_message_id=? WHERE run_id=? AND used_bootstrap_message_id IS NULL", [m.id, r.id]);
-      this.event(r.id, "recipient_admission", key2(receiver), { messageId: m.id, attribution: "local_capability", budgetCountedAtReservation: true });
+      this.event(r.id, "recipient_admission", key2(receiver), {
+        messageId: m.id,
+        attribution: "local_capability",
+        budgetCountedAtReservation: true
+      });
       return true;
     }).immediate();
   }
@@ -9097,14 +9233,30 @@ The human revoked the panel edit authorization for this collaboration (local pan
       }
       if (report.kind === "review" && !all.some((x) => x.contextVersion === r.context_version && x.report.kind === "result" && x.report.resultId === report.resultId && x.report.version === report.version))
         throw new Error("Review target is absent or stale");
-      this.db.run("INSERT INTO desktop_reports VALUES(?,?,?,?,?,?,?,?)", [reportId, id, key2(p), reportContext, JSON.stringify(report), text, h, this.now()]);
+      this.db.run("INSERT INTO desktop_reports VALUES(?,?,?,?,?,?,?,?)", [
+        reportId,
+        id,
+        key2(p),
+        reportContext,
+        JSON.stringify(report),
+        text,
+        h,
+        this.now()
+      ]);
       if (structured && reportContext === r.context_version)
         this.coordination.complete(id, key2(p), reportId, reportContext, report);
       this.event(id, "agent_report", key2(p), { reportId, declared: true, validatedByCore: false });
     }).immediate();
   }
   reports(id) {
-    return this.db.query("SELECT * FROM desktop_reports WHERE run_id=? ORDER BY rowid").all(id).map((x) => ({ ...x, report: reportSchema.parse(JSON.parse(x.payload)), contextVersion: x.context_version, contentHash: hash5(x.body), declared: true, validatedByCore: false }));
+    return this.db.query("SELECT * FROM desktop_reports WHERE run_id=? ORDER BY rowid").all(id).map((x) => ({
+      ...x,
+      report: reportSchema.parse(JSON.parse(x.payload)),
+      contextVersion: x.context_version,
+      contentHash: hash5(x.body),
+      declared: true,
+      validatedByCore: false
+    }));
   }
   control(id, p, actionId, expectedRevision, action, holder, panel = false, closed = []) {
     return this.db.transaction(() => {
@@ -9128,11 +9280,29 @@ The human revoked the panel edit authorization for this collaboration (local pan
       if (action.action === "cancel" || action.action === "finish") {
         if (action.closure) {
           const reports = this.reports(id), target = action.closure.result, result = target ? reports.find((q) => q.report.kind === "result" && q.report.resultId === target.resultId && q.report.version === target.version) : null, all = this.status(id, p);
-          this.coordination.close(id, key2(p), action.closure, { contextVersion: r.context_version, result: result && result.report.kind === "result" ? { resultId: result.report.resultId, version: result.report.version, author: result.author, contentHash: result.contentHash, contextVersion: result.contextVersion } : null, reviews: all.reviews.map((q) => {
-            if (q.report.kind !== "review")
-              throw new Error("Invalid review");
-            return { author: q.author, resultId: q.report.resultId, version: q.report.version, verdict: q.report.verdict, contextVersion: q.contextVersion, current: q.current, disagreements: q.report.disagreements };
-          }) });
+          this.coordination.close(id, key2(p), action.closure, {
+            contextVersion: r.context_version,
+            result: result && result.report.kind === "result" ? {
+              resultId: result.report.resultId,
+              version: result.report.version,
+              author: result.author,
+              contentHash: result.contentHash,
+              contextVersion: result.contextVersion
+            } : null,
+            reviews: all.reviews.map((q) => {
+              if (q.report.kind !== "review")
+                throw new Error("Invalid review");
+              return {
+                author: q.author,
+                resultId: q.report.resultId,
+                version: q.report.version,
+                verdict: q.report.verdict,
+                contextVersion: q.contextVersion,
+                current: q.current,
+                disagreements: q.report.disagreements
+              };
+            })
+          });
         }
         this.terminal(id, action.action === "cancel" ? "cancelled" : "completed", action.action === "finish" && closed.length ? "finish_participant_closed" : action.action, actor);
       } else {
@@ -9155,14 +9325,22 @@ The human revoked the panel edit authorization for this collaboration (local pan
             this.coordination.phase(id, actor, actionId, action.coordinationRevision ?? -1, action.phase, r.context_version);
           if (action.action === "task") {
             const assigned = action.assignee === "peer" ? JSON.parse(r.participants).find((x) => !same(x, p)) : p;
-            this.coordination.assign(id, { assigner: key2(p), assignee: key2(assigned), contextVersion: r.context_version, task: action.task });
+            this.coordination.assign(id, {
+              assigner: key2(p),
+              assignee: key2(assigned),
+              contextVersion: r.context_version,
+              task: action.task
+            });
           }
           if (action.action === "context") {
             const c = contextSchema.parse(action.context);
             if (this.db.query("SELECT 1 FROM desktop_messages WHERE run_id=? AND status IN('reserved','submitting','unknown')").get(id))
               throw new Error("Resolve uncertain delivery before context");
             this.db.run("INSERT INTO desktop_contexts VALUES(?,?,?)", [id, r.context_version + 1, JSON.stringify(c)]);
-            this.db.run("UPDATE desktop_runs SET context=?,context_version=context_version+1 WHERE id=?", [JSON.stringify(c), id]);
+            this.db.run("UPDATE desktop_runs SET context=?,context_version=context_version+1 WHERE id=?", [
+              JSON.stringify(c),
+              id
+            ]);
             this.coordination.contextChanged(id, r.context_version + 1);
           }
         }
@@ -9187,9 +9365,52 @@ The human revoked the panel edit authorization for this collaboration (local pan
         throw new Error("Invalid review");
       const versions = results.filter((y) => y.report.kind === "result" && y.report.resultId === q.resultId);
       const target = versions.find((y) => y.report.kind === "result" && y.report.version === q.version);
-      return { ...x, current: x.contextVersion === r.context_version && target?.contextVersion === r.context_version && q.version === Math.max(0, ...versions.map((y) => y.report.kind === "result" ? y.report.version : 0)), targetHash: target?.contentHash ?? null };
+      return {
+        ...x,
+        current: x.contextVersion === r.context_version && target?.contextVersion === r.context_version && q.version === Math.max(0, ...versions.map((y) => y.report.kind === "result" ? y.report.version : 0)),
+        targetHash: target?.contentHash ?? null
+      };
     });
-    return { schemaVersion: "desktop_v2", id: r.id, initiator: { provider: r.initiator.split(":")[0], sessionId: r.initiator.split(":")[1] }, ownerThread: r.initiator.split(":")[1], state: r.state, reason: r.reason, createdAt: r.created_at, contextVersion: r.context_version, context: contextSchema.parse(JSON.parse(r.context)), routine: JSON.parse(r.routine), limits: desktopLimitsSchema.parse(JSON.parse(r.limits)), messagesUsed: r.messages_used, deadline: r.deadline, participants: JSON.parse(r.participants).map((x) => ({ ...x, surfaceLabel: surfaceLabel(x.surface) })), consent: this.consentStatus(id), editAuthorization: this.editStatus(id), coordination: { revision: r.revision, lease: { holder: r.lease_holder, epoch: r.lease_epoch, expiresAt: r.lease_until }, barrierOpen: !structured.structured || structured.barrierOpen, structured }, reports, results, reviews, validatedConsensus: false, messages: this.db.query("SELECT * FROM desktop_messages WHERE run_id=? ORDER BY rowid").all(id).map(({ cap_hash, body, ...m }) => ({ ...m, src: { provider: m.src.split(":")[0], sessionId: m.src.split(":")[1] }, dst: { provider: m.dst.split(":")[0], sessionId: m.dst.split(":")[1] }, text: m.authorized || ["socket-written", "delivered", "consumed"].includes(m.status) ? body : null, attribution: m.dst.startsWith("claude:") ? "authenticated_mcp_caller" : "local_capability", recipientAdmission: m.dst.startsWith("claude:") ? "native_claude_not_observed" : m.authorized ? "core_admitted" : "not_admitted" })), events: this.db.query("SELECT * FROM desktop_events WHERE run_id=? ORDER BY sequence").all(id).map((e) => ({ ...e, payload: JSON.parse(e.payload) })) };
+    return {
+      schemaVersion: "desktop_v2",
+      id: r.id,
+      initiator: { provider: r.initiator.split(":")[0], sessionId: r.initiator.split(":")[1] },
+      ownerThread: r.initiator.split(":")[1],
+      state: r.state,
+      reason: r.reason,
+      createdAt: r.created_at,
+      contextVersion: r.context_version,
+      context: contextSchema.parse(JSON.parse(r.context)),
+      routine: JSON.parse(r.routine),
+      limits: desktopLimitsSchema.parse(JSON.parse(r.limits)),
+      messagesUsed: r.messages_used,
+      deadline: r.deadline,
+      participants: JSON.parse(r.participants).map((x) => ({
+        ...x,
+        surfaceLabel: surfaceLabel(x.surface)
+      })),
+      consent: this.consentStatus(id),
+      editAuthorization: this.editStatus(id),
+      coordination: {
+        revision: r.revision,
+        lease: { holder: r.lease_holder, epoch: r.lease_epoch, expiresAt: r.lease_until },
+        barrierOpen: !structured.structured || structured.barrierOpen,
+        structured
+      },
+      reports,
+      results,
+      reviews,
+      validatedConsensus: false,
+      messages: this.db.query("SELECT * FROM desktop_messages WHERE run_id=? ORDER BY rowid").all(id).map(({ cap_hash, body, ...m }) => ({
+        ...m,
+        src: { provider: m.src.split(":")[0], sessionId: m.src.split(":")[1] },
+        dst: { provider: m.dst.split(":")[0], sessionId: m.dst.split(":")[1] },
+        text: m.authorized || ["socket-written", "delivered", "consumed"].includes(m.status) ? body : null,
+        attribution: m.dst.startsWith("claude:") ? "authenticated_mcp_caller" : "local_capability",
+        recipientAdmission: m.dst.startsWith("claude:") ? "native_claude_not_observed" : m.authorized ? "core_admitted" : "not_admitted"
+      })),
+      events: this.db.query("SELECT * FROM desktop_events WHERE run_id=? ORDER BY sequence").all(id).map((e) => ({ ...e, payload: JSON.parse(e.payload) }))
+    };
   }
   list(p, panel = false) {
     return this.db.query("SELECT id,participants FROM desktop_runs ORDER BY created_at DESC").all().filter((r) => JSON.parse(r.participants).some((x) => same(x, p))).map((r) => this.status(r.id, p, panel));
@@ -9203,7 +9424,10 @@ function parseDesktopMessage(text) {
 `);
   if (end < 0 || end > 2048)
     throw new Error("Invalid Desktop header");
-  return { header: desktopHeaderSchema.parse(JSON.parse(body.slice(desktopPrefix.length, end))), text: body.slice(end + 1) };
+  return {
+    header: desktopHeaderSchema.parse(JSON.parse(body.slice(desktopPrefix.length, end))),
+    text: body.slice(end + 1)
+  };
 }
 
 // src/bridge.ts
