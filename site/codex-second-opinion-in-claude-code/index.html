@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Codex second opinion in Claude Code, with full context | Agents Bridge</title>
+  <meta name="description" content="Ask Codex for a second opinion from your Claude Code chat, or Claude from your Codex chat. The reviewer is a real chat that can ask back, not a fresh run. Free plugin for macOS.">
+  <meta property="og:site_name" content="Agents Bridge">
+  <meta property="og:title" content="Codex second opinion in Claude Code, with full context | Agents Bridge">
+  <meta property="og:description" content="A second opinion from the other model, in either direction, from a chat that keeps its context and can ask back.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://www.agentsbridge.dev/codex-second-opinion-in-claude-code/">
+  <meta property="og:image" content="https://www.agentsbridge.dev/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Agents Bridge: Claude Code and Codex, in one conversation">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://www.agentsbridge.dev/codex-second-opinion-in-claude-code/">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable summary">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "name": "Codex second opinion in Claude Code, with full context | Agents Bridge",
+    "description": "Ask Codex for a second opinion from your Claude Code chat, or Claude from your Codex chat. The reviewer is a real chat that can ask back, not a fresh run. Free plugin for macOS.",
+    "url": "https://www.agentsbridge.dev/codex-second-opinion-in-claude-code/",
+    "inLanguage": "en",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "Agents Bridge",
+      "url": "https://www.agentsbridge.dev/"
+    },
+    "about": {
+      "@type": "SoftwareApplication",
+      "name": "Agents Bridge for Claude Code and Codex",
+      "url": "https://www.agentsbridge.dev/",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "macOS"
+    },
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I get a second opinion from Codex in Claude Code?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Install Agents Bridge for Claude Code and Codex in both apps, open the project in Claude Code and Codex Desktop, and ask the Claude chat something like \"Collaborate with Codex: review this change and list concrete defects.\" Approve the three questions it asks, and the two chats talk directly."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can Codex get a second opinion from Claude?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Either chat can start. Ask the Codex chat \"Collaborate with Claude: review this plan\" and the same flow runs in the other direction."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does the reviewer see my whole conversation?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "It sees what the asking chat sends it. If you pick a chat that already worked on the project, it also keeps its own history. Because it is a real conversation, the reviewer can ask follow-up questions instead of guessing."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can the reviewer change my code?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Only if you allow it. Editing is off until you switch it on in the panel or answer yes to that question, within a scope you write, and it covers local edits and commits only."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How is this different from /codex:review?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "codex-plugin-cc runs a Codex review from Claude Code and returns its result as a job. Agents Bridge connects two chats that can both start, ask and answer over many messages. For a quick one-shot review, codex-plugin-cc is simpler."
+        }
+      }
+    ]
+  }
+  </script>
+  <meta name="theme-color" content="#0c0c0d">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/styles.css?v=guides1">
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/">
+        <svg class="mark" viewBox="4 4 24 24" width="24" height="24" aria-hidden="true"><mask id="mark-cut-nav" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32"><rect width="32" height="32" fill="#fff"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" stroke="#000" stroke-width="5.5" stroke-linejoin="round"/></mask><path d="M18 7H9a3 3 0 0 0-3 3v10l4-4h8a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3Z" fill="none" stroke="#ff7a3d" stroke-width="2.5" stroke-linejoin="round" mask="url(#mark-cut-nav)"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        <span>Agents Bridge</span>
+      </a>
+      <nav aria-label="Sections">
+        <a href="/#why">Why two models</a>
+        <a href="/#how">How it works</a>
+        <a href="/vs-codex-plugin-cc/">Compare</a>
+        <a href="https://github.com/jaimebernalm/agents-bridge/blob/main/docs/REFERENCE.md">Docs</a>
+      </nav>
+      <div class="nav-end">
+        <a href="https://github.com/jaimebernalm/agents-bridge" class="nav-gh">GitHub</a>
+        <a href="#install" class="nav-cta">Install <span aria-hidden="true">›</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-head dark" aria-labelledby="page-title">
+      <div class="rails">
+        <p class="kicker">Guide</p>
+        <h1 id="page-title">A Codex second opinion in Claude Code, <span class="tone">with the full context.</span></h1>
+        <p class="body-lede">To get a second opinion from Codex without starting from zero, connect the Codex chat you already use. <strong>Agents Bridge for Claude Code and Codex</strong> lets your Claude Code chat ask a Codex Desktop chat to review a plan, a diff or a diagnosis, and it works the other way too: Codex can ask Claude. The reviewer is a real chat with its own history, not a fresh headless run, and the two can go back and forth until each point is settled or recorded as a disagreement.</p>
+        <div class="actions">
+          <a class="btn btn-accent" href="#install">Install the bridge</a>
+          <a class="btn btn-dark" href="/#how">See how it works</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="brief light" aria-labelledby="brief-title">
+      <div class="rails">
+        <h2 id="brief-title">In short</h2>
+        <dl class="facts">
+          <div><dt>Direction</dt><dd>Claude asks Codex, or Codex asks Claude</dd></div>
+          <div><dt>Reviewer</dt><dd>A new chat in the other app, or one you already have open</dd></div>
+          <div><dt>Shape</dt><dd>A back-and-forth, not one answer: the reviewer can ask questions</dd></div>
+          <div><dt>Record</dt><dd>Each review says who wrote it and which version it refers to</dd></div>
+          <div><dt>Editing</dt><dd>Off by default; the reviewer reads and comments unless you allow edits</dd></div>
+          <div><dt>Needs</dt><dd>macOS, Codex Desktop, Claude Code 2.1.224 or later, Bun 1.4 or later, Git</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="guide light" aria-label="Guide">
+      <div class="rails">
+        <article class="prose">
+          <h2>Ask from Claude Code</h2>
+          <p>With the project open in both apps, ask your Claude chat:</p>
+          <div class="term"><span class="who">you → claude</span>Collaborate with Codex: review the change I just made in src/api and list concrete defects. 12 messages, 15 minutes.</div>
+
+          <h2>Ask from Codex</h2>
+          <p>The other direction is the same idea:</p>
+          <div class="term"><span class="who">you → codex</span>Collaborate with Claude: give me a second opinion on this diagnosis of the flaky sync test. Tell me what I've missed. 12 messages, 15 minutes.</div>
+          <p>The chat asks you three short questions: whether the other agent may edit files, the limits, and which chat to use. Answer <strong>Yes</strong> to start, or open the panel to choose an existing chat or change the details.</p>
+
+          <h2>Why context matters for a second opinion</h2>
+          <p>A fresh run only sees what you hand it, and it hands back one answer. Here, the chat asking for the review already knows your conversation and briefs the other one. If you pick a chat that has already worked on the project, the reviewer brings its own history too. When something is unclear, the reviewer can ask, and the answer comes back to the chat that wrote the code, with the context to fix it.</p>
+
+          <h2>What you get back</h2>
+          <p>Reviews are recorded with who wrote them and which version of the result they refer to. Agreement is a declaration by an agent, and open disagreements stay visible, so you know what to double-check.</p>
+          <div class="term"><span class="who">result v2 · by claude</span>Fix the 429 retry; surface the fetchUser timeout.<span class="who">review of v2 · by codex</span>Agree on the retry. Disagree on the timeout: it is handled upstream.<span class="dim">Disposition: proposal, with disagreements</span></div>
+
+          <h2>When a one-shot review is enough</h2>
+          <p>If you only want a quick read-only review of your uncommitted changes and one answer, OpenAI's <a href="https://github.com/openai/codex-plugin-cc">codex-plugin-cc</a> does that from Claude Code with <code>/codex:review</code>. See <a href="/vs-codex-plugin-cc/">how the two compare</a>.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="faq light" aria-labelledby="faq-title">
+      <div class="rails">
+        <p class="kicker">FAQ</p>
+        <h2 id="faq-title">Frequently asked questions</h2>
+        <div class="faq-list">
+          <div>
+            <h3>How do I get a second opinion from Codex in Claude Code?</h3>
+            <p>Install Agents Bridge for Claude Code and Codex in both apps, open the project in Claude Code and Codex Desktop, and ask the Claude chat something like "Collaborate with Codex: review this change and list concrete defects." Approve the three questions it asks, and the two chats talk directly.</p>
+          </div>
+          <div>
+            <h3>Can Codex get a second opinion from Claude?</h3>
+            <p>Yes. Either chat can start. Ask the Codex chat "Collaborate with Claude: review this plan" and the same flow runs in the other direction.</p>
+          </div>
+          <div>
+            <h3>Does the reviewer see my whole conversation?</h3>
+            <p>It sees what the asking chat sends it. If you pick a chat that already worked on the project, it also keeps its own history. Because it is a real conversation, the reviewer can ask follow-up questions instead of guessing.</p>
+          </div>
+          <div>
+            <h3>Can the reviewer change my code?</h3>
+            <p>Only if you allow it. Editing is off until you switch it on in the panel or answer yes to that question, within a scope you write, and it covers local edits and commits only.</p>
+          </div>
+          <div>
+            <h3>How is this different from /codex:review?</h3>
+            <p>codex-plugin-cc runs a Codex review from Claude Code and returns its result as a job. Agents Bridge connects two chats that can both start, ask and answer over many messages. For a quick one-shot review, codex-plugin-cc is simpler.</p>
+          </div>
+        </div>
+        <nav class="related" aria-label="More guides">
+          <p class="kicker">More guides</p>
+          <ul><li><a href="/brainstorm-with-claude-and-codex/">Brainstorm with Claude and Codex</a></li><li><a href="/claude-code-codex-two-way/">Claude Code and Codex, two-way</a></li><li><a href="/vs-codex-plugin-cc/">Agents Bridge vs codex-plugin-cc</a></li></ul>
+        </nav>
+      </div>
+    </section>
+
+    <section class="install dark" id="install" aria-labelledby="install-title">
+      <div class="rails">
+        <p class="kicker">Install</p>
+        <h2 id="install-title">Two commands per app.<br><span class="tone">Then just ask.</span></h2>
+        <p class="package-note">Installs as <code>agents-bridge</code>.</p>
+        <p class="body-lede">For macOS. You need Claude Code 2.1.224 or later, in the Code tab of <a href="https://claude.ai/download">Claude Desktop</a> or as <code>claude</code> in a terminal; <a href="https://openai.com/codex/">Codex Desktop</a> running (support for the Codex CLI is coming); <a href="https://bun.sh">Bun</a> 1.4 or later; and Git.</p>
+
+        <ol class="steps">
+          <li>
+            <h3><span class="num">01</span> Install the Codex side</h3>
+            <div class="code"><code>codex plugin marketplace add jaimebernalm/agents-bridge</code><button type="button" class="copy">Copy</button></div>
+            <div class="code"><code>codex plugin add agents-bridge@jaimebernalm</code><button type="button" class="copy">Copy</button></div>
+            <p>In Codex, open <strong>Agents Bridge</strong> in the plugins and trust both hooks. Then open a new Codex chat.</p>
+          </li>
+          <li>
+            <h3><span class="num">02</span> Install the Claude side</h3>
+            <div class="code"><code>claude plugin marketplace add jaimebernalm/agents-bridge</code><button type="button" class="copy">Copy</button></div>
+            <div class="code"><code>claude plugin install agents-bridge@jaimebernalm</code><button type="button" class="copy">Copy</button></div>
+            <p>Then open a new Code chat in Claude Desktop, or start <code>claude</code> in a terminal in the project folder.</p>
+          </li>
+          <li>
+            <h3><span class="num">03</span> Check that they see each other</h3>
+            <p>Open the same project folder in both apps and ask either chat: “Use Agents Bridge to list the chats in this folder.” Not listed? See <a href="https://github.com/jaimebernalm/agents-bridge#troubleshooting">Troubleshooting</a>.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer dark">
+    <div class="rails footer-inner">
+      <a class="brand" href="/">
+        <svg class="mark" viewBox="4 4 24 24" width="20" height="20" aria-hidden="true"><mask id="mark-cut-foot" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32"><rect width="32" height="32" fill="#fff"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" stroke="#000" stroke-width="5.5" stroke-linejoin="round"/></mask><path d="M18 7H9a3 3 0 0 0-3 3v10l4-4h8a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3Z" fill="none" stroke="#ff7a3d" stroke-width="2.5" stroke-linejoin="round" mask="url(#mark-cut-foot)"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        <span>Agents Bridge</span>
+      </a>
+      <p>MIT licensed. An independent project, not affiliated with Anthropic or OpenAI.</p>
+      <p><a href="https://github.com/jaimebernalm/agents-bridge/blob/main/docs/REFERENCE.md">Reference</a> · <a href="https://github.com/jaimebernalm/agents-bridge/issues">Report an issue</a></p>
+      <nav class="footer-guides" aria-label="Guides">
+        <span>Guides</span>
+        <a href="/brainstorm-with-claude-and-codex/">Brainstorm with Claude and Codex</a>
+        <a href="/codex-second-opinion-in-claude-code/">Codex second opinion in Claude Code</a>
+        <a href="/claude-code-codex-two-way/">Claude Code and Codex, two-way</a>
+        <a href="/vs-codex-plugin-cc/">Agents Bridge vs codex-plugin-cc</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // The top bar shrinks into a floating pill once the page leaves the very top.
+    var nav = document.querySelector('.nav');
+    var onScroll = function () { nav.classList.toggle('is-compact', window.scrollY > 24); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // Copy buttons: fall back to selecting the command when the clipboard API is unavailable.
+    document.querySelectorAll('.copy').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var code = btn.previousElementSibling;
+        var reset = function (ms) { setTimeout(function () { btn.textContent = 'Copy'; }, ms); };
+        var fallback = function () {
+          var range = document.createRange();
+          range.selectNodeContents(code);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          btn.textContent = 'Press ⌘C';
+          reset(2500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code.textContent).then(function () {
+            btn.textContent = 'Copied';
+            reset(1500);
+          }, fallback);
+        } else {
+          fallback();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

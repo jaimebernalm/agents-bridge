@@ -387,11 +387,52 @@ tbody td:last-child { color: var(--text); font-weight: 600; }
 }
 .copy:hover { background: var(--raise); color: var(--accent); box-shadow: inset 0 0 0 1px rgb(255 122 61 / .45); }
 
+/* Guides: a dark title block with the short answer, then light reading sections. */
+.page-head .rails { padding-top: 152px; padding-bottom: 88px; }
+.page-head h1 { max-width: 16em; font-size: clamp(36px, 5.6vw, 60px); line-height: 1.06; letter-spacing: -.032em; }
+.page-head h1 .tone { color: var(--accent); }
+.page-head .body-lede { max-width: 64ch; }
+.page-head .body-lede strong { color: var(--on-dark); font-weight: 500; }
+.page-head .actions { justify-content: flex-start; }
+.brief .rails, .guide .rails, .faq .rails { padding-top: 88px; padding-bottom: 88px; }
+@media (max-width: 720px) {
+  .page-head .rails { padding-top: 112px; padding-bottom: 64px; }
+  .brief .rails, .guide .rails, .faq .rails { padding-top: 64px; padding-bottom: 64px; }
+}
+.brief .facts { margin-top: 32px; max-width: 880px; }
+.brief .facts div { grid-template-columns: 260px 1fr; gap: 24px; }
+.brief .facts dt { font: 500 15px/24px var(--body); }
+@media (max-width: 640px) { .brief .facts div { grid-template-columns: 1fr; gap: 2px; } }
+.prose { max-width: 70ch; }
+.prose h2, .faq h2 { font-size: clamp(26px, 2.8vw, 34px); line-height: 1.15; letter-spacing: -.018em; }
+.prose h2:not(:first-child) { margin-top: 64px; }
+.prose p, .prose ul { margin-top: 16px; color: var(--text-muted); font-size: 17px; line-height: 27px; }
+.prose ul { padding-left: 22px; }
+.prose li + li { margin-top: 8px; }
+.prose li::marker { color: var(--accent-ink); }
+.prose strong { color: var(--text); font-weight: 500; }
+.prose .term { margin-top: 20px; }
+.prose a, .faq-list a, .related a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+.prose a:hover, .faq-list a:hover, .related a:hover { color: var(--accent-ink); }
+.prose p code, .prose li code, .faq-list code, .brief code { padding: 1px 5px; border-radius: 5px; background: var(--paper-2); color: var(--text); overflow-wrap: anywhere; }
+.page-head .body-lede code { color: var(--on-dark); }
+.page-head .body-lede a { color: var(--on-dark); }
+.faq-list { margin-top: 40px; display: grid; gap: 0 48px; }
+@media (min-width: 880px) { .faq-list { grid-template-columns: 1fr 1fr; } }
+.faq-list > div { padding: 24px 0 28px; border-top: 1px solid var(--line-light); }
+.faq-list p { margin-top: 10px; max-width: 60ch; color: var(--text-muted); }
+.related { margin-top: 48px; padding-top: 32px; border-top: 1px solid var(--line-light); }
+.related .kicker { margin-bottom: 12px; }
+.related ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 28px; }
+
 /* Footer */
 .footer { border-top: 1px solid var(--line-dark); }
 .footer-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; padding-top: 32px; padding-bottom: 40px; font-size: 13px; color: var(--on-dark-muted); }
 .footer-inner p:first-of-type { flex: 1; min-width: 240px; }
 .footer a { color: var(--on-dark); }
+.footer .brand { text-decoration: none; }
+.footer-guides { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px 20px; padding-top: 16px; border-top: 1px solid var(--line-dark); }
+.footer-guides span { color: var(--on-dark-muted); }
 
 @media (prefers-reduced-motion: reduce) {
   .nav, .nav-inner { transition: none; }

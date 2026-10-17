@@ -26,6 +26,13 @@ Then the person must open Codex, find Agents Bridge in its plugins and trust bot
 - [Agents' guide](https://github.com/jaimebernalm/agents-bridge/blob/main/plugins/agents-bridge/skills/bridge-collaboration/SKILL.md): how the two chats should collaborate
 - [Tool reference](https://github.com/jaimebernalm/agents-bridge/blob/main/plugins/agents-bridge/skills/bridge-collaboration/references/tools.md)
 
+## Guides
+
+- [Brainstorm with Claude and Codex together](https://www.agentsbridge.dev/brainstorm-with-claude-and-codex/): have the two chats develop and challenge ideas, starting in either app, with example prompts
+- [Codex second opinion in Claude Code, with full context](https://www.agentsbridge.dev/codex-second-opinion-in-claude-code/): a review from the other model in either direction, from a chat that keeps its context and can ask back
+- [Make Claude Code and Codex talk to each other](https://www.agentsbridge.dev/claude-code-codex-two-way/): two real chats messaging each other, and how that differs from one-way delegation
+- [codex-plugin-cc vs Agents Bridge for Claude Code and Codex](https://www.agentsbridge.dev/vs-codex-plugin-cc/): when OpenAI's codex-plugin-cc (/codex:review, /codex:adversarial-review, /codex:rescue) or `codex exec` is the better fit, and when Agents Bridge is
+
 ## Optional
 
 - [Source code](https://github.com/jaimebernalm/agents-bridge)
