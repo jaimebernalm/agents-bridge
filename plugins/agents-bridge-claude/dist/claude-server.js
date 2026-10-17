@@ -4057,13 +4057,14 @@ var require_fast_uri = __commonJS(function(exports, module) {
       if (!malformedIPLiteral) {
         malformedHost = canonicalizeHost(parsed, options, schemeHandler, isIP);
       }
-      if (!schemeHandler || schemeHandler && !schemeHandler.skipNormalize) {
-        if (uri.indexOf("%") !== -1) {
-          if (parsed.host !== undefined && !malformedIPLiteral) {
-            const host = isIP ? parsed.host : normalizePercentEncoding(parsed.host, true);
-            parsed.host = reescapeHostDelimiters(host, isIP);
-          }
+      if (uri.indexOf("%") !== -1 && parsed.host !== undefined && !malformedIPLiteral) {
+        let host = isIP ? parsed.host : normalizePercentEncoding(parsed.host, true);
+        if (!isIP) {
+          host = normalizePercentEncoding(host.toLowerCase());
         }
+        parsed.host = reescapeHostDelimiters(host, isIP);
+      }
+      if (!schemeHandler || schemeHandler && !schemeHandler.skipNormalize) {
         if (parsed.path) {
           parsed.path = normalizePathEncoding(parsed.path);
         }
@@ -22252,7 +22253,7 @@ async function authenticateClaudeCaller(options, trace = []) {
 // package.json
 var package_default = {
   name: "agents-bridge",
-  version: "1.0.3",
+  version: "1.0.4",
   private: true,
   type: "module",
   scripts: {
@@ -22270,7 +22271,7 @@ var package_default = {
     "build:claude": "bun scripts/build-claude-plugin.ts"
   },
   dependencies: {
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     zod: "^4.6.4"
   },
   devDependencies: {
@@ -26660,7 +26661,7 @@ var writingTool = (hints) => ({ readOnlyHint: false, destructiveHint: hints.dest
 // src/question-test.ts
 function registerQuestionTest(server, options) {
   server.registerTool(questionTestTool, {
-    description: "Test asking the person a bridge question with this app\u2019s own question tool. Without questionId it returns a sample " + "question to ask word for word; call it again with that questionId after the person answers to see whether the answer reached " + "the bridge directly from the app. Use it only when the person asks for this test. Sends nothing to the other chat and grants nothing.",
+    description: "Test asking the person a bridge question with this app\u2019s own question tool. Without questionId it returns a sample question to ask word for word; call it again with that questionId after the person answers to see whether the answer reached the bridge directly from the app. Use it only when the person asks for this test. Sends nothing to the other chat and grants nothing.",
     inputSchema: { questionId: uuid3.optional() },
     annotations: writingTool({ destructive: false, idempotent: false })
   }, async ({ questionId }, extra) => {

@@ -6637,7 +6637,7 @@ function serializeFrame(frame) {
 // package.json
 var package_default = {
   name: "agents-bridge",
-  version: "1.0.3",
+  version: "1.0.4",
   private: true,
   type: "module",
   scripts: {
@@ -6655,7 +6655,7 @@ var package_default = {
     "build:claude": "bun scripts/build-claude-plugin.ts"
   },
   dependencies: {
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     zod: "^4.6.4"
   },
   devDependencies: {
