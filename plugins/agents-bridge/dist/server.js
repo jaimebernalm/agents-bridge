@@ -4057,13 +4057,14 @@ var require_fast_uri = __commonJS(function(exports, module) {
       if (!malformedIPLiteral) {
         malformedHost = canonicalizeHost(parsed, options, schemeHandler, isIP);
       }
-      if (!schemeHandler || schemeHandler && !schemeHandler.skipNormalize) {
-        if (uri.indexOf("%") !== -1) {
-          if (parsed.host !== undefined && !malformedIPLiteral) {
-            const host = isIP ? parsed.host : normalizePercentEncoding(parsed.host, true);
-            parsed.host = reescapeHostDelimiters(host, isIP);
-          }
+      if (uri.indexOf("%") !== -1 && parsed.host !== undefined && !malformedIPLiteral) {
+        let host = isIP ? parsed.host : normalizePercentEncoding(parsed.host, true);
+        if (!isIP) {
+          host = normalizePercentEncoding(host.toLowerCase());
         }
+        parsed.host = reescapeHostDelimiters(host, isIP);
+      }
+      if (!schemeHandler || schemeHandler && !schemeHandler.skipNormalize) {
         if (parsed.path) {
           parsed.path = normalizePathEncoding(parsed.path);
         }
@@ -6939,7 +6940,7 @@ var package_default = {
     "build:claude": "bun scripts/build-claude-plugin.ts"
   },
   dependencies: {
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     zod: "^4.6.4"
   },
   devDependencies: {
