@@ -10,6 +10,7 @@ import { authenticateClaudeCaller, CallerRejected, metaSessionHints, parentPid, 
 import { version } from './version';
 import { registerDesktopTools } from './desktop-runtime';
 import { diagnoseTool, serverInstructions, serverName, stateFolder } from './names';
+import { readOnlyTool } from './tool-hints';
 import { setReaderApp } from './project';
 
 export type Authenticate = (meta?: Record<string, unknown>) => Promise<AuthenticatedCaller>;
@@ -44,7 +45,7 @@ export function createClaudeServer(options: ClaudeServerOptions) {
     `${diagnoseTool} reports whether this chat is connected to the bridge; a rejection means the bridge is unavailable here, not that you should supply an ID.`) });
   server.registerTool(diagnoseTool, {
     description: 'Report whether this Claude chat is connected to the bridge and, if not, why. Takes no input: the bridge finds the chat from its own process. Read-only.',
-    inputSchema: {}, annotations: { readOnlyHint: true, openWorldHint: false },
+    inputSchema: {}, annotations: readOnlyTool,
   }, async (_args, extra) => {
     const meta = extra._meta as Record<string, unknown> | undefined, trace: AncestorStep[] = [];
     let caller: AuthenticatedCaller | undefined, rejection: { code: string; message: string } | undefined;

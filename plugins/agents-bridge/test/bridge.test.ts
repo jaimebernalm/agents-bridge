@@ -23,8 +23,18 @@ test('the Codex server lists its tools, binds state to caller metadata and rejec
       env: { CODEX_HOME: root, CLAUDE_CONFIG_DIR: root } }));
     expect(client.getServerVersion()?.version).toBe(version);
     // The same collaboration tools as Claude, plus Codex's own receiver tools.
-    expect((await client.listTools()).tools.map(tool => tool.name).sort())
+    const listed = (await client.listTools()).tools;
+    expect(listed.map(tool => tool.name).sort())
       .toEqual(['connect_this_chat', 'diagnose', 'session_start', questionTestTool, ...Object.values(tools)].sort());
+    // Every tool declares all four hints, as directories such as OpenAI's require; none reaches beyond this computer.
+    for (const tool of listed) {
+      for (const hint of ['readOnlyHint', 'destructiveHint', 'idempotentHint', 'openWorldHint'] as const) expect(typeof tool.annotations?.[hint]).toBe('boolean');
+      expect(tool.annotations?.openWorldHint).toBe(false);
+      if (tool.annotations?.readOnlyHint) expect(tool.annotations.destructiveHint).toBe(false);
+    }
+    expect(listed.filter(tool => tool.annotations?.readOnlyHint).map(tool => tool.name).sort())
+      .toEqual(['diagnose', tools.discover, tools.preflight, tools.status, tools.export, tools.ticket_status].sort());
+    expect(listed.filter(tool => tool.annotations?.destructiveHint).map(tool => tool.name).sort()).toEqual([tools.confirm, tools.control].sort());
     // Without caller metadata no tool can tell which Codex task is asking.
     const missing = await client.callTool({ name: 'diagnose', arguments: { cwd: root } });
     expect(missing.isError).toBe(true);

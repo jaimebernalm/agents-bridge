@@ -13,6 +13,7 @@ import { doctor } from './doctor';
 import { ownCodexParticipant } from './participants';
 import { setReaderApp } from './project';
 import { diagnoseTool, serverInstructions, serverName, stateFolder } from './names';
+import { readOnlyTool, writingTool } from './tool-hints';
 
 setReaderApp('Codex');
 const configDir = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude');
@@ -48,7 +49,7 @@ const server = new McpServer({ name: serverName, version }, { instructions: serv
   `If ${diagnoseTool} finds no receiver for this chat, connect_this_chat connects it without losing the conversation.`) });
 
 server.registerTool('session_start', { description: 'Bind the native SessionStart lifecycle hook and start the receiver.',
-  inputSchema: { cwd: z.string().refine(isAbsolute) }, _meta: { ui: { visibility: [] } } }, async ({ cwd }, extra) => {
+  inputSchema: { cwd: z.string().refine(isAbsolute) }, annotations: writingTool({ destructive: false, idempotent: true }), _meta: { ui: { visibility: [] } } }, async ({ cwd }, extra) => {
   const threadId = callerThread(extra._meta);
   if (bridge && bridge.threadId !== threadId) throw new Error('This MCP process is already bound to another Codex task');
   await activateReceiver({ threadId, project: cwd, configDir, codexHome, hookPath: join(import.meta.dir, `hook${extname(import.meta.path)}`) });
@@ -58,7 +59,7 @@ server.registerTool('session_start', { description: 'Bind the native SessionStar
 });
 
 server.registerTool('connect_this_chat', { description: 'Connect this existing Codex chat to the bridge so the other chat can reach it, for a chat opened before the plugin’s hooks were trusted. Use it when the person asks or diagnose reports no receiver. Keeps the conversation and changes no permission or reception setting.',
-  inputSchema: { cwd: z.string().refine(isAbsolute) }, annotations: { openWorldHint: false } }, async ({ cwd }, extra) => {
+  inputSchema: { cwd: z.string().refine(isAbsolute) }, annotations: writingTool({ destructive: false, idempotent: true }) }, async ({ cwd }, extra) => {
   const threadId = callerThread(extra._meta);
   if (bridge && bridge.threadId !== threadId) throw new Error('This MCP process is already bound to another Codex task');
   const attached = await activateReceiver({ threadId, project: cwd, configDir, codexHome, hookPath: join(import.meta.dir, `hook${extname(import.meta.path)}`) });
@@ -67,7 +68,7 @@ server.registerTool('connect_this_chat', { description: 'Connect this existing C
 });
 
 server.registerTool(diagnoseTool, { description: 'Check why the bridge works or not in this Codex chat and project: runtime, installation, receiver and reception. Optionally checks one other chat by peerId. Read-only: sends nothing and changes no setting.',
-  inputSchema: { cwd: z.string().refine(isAbsolute), peerId: uuid.optional() }, annotations: { readOnlyHint: true, openWorldHint: false } },
+  inputSchema: { cwd: z.string().refine(isAbsolute), peerId: uuid.optional() }, annotations: readOnlyTool },
   async ({ cwd, peerId }, extra) => result(await doctor({ project: cwd, threadId: callerThread(extra._meta), peerId,
     configDir, codexHome, pluginRoot: dirname(import.meta.dir) })));
 
