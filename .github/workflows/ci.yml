@@ -31,14 +31,15 @@ jobs:
       - run: bun run check
       - run: bun test
 
-      # dist/ is committed and `codex plugin marketplace add` installs from the branch,
-      # so a bundle that lags src/ ships stale code with no error anywhere.
-      - name: Committed bundle matches src
+      # dist/ is committed and both apps install the plugins from the branch, so a bundle that
+      # lags src/ ships stale code with no error anywhere. The bundles stay unminified so anyone
+      # can read what runs, and this check shows it is exactly what src/ builds to.
+      - name: Committed bundles match src
         if: matrix.os == 'ubuntu-latest'
         run: |
           set -eu
           bun run build
-          git diff --exit-code -- dist panel-dist || {
+          git diff --exit-code -- dist panel-dist ../agents-bridge-claude/dist ../agents-bridge-claude/panel-dist ../agents-bridge-claude/skills ../agents-bridge-claude/scripts || {
             echo "::error::dist is stale. Run 'bun run build' and commit the result."
             exit 1
           }

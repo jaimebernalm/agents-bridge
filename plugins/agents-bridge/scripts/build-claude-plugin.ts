@@ -7,7 +7,7 @@ import { join } from 'node:path';
 const here = join(import.meta.dir, '..'), target = join(here, '../agents-bridge-claude');
 const result = await Bun.build({
   entrypoints: [join(here, 'src/claude-server.ts'), join(here, 'src/claude-hook.ts'), join(here, 'src/answer-hook.ts'), join(here, 'src/panel-hook.ts')],
-  target: 'bun', minify: true, outdir: join(target, 'dist'),
+  target: 'bun', outdir: join(target, 'dist'),
 });
 if (!result.success) { for (const log of result.logs) console.error(log); process.exit(1); }
 copyFileSync(join(here, 'scripts/run-bun.sh'), join(target, 'scripts/run-bun.sh'));

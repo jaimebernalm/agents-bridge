@@ -1,6 +1,6 @@
 {
   "name": "agents-bridge",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,7 +12,7 @@
     "doctor": "bun src/cli.ts doctor",
     "attach": "bun src/cli.ts attach",
     "verify:installation": "bun scripts/verify-installation.ts",
-    "build:backend": "bun build src/server.ts src/hook.ts src/cli.ts --target=bun --minify --outdir=dist",
+    "build:backend": "bun build src/server.ts src/hook.ts src/cli.ts --target=bun --outdir=dist",
     "build:ui": "cd ui && bun run build",
     "sanitize:pilot": "bun scripts/sanitize-pilot.ts",
     "build:claude": "bun scripts/build-claude-plugin.ts"
