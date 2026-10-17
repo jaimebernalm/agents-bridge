@@ -6921,7 +6921,7 @@ var require_dist = __commonJS(function(exports, module) {
 // package.json
 var package_default = {
   name: "agents-bridge",
-  version: "1.0.3",
+  version: "1.0.4",
   private: true,
   type: "module",
   scripts: {

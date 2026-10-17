@@ -7436,7 +7436,7 @@ import { Database as Database2 } from "bun:sqlite";
 // package.json
 var package_default = {
   name: "agents-bridge",
-  version: "1.0.3",
+  version: "1.0.4",
   private: true,
   type: "module",
   scripts: {
