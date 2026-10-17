@@ -30,6 +30,7 @@ import {askOf,consumeQuestion,createQuestion,questionExpired,questionLanguage,qu
 import {approvalDecision,approvalQuestions,proposalSubject,subjectParts,type Limits} from './chat-approval';
 import {writePanelCard} from './panel-card';
 import {displayName,tools,type Operation} from './names';
+import {readOnlyTool,writingTool,type ToolHints} from './tool-hints';
 import {registerQuestionTest} from './question-test';
 import {claudeCliSurface,claudeSurfaces} from './surfaces';
 
@@ -111,7 +112,15 @@ export function registerDesktopTools(server:McpServer,options:DesktopRuntimeOpti
   // The panel as a card the agent shows in the chat: a page with the link that opens this chat's panel window.
   const panelCard=async(c:RuntimeCaller)=>writePanelCard(options.stateDir,c,(await ensurePanel(c)).panel.openUrl,questionLanguage(options.stateDir));
   const privatePanel=async(c:RuntimeCaller,force=false,target:{runId?:string;authorization?:boolean;pickChat?:boolean}={}):Promise<{url:string;browser:unknown;actor:string;tokenReturned:false}>=>{const {panel:current,replaced}=await ensurePanel(c);force=force||replaced;const browser=await opening.open('desktop:'+c.provider+':'+c.sessionId,panelLink(force?current.reopenUrl():current.url,target),true,force);return {url:panelLink(current.origin+'/',target),browser,actor:'panel_session',tokenReturned:false};};
-  const register=(name:Operation,schema:Record<string,z.ZodType>,description:string,run:(args:any,c:RuntimeCaller,panelActor?:string)=>Promise<unknown>|unknown)=>{operations.set(name,{schema:z.object(schema).strict(),run});server.registerTool(tools[name],{description,inputSchema:schema,annotations:{openWorldHint:false,readOnlyHint:['discover','preflight','status','export','ticket_status'].includes(name)}},async(args,extra)=>result(await run(args,await caller(extra._meta))));};
+  // Each tool's four hints (tool-hints.ts). control can cancel or finish a collaboration and confirm discards the proposal on
+  // Cancel; propose without a requestId and open_new_chat's claim are the only writes a repeated call does not simply return.
+  const toolHints:Record<Operation,ToolHints>={discover:readOnlyTool,preflight:readOnlyTool,status:readOnlyTool,export:readOnlyTool,ticket_status:readOnlyTool,
+   control:writingTool({destructive:true,idempotent:true}),confirm:writingTool({destructive:true,idempotent:true}),
+   propose:writingTool({destructive:false,idempotent:false}),ticket_execute:writingTool({destructive:false,idempotent:false}),
+   panel:writingTool({destructive:false,idempotent:true}),prepare:writingTool({destructive:false,idempotent:true}),start:writingTool({destructive:false,idempotent:true}),
+   send:writingTool({destructive:false,idempotent:true}),report:writingTool({destructive:false,idempotent:true}),implementation:writingTool({destructive:false,idempotent:true}),
+   ticket_request:writingTool({destructive:false,idempotent:true}),ticket_outcome:writingTool({destructive:false,idempotent:true}),panel_command:writingTool({destructive:false,idempotent:true})};
+  const register=(name:Operation,schema:Record<string,z.ZodType>,description:string,run:(args:any,c:RuntimeCaller,panelActor?:string)=>Promise<unknown>|unknown)=>{operations.set(name,{schema:z.object(schema).strict(),run});server.registerTool(tools[name],{description,inputSchema:schema,annotations:toolHints[name]},async(args,extra)=>result(await run(args,await caller(extra._meta))));};
   register('discover',{},'List the Claude and Codex chats open on this computer that can join a collaboration, with their exact IDs, folders, where each runs (surfaceLabel: Claude Desktop, Claude CLI or Codex Desktop) and whether each is busy. Pick the other chat by its ID: names repeat. Read-only.',async()=>peers());
   register('preflight',{peerId:uuid},'Before starting a collaboration with a chat, check that both chats run this bridge in the same project and can receive messages, and whether the person must approve in the panel first. Read-only: sends nothing and grants nothing.',async(a,c)=>preflight(c,a.peerId,true));
   register('panel',{},'Open the collaboration panel in the person’s browser, where they approve, follow and steer collaborations. Returns a link without credentials and starts nothing.',async(_a,c)=>privatePanel(c,true));

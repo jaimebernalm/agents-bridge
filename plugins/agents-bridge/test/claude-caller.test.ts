@@ -181,6 +181,7 @@ test('diagnose takes no input and reports bound identity or a rejection', async 
   await Promise.all([server.connect(serverSide), client.connect(clientSide)]);
   const tools = await client.listTools();
   expect(tools.tools.map(tool => tool.name)).toEqual(['diagnose']);
+  expect(tools.tools[0]!.annotations).toEqual({ readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false });
   expect(Object.keys(tools.tools[0]!.inputSchema.properties ?? {})).toEqual([]);
   const rejected = await client.callTool({ name: 'diagnose', arguments: {} });
   expect(rejected.isError).toBe(true);
