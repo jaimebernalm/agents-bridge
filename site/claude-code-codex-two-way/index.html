@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Make Claude Code and Codex talk to each other | Agents Bridge</title>
+  <meta name="description" content="Connect a Claude Code chat and a Codex Desktop chat so they message each other directly, in both directions. How two real chats differ from one-way delegation.">
+  <meta property="og:site_name" content="Agents Bridge">
+  <meta property="og:title" content="Make Claude Code and Codex talk to each other | Agents Bridge">
+  <meta property="og:description" content="Two real chats in one conversation, started from either side. Not a delegated job.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://www.agentsbridge.dev/claude-code-codex-two-way/">
+  <meta property="og:image" content="https://www.agentsbridge.dev/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Agents Bridge: Claude Code and Codex, in one conversation">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://www.agentsbridge.dev/claude-code-codex-two-way/">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable summary">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "name": "Make Claude Code and Codex talk to each other | Agents Bridge",
+    "description": "Connect a Claude Code chat and a Codex Desktop chat so they message each other directly, in both directions. How two real chats differ from one-way delegation.",
+    "url": "https://www.agentsbridge.dev/claude-code-codex-two-way/",
+    "inLanguage": "en",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "Agents Bridge",
+      "url": "https://www.agentsbridge.dev/"
+    },
+    "about": {
+      "@type": "SoftwareApplication",
+      "name": "Agents Bridge for Claude Code and Codex",
+      "url": "https://www.agentsbridge.dev/",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "macOS"
+    },
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Can Claude Code and Codex talk to each other directly?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Agents Bridge for Claude Code and Codex connects a Claude Code chat and a Codex Desktop chat on the same Mac. After you approve, they send each other messages directly, and you follow the conversation in a local panel."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is it two-way, or only Claude calling Codex?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Two-way. Either chat can start a collaboration, and both send and answer messages within it."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do both apps need to stay open?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Codex Desktop must be running, and the Claude chat must be open in the Code tab of Claude Desktop or as an interactive claude chat in a terminal."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does it work with the Codex CLI or claude -p?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Not yet for the Codex CLI; support is planned. Non-interactive Claude (claude -p), the VS Code extension and the SDK are not supported."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is anything sent to a server?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The bridge itself sends nothing off your machine: messages travel over local sockets and the Codex app's connection, and history stays in a private file on your Mac. The models still run through their own providers, as they always do."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What stops the two agents from talking forever?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The limits you set. Message count and deadline apply to both directions, and you can pause or finish the collaboration from the panel at any time."
+        }
+      }
+    ]
+  }
+  </script>
+  <meta name="theme-color" content="#0c0c0d">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/styles.css?v=guides1">
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/">
+        <svg class="mark" viewBox="4 4 24 24" width="24" height="24" aria-hidden="true"><mask id="mark-cut-nav" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32"><rect width="32" height="32" fill="#fff"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" stroke="#000" stroke-width="5.5" stroke-linejoin="round"/></mask><path d="M18 7H9a3 3 0 0 0-3 3v10l4-4h8a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3Z" fill="none" stroke="#ff7a3d" stroke-width="2.5" stroke-linejoin="round" mask="url(#mark-cut-nav)"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        <span>Agents Bridge</span>
+      </a>
+      <nav aria-label="Sections">
+        <a href="/#why">Why two models</a>
+        <a href="/#how">How it works</a>
+        <a href="/vs-codex-plugin-cc/">Compare</a>
+        <a href="https://github.com/jaimebernalm/agents-bridge/blob/main/docs/REFERENCE.md">Docs</a>
+      </nav>
+      <div class="nav-end">
+        <a href="https://github.com/jaimebernalm/agents-bridge" class="nav-gh">GitHub</a>
+        <a href="#install" class="nav-cta">Install <span aria-hidden="true">›</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-head dark" aria-labelledby="page-title">
+      <div class="rails">
+        <p class="kicker">Guide</p>
+        <h1 id="page-title">Make Claude Code and Codex <span class="tone">talk to each other.</span></h1>
+        <p class="body-lede"><strong>Agents Bridge for Claude Code and Codex</strong> connects a Claude Code chat and a Codex Desktop chat on the same Mac so they message each other directly, in both directions. Either chat can start; both stay open in their own apps while you watch, and each keeps its own context. That is different from one-way delegation, where one agent runs the other as a background tool and gets one answer back.</p>
+        <div class="actions">
+          <a class="btn btn-accent" href="#install">Install the bridge</a>
+          <a class="btn btn-dark" href="/#how">See how it works</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="brief light" aria-labelledby="brief-title">
+      <div class="rails">
+        <h2 id="brief-title">In short</h2>
+        <dl class="facts">
+          <div><dt>Who starts</dt><dd>Either chat, in plain words</dd></div>
+          <div><dt>Who takes part</dt><dd>A Claude Code chat (Code tab or interactive claude in a terminal) and a Codex Desktop chat</dd></div>
+          <div><dt>Transport</dt><dd>Local sockets and the Codex app's own connection; the bridge makes no model calls</dd></div>
+          <div><dt>Limits</dt><dd>Message count and deadline, enforced in both directions</dd></div>
+          <div><dt>Delivery</dt><dd>An uncertain delivery is shown as uncertain, never resent</dd></div>
+          <div><dt>Memory</dt><dd>Context, results, reviews and disagreements are saved and survive restarts</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="compare light" aria-labelledby="compare-title">
+      <div class="rails">
+        <h2 id="compare-title">Two real chats vs one-way delegation</h2>
+        <p class="body-lede">Delegation plugins make one agent call the other as a background tool: a fresh run that hands back one answer. That works well for a quick second opinion. The bridge connects two conversations instead.</p>
+        <div class="table-wrap">
+          <table role="table" aria-label="Two real chats vs one-way delegation">
+            <thead role="rowgroup">
+              <tr role="row"><th scope="col" role="columnheader"><span class="sr">Aspect</span></th><th scope="col" role="columnheader">Agent-as-a-tool</th><th scope="col" role="columnheader">Agents Bridge</th></tr>
+            </thead>
+            <tbody role="rowgroup">
+              <tr role="row"><th scope="row" role="rowheader">The other agent</th><td role="cell"><span class="compare-cell-label">Agent-as-a-tool</span>A fresh run with no history</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Your actual Codex and Claude chats, with everything they already know</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">Who starts</th><td role="cell"><span class="compare-cell-label">Agent-as-a-tool</span>One direction per plugin</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Either chat</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">Shape</th><td role="cell"><span class="compare-cell-label">Agent-as-a-tool</span>One job in, one answer out</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>A back-and-forth, with message and time limits</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">Your controls</th><td role="cell"><span class="compare-cell-label">Agent-as-a-tool</span>A slash command</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>A local panel: approve, pause, finish, export</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">Editing</th><td role="cell"><span class="compare-cell-label">Agent-as-a-tool</span>The called agent edits your files</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Off until you allow it, with a written scope; local edits and commits only</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">Memory</th><td role="cell"><span class="compare-cell-label">Agent-as-a-tool</span>Job output</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Context, results, reviews and disagreements, saved across restarts</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide light" aria-label="Guide">
+      <div class="rails">
+        <article class="prose">
+          <h2>How a message arrives</h2>
+          <p>A message from the other chat steers the receiving chat's current turn, or starts a turn when it is idle. A running tool is never interrupted. The message arrives marked as input from another agent, and the receiving chat answers it in the same collaboration. Text from the other agent carries no authority: it can't grant permissions or approve anything on your behalf.</p>
+
+          <h2>Start it from either side</h2>
+          <div class="term"><span class="who">you → claude</span>Collaborate with Codex. Review this plan and challenge its assumptions.<span class="who">you → codex</span>Collaborate with Claude. Review this plan and challenge its assumptions.</div>
+          <p>The chat asks three short questions: editing, limits, and whether to start with a new chat in the other app. Answer <strong>Yes</strong>, or open the panel to pick a chat you already have open. A new Claude chat requested this way always opens in Claude Desktop; to use a terminal chat, start <code>claude</code> in the project folder first and pick it in the panel.</p>
+
+          <h2>Longer work in one conversation</h2>
+          <ul>
+            <li><strong>Phases.</strong> "Plan this feature with Codex, then implement it phase by phase" runs as one collaboration; one approval covers every phase.</li>
+            <li><strong>Editing.</strong> Off until you allow it, within the scope you write. Local edits and commits only unless your scope says otherwise, and each app's own approval prompts still apply.</li>
+            <li><strong>Shared files.</strong> The bridge does not lock files. When both agents edit, give them separate files or separate worktrees.</li>
+            <li><strong>Control.</strong> Pause, finish or export (Markdown or JSON) from the panel at any time.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="faq light" aria-labelledby="faq-title">
+      <div class="rails">
+        <p class="kicker">FAQ</p>
+        <h2 id="faq-title">Frequently asked questions</h2>
+        <div class="faq-list">
+          <div>
+            <h3>Can Claude Code and Codex talk to each other directly?</h3>
+            <p>Yes. Agents Bridge for Claude Code and Codex connects a Claude Code chat and a Codex Desktop chat on the same Mac. After you approve, they send each other messages directly, and you follow the conversation in a local panel.</p>
+          </div>
+          <div>
+            <h3>Is it two-way, or only Claude calling Codex?</h3>
+            <p>Two-way. Either chat can start a collaboration, and both send and answer messages within it.</p>
+          </div>
+          <div>
+            <h3>Do both apps need to stay open?</h3>
+            <p>Yes. Codex Desktop must be running, and the Claude chat must be open in the Code tab of Claude Desktop or as an interactive claude chat in a terminal.</p>
+          </div>
+          <div>
+            <h3>Does it work with the Codex CLI or claude -p?</h3>
+            <p>Not yet for the Codex CLI; support is planned. Non-interactive Claude (claude -p), the VS Code extension and the SDK are not supported.</p>
+          </div>
+          <div>
+            <h3>Is anything sent to a server?</h3>
+            <p>The bridge itself sends nothing off your machine: messages travel over local sockets and the Codex app's connection, and history stays in a private file on your Mac. The models still run through their own providers, as they always do.</p>
+          </div>
+          <div>
+            <h3>What stops the two agents from talking forever?</h3>
+            <p>The limits you set. Message count and deadline apply to both directions, and you can pause or finish the collaboration from the panel at any time.</p>
+          </div>
+        </div>
+        <nav class="related" aria-label="More guides">
+          <p class="kicker">More guides</p>
+          <ul><li><a href="/brainstorm-with-claude-and-codex/">Brainstorm with Claude and Codex</a></li><li><a href="/codex-second-opinion-in-claude-code/">Codex second opinion in Claude Code</a></li><li><a href="/vs-codex-plugin-cc/">Agents Bridge vs codex-plugin-cc</a></li></ul>
+        </nav>
+      </div>
+    </section>
+
+    <section class="install dark" id="install" aria-labelledby="install-title">
+      <div class="rails">
+        <p class="kicker">Install</p>
+        <h2 id="install-title">Two commands per app.<br><span class="tone">Then just ask.</span></h2>
+        <p class="package-note">Installs as <code>agents-bridge</code>.</p>
+        <p class="body-lede">For macOS. You need Claude Code 2.1.224 or later, in the Code tab of <a href="https://claude.ai/download">Claude Desktop</a> or as <code>claude</code> in a terminal; <a href="https://openai.com/codex/">Codex Desktop</a> running (support for the Codex CLI is coming); <a href="https://bun.sh">Bun</a> 1.4 or later; and Git.</p>
+
+        <ol class="steps">
+          <li>
+            <h3><span class="num">01</span> Install the Codex side</h3>
+            <div class="code"><code>codex plugin marketplace add jaimebernalm/agents-bridge</code><button type="button" class="copy">Copy</button></div>
+            <div class="code"><code>codex plugin add agents-bridge@jaimebernalm</code><button type="button" class="copy">Copy</button></div>
+            <p>In Codex, open <strong>Agents Bridge</strong> in the plugins and trust both hooks. Then open a new Codex chat.</p>
+          </li>
+          <li>
+            <h3><span class="num">02</span> Install the Claude side</h3>
+            <div class="code"><code>claude plugin marketplace add jaimebernalm/agents-bridge</code><button type="button" class="copy">Copy</button></div>
+            <div class="code"><code>claude plugin install agents-bridge@jaimebernalm</code><button type="button" class="copy">Copy</button></div>
+            <p>Then open a new Code chat in Claude Desktop, or start <code>claude</code> in a terminal in the project folder.</p>
+          </li>
+          <li>
+            <h3><span class="num">03</span> Check that they see each other</h3>
+            <p>Open the same project folder in both apps and ask either chat: “Use Agents Bridge to list the chats in this folder.” Not listed? See <a href="https://github.com/jaimebernalm/agents-bridge#troubleshooting">Troubleshooting</a>.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer dark">
+    <div class="rails footer-inner">
+      <a class="brand" href="/">
+        <svg class="mark" viewBox="4 4 24 24" width="20" height="20" aria-hidden="true"><mask id="mark-cut-foot" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32"><rect width="32" height="32" fill="#fff"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" stroke="#000" stroke-width="5.5" stroke-linejoin="round"/></mask><path d="M18 7H9a3 3 0 0 0-3 3v10l4-4h8a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3Z" fill="none" stroke="#ff7a3d" stroke-width="2.5" stroke-linejoin="round" mask="url(#mark-cut-foot)"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        <span>Agents Bridge</span>
+      </a>
+      <p>MIT licensed. An independent project, not affiliated with Anthropic or OpenAI.</p>
+      <p><a href="https://github.com/jaimebernalm/agents-bridge/blob/main/docs/REFERENCE.md">Reference</a> · <a href="https://github.com/jaimebernalm/agents-bridge/issues">Report an issue</a></p>
+      <nav class="footer-guides" aria-label="Guides">
+        <span>Guides</span>
+        <a href="/brainstorm-with-claude-and-codex/">Brainstorm with Claude and Codex</a>
+        <a href="/codex-second-opinion-in-claude-code/">Codex second opinion in Claude Code</a>
+        <a href="/claude-code-codex-two-way/">Claude Code and Codex, two-way</a>
+        <a href="/vs-codex-plugin-cc/">Agents Bridge vs codex-plugin-cc</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // The top bar shrinks into a floating pill once the page leaves the very top.
+    var nav = document.querySelector('.nav');
+    var onScroll = function () { nav.classList.toggle('is-compact', window.scrollY > 24); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // Copy buttons: fall back to selecting the command when the clipboard API is unavailable.
+    document.querySelectorAll('.copy').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var code = btn.previousElementSibling;
+        var reset = function (ms) { setTimeout(function () { btn.textContent = 'Copy'; }, ms); };
+        var fallback = function () {
+          var range = document.createRange();
+          range.selectNodeContents(code);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          btn.textContent = 'Press ⌘C';
+          reset(2500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code.textContent).then(function () {
+            btn.textContent = 'Copied';
+            reset(1500);
+          }, fallback);
+        } else {
+          fallback();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brainstorm with Claude and Codex together | Agents Bridge</title>
+  <meta name="description" content="Have Claude Code and Codex develop and challenge ideas together as two real chats. Start in either app, set the limits, keep the disagreements. Free plugin for macOS.">
+  <meta property="og:site_name" content="Agents Bridge">
+  <meta property="og:title" content="Brainstorm with Claude and Codex together | Agents Bridge">
+  <meta property="og:description" content="Claude and Codex propose, question and refine ideas together, in a conversation you approve and follow.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://www.agentsbridge.dev/brainstorm-with-claude-and-codex/">
+  <meta property="og:image" content="https://www.agentsbridge.dev/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Agents Bridge: Claude Code and Codex, in one conversation">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://www.agentsbridge.dev/brainstorm-with-claude-and-codex/">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable summary">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "name": "Brainstorm with Claude and Codex together | Agents Bridge",
+    "description": "Have Claude Code and Codex develop and challenge ideas together as two real chats. Start in either app, set the limits, keep the disagreements. Free plugin for macOS.",
+    "url": "https://www.agentsbridge.dev/brainstorm-with-claude-and-codex/",
+    "inLanguage": "en",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "Agents Bridge",
+      "url": "https://www.agentsbridge.dev/"
+    },
+    "about": {
+      "@type": "SoftwareApplication",
+      "name": "Agents Bridge for Claude Code and Codex",
+      "url": "https://www.agentsbridge.dev/",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "macOS"
+    },
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Can Claude and Codex brainstorm together without copying between windows?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. With Agents Bridge for Claude Code and Codex, a Claude Code chat and a Codex Desktop chat on the same Mac message each other directly after you approve the collaboration. You watch the exchange and can pause, finish or export it from a local panel."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I have to start the brainstorm in Claude Code?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. You can ask either chat. From Claude, say \"Collaborate with Codex on this\"; from Codex, say \"Collaborate with Claude on this\"."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Will they edit my files while brainstorming?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Not unless you allow it. Editing is off until you switch it on, within a scope you write, and it covers local edits and commits only."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What happens when Claude and Codex disagree?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The disagreement stays on the record. Results and reviews say who wrote them, and the final result lists where the two still disagree instead of presenting one confident answer."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does it cost anything?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The plugin is free and MIT licensed. Both apps use your normal subscriptions; the bridge makes no model calls of its own and sends nothing off your machine."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does it work on Windows, Linux or with the Codex CLI?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Not yet. It needs macOS, Codex Desktop running, and Claude Code 2.1.224 or later in the Code tab of Claude Desktop or as an interactive claude chat in a terminal. Support for the Codex CLI is planned."
+        }
+      }
+    ]
+  }
+  </script>
+  <meta name="theme-color" content="#0c0c0d">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/styles.css?v=guides1">
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/">
+        <svg class="mark" viewBox="4 4 24 24" width="24" height="24" aria-hidden="true"><mask id="mark-cut-nav" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32"><rect width="32" height="32" fill="#fff"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" stroke="#000" stroke-width="5.5" stroke-linejoin="round"/></mask><path d="M18 7H9a3 3 0 0 0-3 3v10l4-4h8a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3Z" fill="none" stroke="#ff7a3d" stroke-width="2.5" stroke-linejoin="round" mask="url(#mark-cut-nav)"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        <span>Agents Bridge</span>
+      </a>
+      <nav aria-label="Sections">
+        <a href="/#why">Why two models</a>
+        <a href="/#how">How it works</a>
+        <a href="/vs-codex-plugin-cc/">Compare</a>
+        <a href="https://github.com/jaimebernalm/agents-bridge/blob/main/docs/REFERENCE.md">Docs</a>
+      </nav>
+      <div class="nav-end">
+        <a href="https://github.com/jaimebernalm/agents-bridge" class="nav-gh">GitHub</a>
+        <a href="#install" class="nav-cta">Install <span aria-hidden="true">›</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-head dark" aria-labelledby="page-title">
+      <div class="rails">
+        <p class="kicker">Guide</p>
+        <h1 id="page-title">Brainstorm with Claude and Codex <span class="tone">together.</span></h1>
+        <p class="body-lede">Yes, Claude and Codex can brainstorm together without you copying text between windows. <strong>Agents Bridge for Claude Code and Codex</strong> is a free, open-source plugin that connects a Claude Code chat and a Codex Desktop chat on your Mac. Ask either chat to collaborate with the other; once you approve, they message each other directly, build on and challenge each other's ideas, and you get a result that shows who proposed what and where they still disagree.</p>
+        <div class="actions">
+          <a class="btn btn-accent" href="#install">Install the bridge</a>
+          <a class="btn btn-dark" href="/#how">See how it works</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="brief light" aria-labelledby="brief-title">
+      <div class="rails">
+        <h2 id="brief-title">In short</h2>
+        <dl class="facts">
+          <div><dt>Start in</dt><dd>Either app, in plain words</dd></div>
+          <div><dt>You approve</dt><dd>Whether the other agent may edit, the limits, and which chat joins</dd></div>
+          <div><dt>Limits</dt><dd>Messages and time you choose, up to unlimited messages for 24 hours</dd></div>
+          <div><dt>You get</dt><dd>Results and reviews that say who wrote them, with disagreements kept</dd></div>
+          <div><dt>Export</dt><dd>Markdown or JSON</dd></div>
+          <div><dt>Cost</dt><dd>Free, MIT licensed. Uses your existing Claude and Codex plans; the bridge makes no model calls.</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="guide light" aria-label="Guide">
+      <div class="rails">
+        <article class="prose">
+          <h2>Why brainstorm with two models</h2>
+          <p>Claude and Codex were trained differently, so they make different mistakes and reach for different ideas. A model that reviews its own idea tends to agree with itself; a second model questions the assumptions the first one never thought to check.</p>
+          <p>Where they still disagree is often the most useful part. The bridge keeps disagreements on the record instead of forcing a consensus, and "agree" is always a declaration by one agent, never a verified agreement.</p>
+
+          <h2>Start in Claude Code</h2>
+          <p>Open your project in both apps and ask the Claude chat in your own words, with the limits you have in mind:</p>
+          <div class="term"><span class="who">you → claude</span>Collaborate with Codex on this: brainstorm three ways to add offline sync to this app. Each of you propose, then critique the other's ideas. Keep the disagreements. 24 messages, 30 minutes.</div>
+
+          <h2>Or start in Codex</h2>
+          <p>The same works from a Codex Desktop chat. Neither side is the "main" one.</p>
+          <div class="term"><span class="who">you → codex</span>Collaborate with Claude: here is my plan for the onboarding flow. Challenge its assumptions and propose alternatives. 20 messages, 20 minutes.</div>
+          <p>The chat then asks you three short questions: whether the other agent may edit files, the limits, and whether to start with a new chat in the other app. Answer <strong>Yes</strong>, or open the panel to pick a chat you already have open or change the details. Nothing is sent until you say yes.</p>
+
+          <h2>Example prompts</h2>
+          <ul>
+            <li>"Collaborate with Codex: each of you propose a design for the caching layer, then compare them and keep the disagreements."</li>
+            <li>"Collaborate with Claude: list the risks in this migration plan, then argue for and against each one."</li>
+            <li>"Collaborate with Codex: find the weakest assumption in this proposal and suggest how we could test it."</li>
+            <li>"Plan this feature with Codex, then implement it phase by phase." One approval covers every phase.</li>
+          </ul>
+
+          <h2>What each side contributes</h2>
+          <ul>
+            <li><strong>Its own context.</strong> Both are your real chats, not fresh runs. The chat you ask already knows your conversation and the files it has read, and the other chat can be one you already have open with its own history.</li>
+            <li><strong>Its own record.</strong> Each side records its analyses, results and reviews under its own name, with the version they refer to, so you can see which idea came from Claude, which from Codex, and what each one pushed back on.</li>
+            <li><strong>No authority over the other.</strong> Text from the other agent never grants permissions, whatever it says.</li>
+          </ul>
+          <p>Brainstorming needs no file changes, so you can leave editing off. If you later want them to build what they settled on, switch editing on in the panel with a written scope. That covers local edits and commits only; push, pull requests and merges stay excluded unless your scope names them.</p>
+
+          <h2>Follow along</h2>
+          <p>The chat leaves a link, <strong>▶️ Open the bridge panel</strong>. The panel opens in its own small window, where you can pause, finish or export the conversation at any time.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="faq light" aria-labelledby="faq-title">
+      <div class="rails">
+        <p class="kicker">FAQ</p>
+        <h2 id="faq-title">Frequently asked questions</h2>
+        <div class="faq-list">
+          <div>
+            <h3>Can Claude and Codex brainstorm together without copying between windows?</h3>
+            <p>Yes. With Agents Bridge for Claude Code and Codex, a Claude Code chat and a Codex Desktop chat on the same Mac message each other directly after you approve the collaboration. You watch the exchange and can pause, finish or export it from a local panel.</p>
+          </div>
+          <div>
+            <h3>Do I have to start the brainstorm in Claude Code?</h3>
+            <p>No. You can ask either chat. From Claude, say "Collaborate with Codex on this"; from Codex, say "Collaborate with Claude on this".</p>
+          </div>
+          <div>
+            <h3>Will they edit my files while brainstorming?</h3>
+            <p>Not unless you allow it. Editing is off until you switch it on, within a scope you write, and it covers local edits and commits only.</p>
+          </div>
+          <div>
+            <h3>What happens when Claude and Codex disagree?</h3>
+            <p>The disagreement stays on the record. Results and reviews say who wrote them, and the final result lists where the two still disagree instead of presenting one confident answer.</p>
+          </div>
+          <div>
+            <h3>Does it cost anything?</h3>
+            <p>The plugin is free and MIT licensed. Both apps use your normal subscriptions; the bridge makes no model calls of its own and sends nothing off your machine.</p>
+          </div>
+          <div>
+            <h3>Does it work on Windows, Linux or with the Codex CLI?</h3>
+            <p>Not yet. It needs macOS, Codex Desktop running, and Claude Code 2.1.224 or later in the Code tab of Claude Desktop or as an interactive claude chat in a terminal. Support for the Codex CLI is planned.</p>
+          </div>
+        </div>
+        <nav class="related" aria-label="More guides">
+          <p class="kicker">More guides</p>
+          <ul><li><a href="/codex-second-opinion-in-claude-code/">Codex second opinion in Claude Code</a></li><li><a href="/claude-code-codex-two-way/">Claude Code and Codex, two-way</a></li><li><a href="/vs-codex-plugin-cc/">Agents Bridge vs codex-plugin-cc</a></li></ul>
+        </nav>
+      </div>
+    </section>
+
+    <section class="install dark" id="install" aria-labelledby="install-title">
+      <div class="rails">
+        <p class="kicker">Install</p>
+        <h2 id="install-title">Two commands per app.<br><span class="tone">Then just ask.</span></h2>
+        <p class="package-note">Installs as <code>agents-bridge</code>.</p>
+        <p class="body-lede">For macOS. You need Claude Code 2.1.224 or later, in the Code tab of <a href="https://claude.ai/download">Claude Desktop</a> or as <code>claude</code> in a terminal; <a href="https://openai.com/codex/">Codex Desktop</a> running (support for the Codex CLI is coming); <a href="https://bun.sh">Bun</a> 1.4 or later; and Git.</p>
+
+        <ol class="steps">
+          <li>
+            <h3><span class="num">01</span> Install the Codex side</h3>
+            <div class="code"><code>codex plugin marketplace add jaimebernalm/agents-bridge</code><button type="button" class="copy">Copy</button></div>
+            <div class="code"><code>codex plugin add agents-bridge@jaimebernalm</code><button type="button" class="copy">Copy</button></div>
+            <p>In Codex, open <strong>Agents Bridge</strong> in the plugins and trust both hooks. Then open a new Codex chat.</p>
+          </li>
+          <li>
+            <h3><span class="num">02</span> Install the Claude side</h3>
+            <div class="code"><code>claude plugin marketplace add jaimebernalm/agents-bridge</code><button type="button" class="copy">Copy</button></div>
+            <div class="code"><code>claude plugin install agents-bridge@jaimebernalm</code><button type="button" class="copy">Copy</button></div>
+            <p>Then open a new Code chat in Claude Desktop, or start <code>claude</code> in a terminal in the project folder.</p>
+          </li>
+          <li>
+            <h3><span class="num">03</span> Check that they see each other</h3>
+            <p>Open the same project folder in both apps and ask either chat: “Use Agents Bridge to list the chats in this folder.” Not listed? See <a href="https://github.com/jaimebernalm/agents-bridge#troubleshooting">Troubleshooting</a>.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer dark">
+    <div class="rails footer-inner">
+      <a class="brand" href="/">
+        <svg class="mark" viewBox="4 4 24 24" width="20" height="20" aria-hidden="true"><mask id="mark-cut-foot" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32"><rect width="32" height="32" fill="#fff"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" stroke="#000" stroke-width="5.5" stroke-linejoin="round"/></mask><path d="M18 7H9a3 3 0 0 0-3 3v10l4-4h8a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3Z" fill="none" stroke="#ff7a3d" stroke-width="2.5" stroke-linejoin="round" mask="url(#mark-cut-foot)"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        <span>Agents Bridge</span>
+      </a>
+      <p>MIT licensed. An independent project, not affiliated with Anthropic or OpenAI.</p>
+      <p><a href="https://github.com/jaimebernalm/agents-bridge/blob/main/docs/REFERENCE.md">Reference</a> · <a href="https://github.com/jaimebernalm/agents-bridge/issues">Report an issue</a></p>
+      <nav class="footer-guides" aria-label="Guides">
+        <span>Guides</span>
+        <a href="/brainstorm-with-claude-and-codex/">Brainstorm with Claude and Codex</a>
+        <a href="/codex-second-opinion-in-claude-code/">Codex second opinion in Claude Code</a>
+        <a href="/claude-code-codex-two-way/">Claude Code and Codex, two-way</a>
+        <a href="/vs-codex-plugin-cc/">Agents Bridge vs codex-plugin-cc</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // The top bar shrinks into a floating pill once the page leaves the very top.
+    var nav = document.querySelector('.nav');
+    var onScroll = function () { nav.classList.toggle('is-compact', window.scrollY > 24); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // Copy buttons: fall back to selecting the command when the clipboard API is unavailable.
+    document.querySelectorAll('.copy').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var code = btn.previousElementSibling;
+        var reset = function (ms) { setTimeout(function () { btn.textContent = 'Copy'; }, ms); };
+        var fallback = function () {
+          var range = document.createRange();
+          range.selectNodeContents(code);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          btn.textContent = 'Press ⌘C';
+          reset(2500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code.textContent).then(function () {
+            btn.textContent = 'Copied';
+            reset(1500);
+          }, fallback);
+        } else {
+          fallback();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

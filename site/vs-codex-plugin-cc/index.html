@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>codex-plugin-cc vs Agents Bridge for Claude Code and Codex</title>
+  <meta name="description" content="An honest comparison of OpenAI's codex-plugin-cc, codex exec and Agents Bridge for Claude Code and Codex: one-way delegation vs two live chats, and when each one fits.">
+  <meta property="og:site_name" content="Agents Bridge">
+  <meta property="og:title" content="codex-plugin-cc vs Agents Bridge for Claude Code and Codex">
+  <meta property="og:description" content="One-way slash commands, a plain CLI call, or two live chats: what each approach is good at.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://www.agentsbridge.dev/vs-codex-plugin-cc/">
+  <meta property="og:image" content="https://www.agentsbridge.dev/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Agents Bridge: Claude Code and Codex, in one conversation">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://www.agentsbridge.dev/vs-codex-plugin-cc/">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable summary">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "name": "codex-plugin-cc vs Agents Bridge for Claude Code and Codex",
+    "description": "An honest comparison of OpenAI's codex-plugin-cc, codex exec and Agents Bridge for Claude Code and Codex: one-way delegation vs two live chats, and when each one fits.",
+    "url": "https://www.agentsbridge.dev/vs-codex-plugin-cc/",
+    "inLanguage": "en",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "Agents Bridge",
+      "url": "https://www.agentsbridge.dev/"
+    },
+    "about": {
+      "@type": "SoftwareApplication",
+      "name": "Agents Bridge for Claude Code and Codex",
+      "url": "https://www.agentsbridge.dev/",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "macOS"
+    },
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is Agents Bridge made by OpenAI or Anthropic?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Agents Bridge for Claude Code and Codex is an independent, MIT-licensed project, not affiliated with Anthropic or OpenAI. codex-plugin-cc is OpenAI's own plugin."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which is better for code review?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "For a quick one-shot review of uncommitted changes, codex-plugin-cc's /codex:review is simpler. For a review where the reviewer can ask questions, the author can answer, and the fixes go back to the chat that wrote the code, Agents Bridge fits better."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does codex-plugin-cc work from Codex to Claude?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Its commands start in Claude Code and send work to Codex. Agents Bridge works in both directions: either chat can start."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does Agents Bridge work with the Codex CLI?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Not yet. It delivers messages into a Codex Desktop chat, so Codex Desktop must be running on macOS. Support for the Codex CLI is planned."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need to pay for any of these?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "All three are free to use. codex-plugin-cc and codex exec use your ChatGPT plan or OpenAI API key; Agents Bridge uses your normal Claude and Codex subscriptions and makes no model calls of its own."
+        }
+      }
+    ]
+  }
+  </script>
+  <meta name="theme-color" content="#0c0c0d">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/styles.css?v=guides1">
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/">
+        <svg class="mark" viewBox="4 4 24 24" width="24" height="24" aria-hidden="true"><mask id="mark-cut-nav" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32"><rect width="32" height="32" fill="#fff"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" stroke="#000" stroke-width="5.5" stroke-linejoin="round"/></mask><path d="M18 7H9a3 3 0 0 0-3 3v10l4-4h8a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3Z" fill="none" stroke="#ff7a3d" stroke-width="2.5" stroke-linejoin="round" mask="url(#mark-cut-nav)"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        <span>Agents Bridge</span>
+      </a>
+      <nav aria-label="Sections">
+        <a href="/#why">Why two models</a>
+        <a href="/#how">How it works</a>
+        <a href="/vs-codex-plugin-cc/">Compare</a>
+        <a href="https://github.com/jaimebernalm/agents-bridge/blob/main/docs/REFERENCE.md">Docs</a>
+      </nav>
+      <div class="nav-end">
+        <a href="https://github.com/jaimebernalm/agents-bridge" class="nav-gh">GitHub</a>
+        <a href="#install" class="nav-cta">Install <span aria-hidden="true">›</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-head dark" aria-labelledby="page-title">
+      <div class="rails">
+        <p class="kicker">Guide</p>
+        <h1 id="page-title">codex-plugin-cc vs Agents Bridge: <span class="tone">which one fits?</span></h1>
+        <p class="body-lede">They solve different problems. OpenAI's <a href="https://github.com/openai/codex-plugin-cc">codex-plugin-cc</a> lets Claude Code hand work to Codex with slash commands such as <code>/codex:review</code>, <code>/codex:adversarial-review</code> and <code>/codex:rescue</code>, and get the result back. Running <code>codex exec</code> from a shell does a similar one-shot job without a plugin. <strong>Agents Bridge for Claude Code and Codex</strong> connects two chats that are already open, a Claude Code chat and a Codex Desktop chat, for a conversation over many steps that either side can start. For a quick one-way review or task, codex-plugin-cc is the simpler choice.</p>
+        <div class="actions">
+          <a class="btn btn-accent" href="#install">Install the bridge</a>
+          <a class="btn btn-dark" href="/#how">See how it works</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="brief light" aria-labelledby="brief-title">
+      <div class="rails">
+        <h2 id="brief-title">In short</h2>
+        <dl class="facts">
+          <div><dt>Quick review of a diff</dt><dd>codex-plugin-cc: /codex:review</dd></div>
+          <div><dt>Hand a bug to Codex in the background</dt><dd>codex-plugin-cc: /codex:rescue</dd></div>
+          <div><dt>Scripts, CI, no plugin</dt><dd>codex exec</dd></div>
+          <div><dt>Codex CLI, or Linux</dt><dd>codex-plugin-cc or codex exec</dd></div>
+          <div><dt>Both agents working together, from either side</dt><dd>Agents Bridge</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="compare light" aria-labelledby="compare-title">
+      <div class="rails">
+        <h2 id="compare-title">Side by side</h2>
+        <p class="body-lede">What each approach is, as of October 2026. Check each project's own docs for the latest.</p>
+        <div class="table-wrap">
+          <table role="table" aria-label="Side by side">
+            <thead role="rowgroup">
+              <tr role="row"><th scope="col" role="columnheader"><span class="sr">Aspect</span></th><th scope="col" role="columnheader">codex-plugin-cc</th><th scope="col" role="columnheader">codex exec</th><th scope="col" role="columnheader">Agents Bridge</th></tr>
+            </thead>
+            <tbody role="rowgroup">
+              <tr role="row"><th scope="row" role="rowheader">What it is</th><td role="cell"><span class="compare-cell-label">codex-plugin-cc</span>OpenAI's Claude Code plugin with /codex:* slash commands</td><td role="cell"><span class="compare-cell-label">codex exec</span>The Codex CLI's non-interactive mode</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>A plugin for both apps that connects two open chats</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">Who starts</th><td role="cell"><span class="compare-cell-label">codex-plugin-cc</span>Claude Code</td><td role="cell"><span class="compare-cell-label">codex exec</span>Whatever runs the command: Claude Code's shell, a script, CI</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Either chat, in plain words</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">The other agent</th><td role="cell"><span class="compare-cell-label">codex-plugin-cc</span>Codex through your local Codex CLI and its config; a job can be resumed in Codex later</td><td role="cell"><span class="compare-cell-label">codex exec</span>A new non-interactive Codex run</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Your Codex Desktop or Claude Code chat, with its own history</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">Shape</th><td role="cell"><span class="compare-cell-label">codex-plugin-cc</span>A job and its result, optionally in the background</td><td role="cell"><span class="compare-cell-label">codex exec</span>One prompt in, one output out</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>A back-and-forth with message and time limits</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">Editing</th><td role="cell"><span class="compare-cell-label">codex-plugin-cc</span>/codex:review and /codex:adversarial-review are read-only; /codex:rescue can attempt fixes</td><td role="cell"><span class="compare-cell-label">codex exec</span>Set by Codex's own sandbox and approval options</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Off until you allow it, with a written scope; local edits and commits only</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">Runs on</th><td role="cell"><span class="compare-cell-label">codex-plugin-cc</span>Wherever Claude Code and the Codex CLI run</td><td role="cell"><span class="compare-cell-label">codex exec</span>Wherever the Codex CLI runs</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>macOS with Codex Desktop; the Codex CLI is not supported yet</td></tr>
+              <tr role="row"><th scope="row" role="rowheader">The record</th><td role="cell"><span class="compare-cell-label">codex-plugin-cc</span>Job results through /codex:result</td><td role="cell"><span class="compare-cell-label">codex exec</span>The command's output</td><td role="cell" class="bridge-cell"><span class="compare-cell-label">Agents Bridge</span>Authored, versioned results and reviews, disagreements kept; export to Markdown or JSON</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide light" aria-label="Guide">
+      <div class="rails">
+        <article class="prose">
+          <h2>When codex-plugin-cc is the better fit</h2>
+          <ul>
+            <li>You want a quick, read-only review of your uncommitted changes or your branch, and one answer: <code>/codex:review</code>.</li>
+            <li>You want Codex to challenge a design's choices and assumptions in one pass: <code>/codex:adversarial-review</code>.</li>
+            <li>You want to hand Codex a bug and keep working while it runs in the background: <code>/codex:rescue --background</code>, then <code>/codex:status</code> and <code>/codex:result</code>.</li>
+            <li>You want to carry the current Claude Code session into a Codex thread: <code>/codex:transfer</code>.</li>
+            <li>You want Codex to review each Claude response automatically: its optional review gate does that, though its own docs warn it can use up your limits quickly.</li>
+            <li>You use the Codex CLI rather than Codex Desktop, or you work on Linux. Agents Bridge needs Codex Desktop on macOS.</li>
+          </ul>
+
+          <h2>When codex exec is the better fit</h2>
+          <ul>
+            <li>You're scripting: a CI job, a pre-commit check or a batch of prompts.</li>
+            <li>You want nothing installed beyond the Codex CLI.</li>
+            <li>One prompt and one printed output is all you need.</li>
+          </ul>
+
+          <h2>When Agents Bridge is the better fit</h2>
+          <ul>
+            <li>You want both agents in the conversation, asking each other questions and answering over many steps.</li>
+            <li>You want to start from Codex as well as from Claude.</li>
+            <li>You want the other agent to be your existing chat, with what it already knows about the project.</li>
+            <li>You want to approve and follow the collaboration: limits, pause, finish and export in a local panel, with editing off until you allow it.</li>
+            <li>You want a record of who said what, with disagreements kept instead of a single merged answer.</li>
+            <li>You want them to plan and then build phase by phase under one approval.</li>
+          </ul>
+
+          <h2>Can I use both?</h2>
+          <p>Yes. They are independent plugins, so you can install both and choose per task: a slash command for a quick review, the bridge for longer work together.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="faq light" aria-labelledby="faq-title">
+      <div class="rails">
+        <p class="kicker">FAQ</p>
+        <h2 id="faq-title">Frequently asked questions</h2>
+        <div class="faq-list">
+          <div>
+            <h3>Is Agents Bridge made by OpenAI or Anthropic?</h3>
+            <p>No. Agents Bridge for Claude Code and Codex is an independent, MIT-licensed project, not affiliated with Anthropic or OpenAI. codex-plugin-cc is OpenAI's own plugin.</p>
+          </div>
+          <div>
+            <h3>Which is better for code review?</h3>
+            <p>For a quick one-shot review of uncommitted changes, codex-plugin-cc's /codex:review is simpler. For a review where the reviewer can ask questions, the author can answer, and the fixes go back to the chat that wrote the code, Agents Bridge fits better.</p>
+          </div>
+          <div>
+            <h3>Does codex-plugin-cc work from Codex to Claude?</h3>
+            <p>Its commands start in Claude Code and send work to Codex. Agents Bridge works in both directions: either chat can start.</p>
+          </div>
+          <div>
+            <h3>Does Agents Bridge work with the Codex CLI?</h3>
+            <p>Not yet. It delivers messages into a Codex Desktop chat, so Codex Desktop must be running on macOS. Support for the Codex CLI is planned.</p>
+          </div>
+          <div>
+            <h3>Do I need to pay for any of these?</h3>
+            <p>All three are free to use. codex-plugin-cc and codex exec use your ChatGPT plan or OpenAI API key; Agents Bridge uses your normal Claude and Codex subscriptions and makes no model calls of its own.</p>
+          </div>
+        </div>
+        <nav class="related" aria-label="More guides">
+          <p class="kicker">More guides</p>
+          <ul><li><a href="/brainstorm-with-claude-and-codex/">Brainstorm with Claude and Codex</a></li><li><a href="/codex-second-opinion-in-claude-code/">Codex second opinion in Claude Code</a></li><li><a href="/claude-code-codex-two-way/">Claude Code and Codex, two-way</a></li></ul>
+        </nav>
+      </div>
+    </section>
+
+    <section class="install dark" id="install" aria-labelledby="install-title">
+      <div class="rails">
+        <p class="kicker">Install</p>
+        <h2 id="install-title">Two commands per app.<br><span class="tone">Then just ask.</span></h2>
+        <p class="package-note">Installs as <code>agents-bridge</code>.</p>
+        <p class="body-lede">For macOS. You need Claude Code 2.1.224 or later, in the Code tab of <a href="https://claude.ai/download">Claude Desktop</a> or as <code>claude</code> in a terminal; <a href="https://openai.com/codex/">Codex Desktop</a> running (support for the Codex CLI is coming); <a href="https://bun.sh">Bun</a> 1.4 or later; and Git.</p>
+
+        <ol class="steps">
+          <li>
+            <h3><span class="num">01</span> Install the Codex side</h3>
+            <div class="code"><code>codex plugin marketplace add jaimebernalm/agents-bridge</code><button type="button" class="copy">Copy</button></div>
+            <div class="code"><code>codex plugin add agents-bridge@jaimebernalm</code><button type="button" class="copy">Copy</button></div>
+            <p>In Codex, open <strong>Agents Bridge</strong> in the plugins and trust both hooks. Then open a new Codex chat.</p>
+          </li>
+          <li>
+            <h3><span class="num">02</span> Install the Claude side</h3>
+            <div class="code"><code>claude plugin marketplace add jaimebernalm/agents-bridge</code><button type="button" class="copy">Copy</button></div>
+            <div class="code"><code>claude plugin install agents-bridge@jaimebernalm</code><button type="button" class="copy">Copy</button></div>
+            <p>Then open a new Code chat in Claude Desktop, or start <code>claude</code> in a terminal in the project folder.</p>
+          </li>
+          <li>
+            <h3><span class="num">03</span> Check that they see each other</h3>
+            <p>Open the same project folder in both apps and ask either chat: “Use Agents Bridge to list the chats in this folder.” Not listed? See <a href="https://github.com/jaimebernalm/agents-bridge#troubleshooting">Troubleshooting</a>.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer dark">
+    <div class="rails footer-inner">
+      <a class="brand" href="/">
+        <svg class="mark" viewBox="4 4 24 24" width="20" height="20" aria-hidden="true"><mask id="mark-cut-foot" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32"><rect width="32" height="32" fill="#fff"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" stroke="#000" stroke-width="5.5" stroke-linejoin="round"/></mask><path d="M18 7H9a3 3 0 0 0-3 3v10l4-4h8a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3Z" fill="none" stroke="#ff7a3d" stroke-width="2.5" stroke-linejoin="round" mask="url(#mark-cut-foot)"/><path d="M14 25h9a3 3 0 0 0 3-3V13.5l-2.5 2.5h-9.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        <span>Agents Bridge</span>
+      </a>
+      <p>MIT licensed. An independent project, not affiliated with Anthropic or OpenAI.</p>
+      <p><a href="https://github.com/jaimebernalm/agents-bridge/blob/main/docs/REFERENCE.md">Reference</a> · <a href="https://github.com/jaimebernalm/agents-bridge/issues">Report an issue</a></p>
+      <nav class="footer-guides" aria-label="Guides">
+        <span>Guides</span>
+        <a href="/brainstorm-with-claude-and-codex/">Brainstorm with Claude and Codex</a>
+        <a href="/codex-second-opinion-in-claude-code/">Codex second opinion in Claude Code</a>
+        <a href="/claude-code-codex-two-way/">Claude Code and Codex, two-way</a>
+        <a href="/vs-codex-plugin-cc/">Agents Bridge vs codex-plugin-cc</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // The top bar shrinks into a floating pill once the page leaves the very top.
+    var nav = document.querySelector('.nav');
+    var onScroll = function () { nav.classList.toggle('is-compact', window.scrollY > 24); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // Copy buttons: fall back to selecting the command when the clipboard API is unavailable.
+    document.querySelectorAll('.copy').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var code = btn.previousElementSibling;
+        var reset = function (ms) { setTimeout(function () { btn.textContent = 'Copy'; }, ms); };
+        var fallback = function () {
+          var range = document.createRange();
+          range.selectNodeContents(code);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          btn.textContent = 'Press ⌘C';
+          reset(2500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code.textContent).then(function () {
+            btn.textContent = 'Copied';
+            reset(1500);
+          }, fallback);
+        } else {
+          fallback();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
