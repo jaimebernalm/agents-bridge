@@ -1,0 +1,35 @@
+name: Traffic history
+
+# GitHub's traffic API keeps 14 days. This copies them to the stats branch once a day, so the
+# history goes back further. See .github/scripts/traffic.sh.
+
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write # the stats branch
+  actions: read # each day's workflow runs
+
+concurrency:
+  group: traffic
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      # No actions/checkout: a checkout is a clone, and clones are what this records. The script
+      # comes through the contents API instead.
+      - name: Get the script
+        run: >-
+          gh api "repos/$GITHUB_REPOSITORY/contents/.github/scripts/traffic.sh?ref=$GITHUB_SHA"
+          -H 'Accept: application/vnd.github.raw' > traffic.sh
+
+      - name: Record traffic
+        env:
+          TRAFFIC_TOKEN: ${{ secrets.TRAFFIC_TOKEN }}
+        run: bash traffic.sh
